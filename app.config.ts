@@ -32,10 +32,10 @@ const env = {
   appSlug: "kardecFarmerIdle",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
-  scheme: schemeFromBundleId,
-  iosBundleId: bundleId,
-  androidPackage: bundleId,
+  logoUrl: "/manus-storage/icon_57e67d28.png",
+  scheme: "kardecfarmeridletd",
+  iosBundleId: "space.manus.kardec.farmer.idle.td",
+  androidPackage: "space.manus.kardec.farmer.idle.td",
 };
 
 const config: ExpoConfig = {

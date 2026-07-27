@@ -78,3 +78,13 @@
 - [x] Testar sistema de waves e Boss
 - [x] Testar melhorias roguelike
 - [x] Testar Game Over e reinício
+
+
+## Melhorias Visuais (Nova Fase)
+- [x] Gerar imagens de inimigos (normal, boss)
+- [x] Gerar imagens de tropas (Guerreiro, Arqueiro, Tanque)
+- [x] Implementar animações de ataque dos guardas
+- [x] Implementar animações de morte de inimigos
+- [x] Implementar animações de coleta de moedas com partículas
+- [x] Integrar imagens ao GameMap
+- [x] Testar animações em diferentes dispositivos

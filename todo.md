@@ -88,3 +88,14 @@
 - [x] Implementar animações de coleta de moedas com partículas
 - [x] Integrar imagens ao GameMap
 - [x] Testar animações em diferentes dispositivos
+
+
+## Aprimoramento Visual (Nova Fase)
+- [x] Adicionar gradientes ao mapa e plantação
+- [x] Melhorar visual dos caminhos radiais
+- [x] Adicionar sombras e profundidade
+- [x] Melhorar animações de movimento
+- [x] Otimizar renderização com memoização
+- [x] Melhorar responsividade da interface
+- [x] Adicionar efeitos de partículas avançados
+- [x] Melhorar visual do HUD e cartas

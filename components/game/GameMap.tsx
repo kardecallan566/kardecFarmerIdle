@@ -29,7 +29,7 @@ export function GameMap() {
   const { state, dispatch } = useGame();
   const [paths, setPaths] = useState<Array<Array<{ x: number; y: number }>>>([]);
   const [pulse, setPulse] = useState(0);
-  const [lastEnemyPositions, setLastEnemyPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const lastEnemyPositionsRef = React.useRef<Map<string, { x: number; y: number }>>(new Map());
   
   const { animations: attackAnimations, addAttackAnimation } = useAttackAnimations();
   const { deathAnimations, addDeathAnimation } = useDeathAnimations();
@@ -63,12 +63,12 @@ export function GameMap() {
   // Detect enemy deaths and trigger animations
   useEffect(() => {
     const currentEnemyIds = new Set(state.enemies.map(e => e.id));
-    const lastEnemyIds = new Set(lastEnemyPositions.keys());
+    const lastEnemyIds = new Set(lastEnemyPositionsRef.current.keys());
 
     // Check for dead enemies
     lastEnemyIds.forEach(id => {
       if (!currentEnemyIds.has(id)) {
-        const lastPos = lastEnemyPositions.get(id);
+        const lastPos = lastEnemyPositionsRef.current.get(id);
         if (lastPos) {
           // Trigger death animation
           addDeathAnimation(lastPos.x, lastPos.y, '#FF4444');
@@ -85,8 +85,8 @@ export function GameMap() {
     state.enemies.forEach(enemy => {
       newPositions.set(enemy.id, { x: enemy.x, y: enemy.y });
     });
-    setLastEnemyPositions(newPositions);
-  }, [state.enemies, lastEnemyPositions, addDeathAnimation, addCoinAnimation]);
+    lastEnemyPositionsRef.current = newPositions;
+  }, [state.enemies, addDeathAnimation, addCoinAnimation]);
 
   // Trigger attack animations when guards attack
   useEffect(() => {

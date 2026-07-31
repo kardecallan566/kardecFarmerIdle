@@ -37,7 +37,7 @@ export default function GameScreen() {
   };
 
   if (!gameStarted) {
-    return <HomeScreen />;
+    return <HomeScreen onStartGame={handleStartGame} />;
   }
 
   if (state.plantationHealth <= 0) {

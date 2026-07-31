@@ -2,16 +2,21 @@ import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  onStartGame?: () => void;
+}
+
+export function HomeScreen({ onStartGame }: HomeScreenProps) {
   const { dispatch } = useGame();
 
   const handleStartGame = () => {
     dispatch({ type: 'INIT_GAME' });
+    onStartGame?.();
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View className="flex-1 bg-gradient-to-b from-primary/20 to-background justify-center items-center p-6 gap-8">
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <View className="flex-1 bg-background justify-center items-center p-6 gap-8">
         {/* Title */}
         <View className="gap-2 items-center">
           <Text className="text-5xl font-bold text-primary">🌾</Text>

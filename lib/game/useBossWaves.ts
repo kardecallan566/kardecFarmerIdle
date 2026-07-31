@@ -8,12 +8,20 @@ export function useBossWaves() {
   const { state, dispatch } = useGame();
   const bossAbilityCooldownsRef = useRef<Map<string, number>>(new Map());
 
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   // Handle boss abilities
   useEffect(() => {
     if (!state.gameActive || state.gameLost) return;
 
     const bossAbilityInterval = setInterval(() => {
-      const bosses = state.enemies.filter((e) => e.isBoss);
+      const currentState = stateRef.current;
+      if (!currentState.gameActive || currentState.gameLost) return;
+
+      const bosses = currentState.enemies.filter((e) => e.isBoss);
 
       bosses.forEach((boss) => {
         if (!boss.bossAbilities) return;
@@ -25,7 +33,7 @@ export function useBossWaves() {
             // Execute ability
             if (ability.type === 'speedBoost') {
               // Temporarily increase boss speed
-              const updatedEnemies = state.enemies.map((e) => {
+              const updatedEnemies = currentState.enemies.map((e) => {
                 if (e.id === boss.id) {
                   return { ...e, speed: e.speed * 1.5 };
                 }
@@ -35,7 +43,7 @@ export function useBossWaves() {
 
               // Revert speed after 5 seconds
               setTimeout(() => {
-                const revertedEnemies = state.enemies.map((e) => {
+                const revertedEnemies = stateRef.current.enemies.map((e) => {
                   if (e.id === boss.id) {
                     return { ...e, speed: e.speed / 1.5 };
                   }
@@ -74,7 +82,7 @@ export function useBossWaves() {
 
               dispatch({
                 type: 'UPDATE_ENEMIES',
-                enemies: [...state.enemies, ...newMinions],
+                enemies: [...currentState.enemies, ...newMinions],
               });
 
               bossAbilityCooldownsRef.current.set(
@@ -93,7 +101,7 @@ export function useBossWaves() {
     }, 100);
 
     return () => clearInterval(bossAbilityInterval);
-  }, [state.gameActive, state.gameLost, state.enemies, dispatch]);
+  }, [state.gameActive, state.gameLost, dispatch]);
 
   return {
     hasBoss: state.enemies.some((e) => e.isBoss),

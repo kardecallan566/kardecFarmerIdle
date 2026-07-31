@@ -21,6 +21,7 @@ type GameAction =
   | { type: 'UPDATE_ENEMIES'; enemies: Enemy[] }
   | { type: 'UPDATE_GUARDS'; guards: Guard[] }
   | { type: 'ADD_GUARD'; guard: Guard }
+  | { type: 'SPAWN_ENEMY'; enemy: Enemy }
   | { type: 'REMOVE_ENEMY'; enemyId: string }
   | { type: 'DAMAGE_PLANTATION'; amount: number }
   | { type: 'ADD_COINS'; amount: number }
@@ -39,7 +40,7 @@ const initialState: GameState = {
   coins: 200,
   plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
   maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
-  gameActive: true,
+  gameActive: false,
   gameLost: false,
   enemies: [],
   guards: [],
@@ -70,6 +71,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'UPDATE_ENEMIES':
       return { ...state, enemies: action.enemies };
+
+    case 'SPAWN_ENEMY':
+      return { ...state, enemies: [...state.enemies, action.enemy] };
 
     case 'UPDATE_GUARDS':
       return { ...state, guards: action.guards };

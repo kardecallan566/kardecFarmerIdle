@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { Dimensions } from 'react-native';
 import { useGame } from './GameContext';
 import {
   Enemy,
@@ -14,20 +15,28 @@ import {
   generateId,
 } from './utils';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
 export function useGameLoop() {
   const { state, dispatch } = useGame();
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const waveSpawnerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const enemySpawnCountRef = useRef(0);
 
-  const mapCenterX = 200; // Approximate center
-  const mapCenterY = 150;
+  const mapCenterX = screenWidth / 2;
+  const mapCenterY = screenHeight / 2 - 100;
+
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Spawn enemies for current wave
   const spawnWaveEnemies = useCallback(() => {
-    if (!state.gameActive || state.gameLost) return;
+    const currentState = stateRef.current;
+    if (!currentState.gameActive || currentState.gameLost) return;
 
-    const waveConfig = getWaveConfig(state.wave);
+    const waveConfig = getWaveConfig(currentState.wave);
     const enemiesPerSecond = Math.max(1, waveConfig.enemyCount / 5); // Spread over 5 seconds
 
     waveSpawnerRef.current = setInterval(() => {
@@ -68,22 +77,25 @@ export function useGameLoop() {
           : undefined,
       };
 
-      dispatch({ type: 'UPDATE_ENEMIES', enemies: [...state.enemies, newEnemy] });
+      dispatch({ type: 'SPAWN_ENEMY', enemy: newEnemy });
       enemySpawnCountRef.current++;
     }, 1000 / enemiesPerSecond);
-  }, [state.wave, state.gameActive, state.gameLost, dispatch]);
+  }, [dispatch]);
 
   // Main game loop: update positions, handle attacks, etc.
   useEffect(() => {
     if (!state.gameActive || state.gameLost) return;
 
     gameLoopRef.current = setInterval(() => {
+      const currentState = stateRef.current;
+      if (!currentState.gameActive || currentState.gameLost) return;
+
       // Update enemy positions
-      const updatedEnemies = state.enemies
+      const updatedEnemies = currentState.enemies
         .map((enemy) => {
           const newProgress = Math.min(
             1,
-            enemy.pathProgress + (enemy.speed * 0.016) / 100 // 60fps update
+            enemy.pathProgress + (enemy.speed * 0.03) / 100
           );
           const newPos = getPositionOnPath(
             mapCenterX,
@@ -118,16 +130,16 @@ export function useGameLoop() {
         .filter((e) => e !== null) as Enemy[];
 
       // Update guard attacks
-      const updatedGuards = state.guards.map((guard) => {
-        let newCooldown = Math.max(0, guard.attackCooldown - 0.016);
+      const remainingEnemies = [...updatedEnemies];
+      const updatedGuards = currentState.guards.map((guard) => {
+        let newCooldown = Math.max(0, guard.attackCooldown - 0.03);
 
         // Find target
-        const targets = updatedEnemies.filter(
-          (e) => distance({ x: guard.x, y: guard.y }, { x: e.x, y: e.y }) < guard.range
+        const target = remainingEnemies.find(
+          (e) => e.health > 0 && distance({ x: guard.x, y: guard.y }, { x: e.x, y: e.y }) < guard.range
         );
 
-        if (targets.length > 0 && newCooldown <= 0) {
-          const target = targets[0];
+        if (target && newCooldown <= 0) {
           // Deal damage to target
           target.health -= guard.damage;
           newCooldown = 1 / guard.attackSpeed; // Reset cooldown
@@ -141,13 +153,15 @@ export function useGameLoop() {
         return { ...guard, attackCooldown: newCooldown };
       });
 
-      dispatch({ type: 'UPDATE_ENEMIES', enemies: updatedEnemies });
+      const aliveEnemies = remainingEnemies.filter((e) => e.health > 0);
+
+      dispatch({ type: 'UPDATE_ENEMIES', enemies: aliveEnemies });
       dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
 
       // Check if wave is complete
       if (
         updatedEnemies.length === 0 &&
-        enemySpawnCountRef.current >= getWaveConfig(state.wave).enemyCount
+        enemySpawnCountRef.current >= getWaveConfig(currentState.wave).enemyCount
       ) {
         // Wave complete, prepare next wave
         setTimeout(() => {
@@ -155,20 +169,22 @@ export function useGameLoop() {
           enemySpawnCountRef.current = 0;
         }, 3000);
       }
-    }, 16); // ~60fps
+    }, 33); // ~30fps for smooth state updates without loop thrashing
 
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [state.gameActive, state.gameLost, state.enemies, state.guards, dispatch]);
+  }, [state.gameActive, state.gameLost, dispatch]);
 
   // Start wave spawning
   useEffect(() => {
+    if (!state.gameActive || state.gameLost) return;
+
     enemySpawnCountRef.current = 0;
     spawnWaveEnemies();
 
     return () => {
       if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
     };
-  }, [state.wave, spawnWaveEnemies]);
+  }, [state.wave, state.gameActive, state.gameLost, spawnWaveEnemies]);
 }

@@ -1,10 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { GuardType, PersistentProgress } from './types';
 
 const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
   TOTAL_GAMES: 'kardec_farmer_total_games',
   TOTAL_ENEMIES_DEFEATED: 'kardec_farmer_total_enemies_defeated',
   TOTAL_COINS_EARNED: 'kardec_farmer_total_coins_earned',
+  PERSISTENT_PROGRESS: 'kardec_farmer_persistent_progress',
+};
+
+export const DEFAULT_PERSISTENT_PROGRESS: PersistentProgress = {
+  bankGold: 0,
+  unlockedTroops: ['warrior'],
+  troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
+  bestWave: 0,
+  totalGames: 0,
 };
 
 export async function saveBestWave(wave: number): Promise<void> {
@@ -52,7 +62,7 @@ export async function addTotalEnemiesDefeated(count: number): Promise<void> {
     const current = await getTotalEnemiesDefeated();
     await AsyncStorage.setItem(
       STORAGE_KEYS.TOTAL_ENEMIES_DEFEATED,
-      (current + count).toString()
+      (current + count).toString(),
     );
   } catch (error) {
     console.error('Error adding enemies defeated:', error);
@@ -64,7 +74,7 @@ export async function getTotalEnemiesDefeated(): Promise<number> {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_ENEMIES_DEFEATED);
     return value ? parseInt(value, 10) : 0;
   } catch (error) {
-    console.error('Error getting total enemies defeated:', error);
+    console.error('Error getting enemies defeated:', error);
     return 0;
   }
 }
@@ -74,7 +84,7 @@ export async function addTotalCoinsEarned(coins: number): Promise<void> {
     const current = await getTotalCoinsEarned();
     await AsyncStorage.setItem(
       STORAGE_KEYS.TOTAL_COINS_EARNED,
-      (current + coins).toString()
+      (current + coins).toString(),
     );
   } catch (error) {
     console.error('Error adding coins earned:', error);
@@ -86,8 +96,49 @@ export async function getTotalCoinsEarned(): Promise<number> {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_COINS_EARNED);
     return value ? parseInt(value, 10) : 0;
   } catch (error) {
-    console.error('Error getting total coins earned:', error);
+    console.error('Error getting coins earned:', error);
     return 0;
+  }
+}
+
+function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentProgress {
+  const unlockedTroops = Array.isArray(raw?.unlockedTroops)
+    ? raw.unlockedTroops.filter((type): type is GuardType =>
+        type === 'warrior' || type === 'archer' || type === 'tank',
+      )
+    : [];
+
+  return {
+    bankGold: Math.max(0, Number(raw?.bankGold) || 0),
+    unlockedTroops: Array.from(new Set(['warrior', ...unlockedTroops])),
+    troopUpgradeLevels: {
+      warrior: Math.max(0, Number(raw?.troopUpgradeLevels?.warrior) || 0),
+      archer: Math.max(0, Number(raw?.troopUpgradeLevels?.archer) || 0),
+      tank: Math.max(0, Number(raw?.troopUpgradeLevels?.tank) || 0),
+    },
+    bestWave: Math.max(0, Number(raw?.bestWave) || 0),
+    totalGames: Math.max(0, Number(raw?.totalGames) || 0),
+  };
+}
+
+export async function getPersistentProgress(): Promise<PersistentProgress> {
+  try {
+    const value = await AsyncStorage.getItem(STORAGE_KEYS.PERSISTENT_PROGRESS);
+    return value ? normalizeProgress(JSON.parse(value) as Partial<PersistentProgress>) : DEFAULT_PERSISTENT_PROGRESS;
+  } catch (error) {
+    console.error('Error getting persistent progress:', error);
+    return DEFAULT_PERSISTENT_PROGRESS;
+  }
+}
+
+export async function savePersistentProgress(progress: PersistentProgress): Promise<void> {
+  try {
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.PERSISTENT_PROGRESS,
+      JSON.stringify(normalizeProgress(progress)),
+    );
+  } catch (error) {
+    console.error('Error saving persistent progress:', error);
   }
 }
 

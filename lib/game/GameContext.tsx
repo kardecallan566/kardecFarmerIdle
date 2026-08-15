@@ -7,6 +7,7 @@ import {
   GUARD_CONFIGS,
   INITIAL_GAME_CONFIG,
   getWaveConfig,
+  GuardType,
 } from './types';
 import {
   getSpawnPoint,
@@ -17,6 +18,7 @@ import {
 } from './utils';
 
 import { CropPlot, SprinklerState } from './types';
+import { getPersistentProgress, savePersistentProgress } from './storage';
 
 type GameAction =
   | { type: 'INIT_GAME' }
@@ -43,7 +45,11 @@ type GameAction =
   | { type: 'SELECT_PLOT'; plotIndex: number | null }
   | { type: 'UPDATE_SPRINKLER'; angle: number }
   | { type: 'SET_PLOT_WATERED'; plotIndex: number; watered: boolean }
-  | { type: 'RESET_WATERED_FLAGS' };
+  | { type: 'RESET_WATERED_FLAGS' }
+  | { type: 'LOAD_PROGRESS'; progress: { bankGold: number; unlockedTroops: GuardType[]; troopUpgradeLevels: Record<GuardType, number>; bestWave: number; totalGames: number } }
+  | { type: 'CLAIM_RUN_REWARD' }
+  | { type: 'UNLOCK_TROOP'; troopType: GuardType; cost: number }
+  | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; cost: number };
 
 const initialPlots: CropPlot[] = [
   {
@@ -116,10 +122,60 @@ const initialState: GameState = {
   upgrades: [],
   selectedCardIndex: null,
   placingMode: false,
+  bankGold: 0,
+  unlockedTroops: ['warrior'],
+  troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
+  bestWave: 0,
+  totalGames: 0,
+  progressLoaded: false,
+  runRewardClaimed: false,
+  lastRunReward: 0,
 };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case 'LOAD_PROGRESS':
+      return {
+        ...state,
+        ...action.progress,
+        progressLoaded: true,
+      };
+
+    case 'CLAIM_RUN_REWARD': {
+      if (!state.gameLost || state.runRewardClaimed) return state;
+      const reward = Math.max(
+        20,
+        Math.floor(state.totalCoinsEarned * 0.45) + state.wave * 20 + state.totalEnemiesDefeated * 2,
+      );
+      return {
+        ...state,
+        bankGold: state.bankGold + reward,
+        bestWave: Math.max(state.bestWave, state.wave),
+        totalGames: state.totalGames + 1,
+        runRewardClaimed: true,
+        lastRunReward: reward,
+      };
+    }
+
+    case 'UNLOCK_TROOP':
+      if (state.unlockedTroops.includes(action.troopType) || state.bankGold < action.cost) return state;
+      return {
+        ...state,
+        bankGold: state.bankGold - action.cost,
+        unlockedTroops: [...state.unlockedTroops, action.troopType],
+      };
+
+    case 'BUY_TROOP_UPGRADE':
+      if (state.bankGold < action.cost) return state;
+      return {
+        ...state,
+        bankGold: state.bankGold - action.cost,
+        troopUpgradeLevels: {
+          ...state.troopUpgradeLevels,
+          [action.troopType]: state.troopUpgradeLevels[action.troopType] + 1,
+        },
+      };
+
     case 'RESET_GAME':
       return {
         ...initialState,
@@ -143,10 +199,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         waveEnemiesTotal: getWaveConfig(1).enemyCount,
         waveEnemiesSpawned: 0,
         sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 },
+        bankGold: state.bankGold,
+        unlockedTroops: state.unlockedTroops,
+        troopUpgradeLevels: state.troopUpgradeLevels,
+        bestWave: state.bestWave,
+        totalGames: state.totalGames,
+        progressLoaded: state.progressLoaded,
+        runRewardClaimed: false,
+        lastRunReward: 0,
       };
 
-    case 'UPDATE_ENEMIES':
-      return { ...state, enemies: action.enemies };
+    case 'UPDATE_ENEMIES': {
+      const nextIds = new Set(action.enemies.map((enemy) => enemy.id));
+      const concurrentlyAddedEnemies = state.enemies.filter((enemy) => !nextIds.has(enemy.id));
+      return {
+        ...state,
+        enemies: [...action.enemies, ...concurrentlyAddedEnemies],
+      };
+    }
 
     case 'UPDATE_ENEMY':
       return {
@@ -302,6 +372,34 @@ export const GameContext = createContext<{
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPersistentProgress().then((progress) => {
+      if (!cancelled) dispatch({ type: 'LOAD_PROGRESS', progress });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!state.progressLoaded) return;
+    void savePersistentProgress({
+      bankGold: state.bankGold,
+      unlockedTroops: state.unlockedTroops,
+      troopUpgradeLevels: state.troopUpgradeLevels,
+      bestWave: state.bestWave,
+      totalGames: state.totalGames,
+    });
+  }, [
+    state.progressLoaded,
+    state.bankGold,
+    state.unlockedTroops,
+    state.troopUpgradeLevels,
+    state.bestWave,
+    state.totalGames,
+  ]);
 
   // Game loop for passive coin generation
   useEffect(() => {

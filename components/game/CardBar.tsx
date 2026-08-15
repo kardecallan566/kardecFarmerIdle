@@ -26,7 +26,7 @@ const GUARD_ACCENTS = {
 
 export function CardBar() {
   const { state, dispatch } = useGame();
-  const { selectCard, isCardAvailable, getCardCooldown, getCardMaxCooldown } = useCardSystem();
+  const { selectCard, isCardAvailable, isTroopUnlocked, getCardCooldown, getCardMaxCooldown } = useCardSystem();
   const { width } = useWindowDimensions();
   const [cooldowns, setCooldowns] = useState<number[]>([0, 0, 0]);
   const cardWidth = Math.max(142, Math.min(188, (width - 34) / 3));
@@ -71,6 +71,7 @@ export function CardBar() {
           const config = GUARD_CONFIGS[guardType];
           const isSelected = state.selectedCardIndex === index;
           const canAfford = state.coins >= config.cost;
+          const unlocked = isTroopUnlocked(index);
           const available = isCardAvailable(index);
           const cooldown = cooldowns[index];
           const maxCooldown = getCardMaxCooldown(index);
@@ -80,11 +81,11 @@ export function CardBar() {
             <Pressable
               key={guardType}
               onPress={() => handleCardPress(index)}
-              disabled={!canAfford || !available}
+              disabled={!unlocked || !canAfford || !available}
               style={({ pressed }) => ({
                 width: cardWidth,
                 transform: [{ scale: pressed && canAfford && available ? 0.97 : 1 }],
-                opacity: canAfford && available ? 1 : 0.55,
+                opacity: unlocked && canAfford && available ? 1 : 0.55,
               })}
             >
               <View
@@ -92,7 +93,14 @@ export function CardBar() {
                   isSelected ? 'border-[#F7C948] bg-[#315F40]' : 'border-[#3E6849] bg-[#1A3B29]'
                 }`}
               >
-                {!available && (
+                {!unlocked && (
+                  <View className="absolute inset-0 z-10 items-center justify-center bg-[#0B1710]/75">
+                    <Text className="rounded-lg border border-[#F7D774] bg-[#213E37] px-2 py-1 text-[10px] font-black tracking-wide text-[#FFF3C4]">BLOQUEADO</Text>
+                    <Text className="mt-1 text-[9px] font-semibold text-[#DDEFC8]">Abra no acampamento</Text>
+                  </View>
+                )}
+
+                {unlocked && !available && (
                   <View
                     className="absolute top-0 left-0 bottom-0 bg-black/45"
                     style={{ width: `${100 - cooldownPercent}%` }}
@@ -135,7 +143,7 @@ export function CardBar() {
                 </View>
 
                 {!canAfford && <Text className="text-[10px] text-[#FF9B7A] mt-1 font-semibold">Sem moedas</Text>}
-                {!available && <Text className="text-[10px] text-[#F7C948] mt-1 font-semibold">{cooldown.toFixed(1)}s</Text>}
+                {unlocked && !available && <Text className="text-[10px] text-[#F7C948] mt-1 font-semibold">{cooldown.toFixed(1)}s</Text>}
               </View>
             </Pressable>
           );

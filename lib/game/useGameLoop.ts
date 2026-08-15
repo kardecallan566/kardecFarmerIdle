@@ -20,7 +20,8 @@ export function useGameLoop() {
   const { width, height: windowHeight } = useWindowDimensions();
   const layout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const waveSpawnerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const enemySpawnTimerRef = useRef(0);
+  const spawnedWaveRef = useRef(0);
   const waveTransitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enemySpawnCountRef = useRef(0);
   const waveTransitionRef = useRef(false);
@@ -30,58 +31,56 @@ export function useGameLoop() {
     stateRef.current = state;
   }, [state]);
 
-  const spawnWaveEnemies = useCallback(() => {
-    const currentState = stateRef.current;
-    if (!currentState.gameActive || currentState.gameLost) return;
-
-    if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
-    enemySpawnCountRef.current = 0;
-    waveTransitionRef.current = false;
-
-    const waveConfig = getWaveConfig(currentState.wave);
-    const enemiesPerSecond = Math.max(0.8, waveConfig.enemyCount / 6);
-
-    waveSpawnerRef.current = setInterval(() => {
-      const latestState = stateRef.current;
-      if (!latestState.gameActive || latestState.gameLost) return;
-
-      if (enemySpawnCountRef.current >= waveConfig.enemyCount) {
-        if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
-        return;
-      }
-
-      const newEnemy: Enemy = {
-        id: generateId('enemy'),
-        x: layout.centerX,
-        y: layout.centerY - layout.spawnDistance,
-        pathIndex: 0,
-        pathProgress: 0,
-        health: waveConfig.enemyHealth,
-        maxHealth: waveConfig.enemyHealth,
-        speed: waveConfig.enemySpeed,
-        damage: waveConfig.enemyDamage,
-        radius: waveConfig.isBossWave ? 18 : 12,
-        color: waveConfig.isBossWave ? '#8B0000' : '#DC143C',
-        isBoss: waveConfig.isBossWave,
-        bossAbilities: waveConfig.isBossWave
-          ? [
-              { type: 'speedBoost', cooldown: 0, maxCooldown: 10 },
-              { type: 'spawnMinions', cooldown: 0, maxCooldown: 15 },
-            ]
-          : undefined,
-      };
-
-      dispatch({ type: 'SPAWN_ENEMY', enemy: newEnemy });
-      enemySpawnCountRef.current += 1;
-    }, 1000 / enemiesPerSecond);
-  }, [dispatch, layout.centerX, layout.centerY, layout.spawnDistance]);
-
   useEffect(() => {
     if (!state.gameActive || state.gameLost) return;
 
+    enemySpawnTimerRef.current = 0;
+    enemySpawnCountRef.current = 0;
+    spawnedWaveRef.current = 0;
     gameLoopRef.current = setInterval(() => {
       const currentState = stateRef.current;
       if (!currentState.gameActive || currentState.gameLost) return;
+
+      const waveConfig = getWaveConfig(currentState.wave);
+      if (spawnedWaveRef.current !== currentState.wave) {
+        spawnedWaveRef.current = currentState.wave;
+        enemySpawnTimerRef.current = 0;
+        enemySpawnCountRef.current = 0;
+        waveTransitionRef.current = false;
+      }
+      enemySpawnTimerRef.current += GAME_DT;
+      const spawnedEnemiesThisTick: Enemy[] = [];
+      const spawnInterval = 1 / Math.max(0.8, waveConfig.enemyCount / 6);
+      if (
+        enemySpawnCountRef.current < waveConfig.enemyCount &&
+        enemySpawnTimerRef.current >= spawnInterval
+      ) {
+        enemySpawnTimerRef.current -= spawnInterval;
+        const newEnemy: Enemy = {
+          id: generateId('enemy'),
+          x: layout.centerX,
+          y: layout.centerY - layout.spawnDistance,
+          pathIndex: 0,
+          pathProgress: 0,
+          health: waveConfig.enemyHealth,
+          maxHealth: waveConfig.enemyHealth,
+          speed: waveConfig.enemySpeed,
+          damage: waveConfig.enemyDamage,
+          radius: waveConfig.isBossWave ? 18 : 12,
+          color: waveConfig.isBossWave ? '#8B0000' : '#DC143C',
+          isBoss: waveConfig.isBossWave,
+          attackCooldown: 0,
+          bossAbilities: waveConfig.isBossWave
+            ? [
+                { type: 'speedBoost', cooldown: 0, maxCooldown: 10 },
+                { type: 'spawnMinions', cooldown: 0, maxCooldown: 15 },
+              ]
+            : undefined,
+        };
+        spawnedEnemiesThisTick.push(newEnemy);
+        dispatch({ type: 'SPAWN_ENEMY', enemy: newEnemy });
+        enemySpawnCountRef.current += 1;
+      }
 
       const previousAngle = currentState.sprinkler.angle;
       const newAngle =
@@ -139,7 +138,8 @@ export function useGameLoop() {
         : currentState.guards;
 
       const defeatedEnemyIds = new Set<string>();
-      const updatedEnemies = currentState.enemies
+      const enemiesForTick = [...currentState.enemies, ...spawnedEnemiesThisTick];
+      const updatedEnemies = enemiesForTick
         .map((enemy) => {
           const newProgress = Math.min(
             1,
@@ -170,9 +170,40 @@ export function useGameLoop() {
         .filter((enemy): enemy is Enemy => enemy !== null);
 
       const remainingEnemies = [...updatedEnemies];
-      const updatedGuards = allGuards
+      const incomingDamageByGuard = new Map<string, number>();
+      const combatEnemies = remainingEnemies.map((enemy) => {
+        const nextEnemyCooldown = Math.max(0, (enemy.attackCooldown ?? 0) - GAME_DT);
+        const guardTarget = allGuards
+          .filter((guard) =>
+            distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y }) <= enemy.radius + 18,
+          )
+          .sort(
+            (first, second) =>
+              distance({ x: first.x, y: first.y }, { x: enemy.x, y: enemy.y }) -
+              distance({ x: second.x, y: second.y }, { x: enemy.x, y: enemy.y }),
+          )[0];
+        let attackCooldown = nextEnemyCooldown;
+
+        if (guardTarget && attackCooldown <= 0) {
+          incomingDamageByGuard.set(
+            guardTarget.id,
+            (incomingDamageByGuard.get(guardTarget.id) ?? 0) + enemy.damage,
+          );
+          attackCooldown = 0.9;
+        }
+
+        return { ...enemy, attackCooldown };
+      });
+      const guardsAfterDamage = allGuards
+        .map((guard) => ({
+          ...guard,
+          health: Math.max(0, guard.health - (incomingDamageByGuard.get(guard.id) ?? 0) * GAME_DT),
+        }))
+        .filter((guard) => guard.health > 0);
+
+      const updatedGuards = guardsAfterDamage
         .map((guard) => {
-          const target = remainingEnemies
+          const target = combatEnemies
             .filter((enemy) => enemy.health > 0)
             .sort(
               (first, second) =>
@@ -228,11 +259,10 @@ export function useGameLoop() {
         dispatch({ type: 'REMOVE_ENEMY', enemyId });
       });
 
-      const aliveEnemies = remainingEnemies.filter((enemy) => enemy.health > 0);
+      const aliveEnemies = combatEnemies.filter((enemy) => enemy.health > 0);
       dispatch({ type: 'UPDATE_ENEMIES', enemies: aliveEnemies });
       dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
 
-      const waveConfig = getWaveConfig(currentState.wave);
       if (
         aliveEnemies.length === 0 &&
         enemySpawnCountRef.current >= waveConfig.enemyCount &&
@@ -251,6 +281,7 @@ export function useGameLoop() {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
       if (waveTransitionTimeoutRef.current) clearTimeout(waveTransitionTimeoutRef.current);
       waveTransitionRef.current = false;
+      enemySpawnTimerRef.current = 0;
     };
   }, [
     dispatch,
@@ -262,12 +293,4 @@ export function useGameLoop() {
     state.gameLost,
   ]);
 
-  useEffect(() => {
-    if (!state.gameActive || state.gameLost) return;
-
-    spawnWaveEnemies();
-    return () => {
-      if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
-    };
-  }, [spawnWaveEnemies, state.gameActive, state.gameLost, state.wave]);
 }

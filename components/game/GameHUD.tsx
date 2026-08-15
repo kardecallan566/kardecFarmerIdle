@@ -99,7 +99,8 @@ export function GameHUD() {
               style={{ width: `${healthPercent}%` }}
             />
           </View>
-          <Text className="mt-0.5 text-[9px] text-[#8FB08D]">Proteja o regador central</Text>
+          <Text className="mt-0.5 text-[9px] text-[#8FB08D]">Proteja o farol central
+</Text>
         </View>
       </View>
 

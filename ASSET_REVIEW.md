@@ -71,3 +71,19 @@ A observação do build corrigido mostrou os inimigos alinhados na faixa central
 ## Validação de derrota e reinício
 
 A partida foi observada até a plantação chegar a 0/100. A tela de Game Over exibiu o motivo, o regador sem vida e as estatísticas finais. Ao pressionar `Jogar Novamente`, o jogo retornou imediatamente para uma nova `Wave 1`, com plantação 100/100, moedas iniciais e contadores reiniciados.
+
+## Verificação da meta-progressão e do Acampamento
+
+A Home final mostrou o bloco de progresso contínuo, gold acumulado, wave máxima e acesso ao Acampamento do Farol. No Acampamento, o Guerreiro aparece disponível no nível 1, enquanto Arqueiro e Tanque aparecem bloqueados com custos de 180 e 360 gold. O novo fluxo também exibe o farol como núcleo protegido nas instruções.
+
+## Verificação do farol e da arena
+
+Na arena exportada, o antigo regador foi substituído por um farol SVG central com torre, lanterna dourada, brilho e feixe rotativo. O feixe ilumina os canteiros e a geração do Guerreiro permanece ativa. A barra inferior confirma que Arqueiro e Tanque estão bloqueados até o Acampamento, enquanto o Guerreiro exibe alcance reduzido para 32.
+
+## Verificação do spawn unificado
+
+No build final, a Wave 1 foi concluída com `5/5` inimigos gerados e a Wave 2 iniciou com `0/7` sem duplicar ou perder entidades. A arena manteve o farol central e os cards bloqueados de arqueiro/tanque, confirmando o ciclo de spawn único e os contadores coerentes.
+
+## Verificação de persistência entre partidas
+
+Foi semeado um perfil de teste no armazenamento web e a aplicação foi recarregada. A Home recuperou corretamente 600 gold, Wave máxima 4 e 2/3 tropas desbloqueadas, confirmando que a meta-progressão é lida fora da arena e não depende do estado temporário da run.

@@ -38,6 +38,7 @@ export function useCardSystem() {
     const guardTypes = ['warrior', 'archer', 'tank'] as const;
     const guardType = guardTypes[cardIndex];
     const guardConfig = GUARD_CONFIGS[guardType];
+    if (!state.unlockedTroops.includes(guardType)) return;
 
     // Check if player has enough coins
     if (state.coins < guardConfig.cost) return;
@@ -68,12 +69,18 @@ export function useCardSystem() {
     return getCardCooldown(cardIndex) <= 0;
   };
 
+  const isTroopUnlocked = (cardIndex: number): boolean => {
+    const guardTypes = ['warrior', 'archer', 'tank'] as const;
+    return state.unlockedTroops.includes(guardTypes[cardIndex]);
+  };
+
   return {
     selectCard,
     deselectCard,
     getCardCooldown,
     getCardMaxCooldown,
     isCardAvailable,
+    isTroopUnlocked,
     cardCooldowns: cardCooldownsRef.current,
   };
 }

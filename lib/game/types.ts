@@ -1,5 +1,15 @@
 // Game types and interfaces
 
+export type GuardType = 'warrior' | 'archer' | 'tank';
+
+export interface PersistentProgress {
+  bankGold: number;
+  unlockedTroops: GuardType[];
+  troopUpgradeLevels: Record<GuardType, number>;
+  bestWave: number;
+  totalGames: number;
+}
+
 export interface Vector2 {
   x: number;
   y: number;
@@ -11,7 +21,7 @@ export interface CropPlot {
   name: string;
   angleStart: number;
   angleEnd: number;
-  cropType: 'warrior' | 'archer' | 'tank' | null;
+  cropType: GuardType | null;
   cropLevel: number;
   x: number;
   y: number;
@@ -43,6 +53,14 @@ export interface GameState {
   upgrades: Upgrade[];
   selectedCardIndex: number | null;
   placingMode: boolean;
+  bankGold: number;
+  unlockedTroops: GuardType[];
+  troopUpgradeLevels: Record<GuardType, number>;
+  bestWave: number;
+  totalGames: number;
+  progressLoaded: boolean;
+  runRewardClaimed: boolean;
+  lastRunReward: number;
 }
 
 export interface Enemy {
@@ -59,6 +77,7 @@ export interface Enemy {
   color: string;
   isBoss: boolean;
   bossAbilities?: BossAbility[];
+  attackCooldown?: number;
 }
 
 export interface BossAbility {
@@ -72,7 +91,7 @@ export interface Guard {
   x: number;
   y: number;
   plotIndex: number; // Which quadrant spawned this guard
-  type: 'warrior' | 'archer' | 'tank';
+  type: GuardType;
   health: number;
   maxHealth: number;
   damage: number;
@@ -87,7 +106,7 @@ export interface Guard {
 
 export interface Card {
   id: string;
-  type: 'warrior' | 'archer' | 'tank';
+  type: GuardType;
   cost: number;
   cooldown: number;
   maxCooldown: number;
@@ -100,7 +119,7 @@ export interface Upgrade {
   description: string;
   type: 'damage' | 'range' | 'cost' | 'coins' | 'health' | 'guardSpecific';
   value: number;
-  targetGuard?: 'warrior' | 'archer' | 'tank';
+  targetGuard?: GuardType;
 }
 
 export interface WaveConfig {
@@ -128,7 +147,7 @@ export const GUARD_CONFIGS = {
     cost: 100,
     health: 50,
     damage: 15,
-    range: 90,
+    range: 32,
     attackSpeed: 1.0,
     moveSpeed: 40,
     color: '#4169E1',
@@ -157,7 +176,28 @@ export const GUARD_CONFIGS = {
     name: 'Tanque',
     cropName: 'Abóbora Blindada',
   },
-};
+} satisfies Record<GuardType, {
+  cost: number;
+  health: number;
+  damage: number;
+  range: number;
+  attackSpeed: number;
+  moveSpeed: number;
+  color: string;
+  name: string;
+  cropName: string;
+}>;
+
+export function getGuardStats(type: GuardType, upgradeLevel = 0) {
+  const base = GUARD_CONFIGS[type];
+  const levelMultiplier = 1 + upgradeLevel * 0.12;
+  return {
+    ...base,
+    health: Math.round(base.health * levelMultiplier),
+    damage: Math.round(base.damage * levelMultiplier),
+    range: base.range,
+  };
+}
 
 export const INITIAL_GAME_CONFIG: GameConfig = {
   mapRadius: 150,

@@ -1,5 +1,6 @@
 import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { getNextBossWave, getWaveConfig } from '@/lib/game/types';
+import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 
 const GAME_LOGO = require('@/assets/images/logo-kardec-farmer.png');
@@ -7,9 +8,11 @@ const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
 
 interface HomeScreenProps {
   onStartGame?: () => void;
+  onOpenCamp?: () => void;
 }
 
-export function HomeScreen({ onStartGame }: HomeScreenProps) {
+export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
+  const { state } = useGame();
   const { width } = useWindowDimensions();
   const isCompact = width < 390;
   const firstWave = getWaveConfig(1);
@@ -45,7 +48,7 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
               Tower Defense agrícola
             </Text>
             <Text className="mt-1 text-center text-xs text-[#6F765F]">
-              Organize suas tropas, segure a estrada e proteja o regador central.
+              Organize suas tropas, segure a estrada e proteja o farol central.
             </Text>
           </View>
 
@@ -74,12 +77,24 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
             </View>
           </View>
 
+          <View className="rounded-3xl border border-[#D3B98B] bg-[#FFF9EA]/95 p-4">
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-[10px] font-black tracking-widest text-[#7D6947]">PROGRESSO CONTÍNUO</Text>
+                <Text className="mt-1 text-base font-black text-[#294F2E]">{Math.floor(state.bankGold)} gold no acampamento</Text>
+              </View>
+              <Text className="text-sm font-black text-[#8B4F2C]">Wave {state.bestWave}</Text>
+            </View>
+            <Text className="mt-2 text-[10px] leading-4 text-[#71835E]">{state.unlockedTroops.length}/3 tropas desbloqueadas. Derrote monstros, resgate a run e treine sua defesa.</Text>
+          </View>
+
           <View className="rounded-3xl border border-[#C9D9BC] bg-[#F5FAEE]/95 p-4">
             <Text className="mb-3 text-sm font-black text-[#294F2E]">Como jogar</Text>
             <View className="gap-3">
               <View className="flex-row items-center gap-3">
                 <View className="rounded-xl bg-[#DDECC8] p-2"><GameIcon name="health" size={18} color="#65C7F4" secondaryColor="#5D994E" /></View>
-                <Text className="flex-1 text-xs leading-4 text-[#52664C]">Plante uma carta em um canteiro para criar uma tropa quando o regador passar.</Text>
+                <Text className="flex-1 text-xs leading-4 text-[#52664C]">Plante uma carta em um canteiro para criar uma tropa quando o feixe do farol iluminar o terreno.
+</Text>
               </View>
               <View className="flex-row items-center gap-3">
                 <View className="rounded-xl bg-[#DDECC8] p-2"><GameIcon name="range" size={18} color="#F7C948" secondaryColor="#5D994E" /></View>
@@ -106,6 +121,13 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
               <Text className="mt-0.5 text-[10px] font-bold text-[#E7F4D6]">Entrar na arena</Text>
             </View>
           </Pressable>
+
+          {onOpenCamp && (
+            <Pressable onPress={onOpenCamp} className="items-center rounded-2xl border border-[#9EBC7A] bg-[#EAF4D8]/95 px-6 py-3 active:opacity-80">
+              <Text className="text-sm font-black tracking-wide text-[#376333]">ACAMPAMENTO DO FAROL</Text>
+              <Text className="mt-0.5 text-[10px] font-bold text-[#71835E]">Upgrades e desbloqueios persistentes</Text>
+            </Pressable>
+          )}
 
           <Text className="text-center text-[10px] text-[#6F765F]">Kardec Farmer Idle • Defesa da plantação em andamento</Text>
         </View>

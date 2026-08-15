@@ -128,11 +128,9 @@ export function GameMap() {
     }
   };
 
-  const sprinklerArmLen = 35;
-  const nozzleX = mapCenterX + Math.cos(state.sprinkler.angle) * sprinklerArmLen;
-  const nozzleY = mapCenterY + Math.sin(state.sprinkler.angle) * sprinklerArmLen;
-  const waterPulse = 1 + Math.sin(animationTick * 0.14) * 0.08;
-  const waterOpacity = 0.22 + (Math.sin(animationTick * 0.14) + 1) * 0.06;
+  const beaconAngle = state.sprinkler.angle;
+  const beaconPulse = 1 + Math.sin(animationTick * 0.14) * 0.08;
+  const beaconOpacity = 0.24 + (Math.sin(animationTick * 0.14) + 1) * 0.06;
 
   return (
     <View
@@ -223,7 +221,7 @@ export function GameMap() {
         {plotPositions.map((pos) => {
           const plot = state.plots.find((p) => p.index === pos.index);
           const isSelected = state.selectedPlotIndex === pos.index;
-          const isWatered = plot?.isWateredThisCycle;
+          const isIlluminated = plot?.isWateredThisCycle;
 
           return (
             <G key={`plot_group_${pos.index}`}>
@@ -233,19 +231,20 @@ export function GameMap() {
                 width={68}
                 height={68}
                 rx={14}
-                fill={isWatered ? '#3d6330' : '#5c3d2e'}
-                stroke={isSelected ? '#3182ce' : isWatered ? '#63b3ed' : '#8c5e47'}
+                fill={isIlluminated ? '#3d6330' : '#5c3d2e'}
+                stroke={isSelected ? '#3182ce' : isIlluminated ? '#F7D774' : '#8c5e47'}
                 strokeWidth={isSelected ? 3 : 2}
                 onPress={() => handlePlotPress(pos.index)}
               />
 
-              {isWatered && (
+              {isIlluminated && (
                 <Circle
                   cx={pos.x}
                   cy={pos.y}
                   r={38}
                   fill="none"
-                  stroke="#63b3ed"
+                                      stroke="#F7D774"
+
                   strokeWidth="2"
                   opacity={0.8}
                 />
@@ -321,11 +320,11 @@ export function GameMap() {
         <Circle
           cx={mapCenterX}
           cy={mapCenterY}
-          r={42 * waterPulse}
+          r={38 * beaconPulse}
           fill="none"
-          stroke="#A7E6FF"
+          stroke="#FFF0A8"
           strokeWidth="2"
-          opacity={waterOpacity}
+          opacity={beaconOpacity}
         />
         <Circle
           cx={mapCenterX}
@@ -336,48 +335,55 @@ export function GameMap() {
           strokeWidth={plantationHit ? 5 : 1}
           opacity={plantationHit ? 0.95 : 0}
         />
-        <Circle
-          cx={mapCenterX}
-          cy={mapCenterY}
-          r={52 * (2 - waterPulse)}
-          fill="none"
-          stroke="#63B3ED"
-          strokeWidth="1"
-          opacity={waterOpacity * 0.7}
-        />
         <Path
-          d={`M ${mapCenterX} ${mapCenterY} L ${mapCenterX + Math.cos(state.sprinkler.angle - 0.25) * mapLayout.mapRadius} ${mapCenterY + Math.sin(state.sprinkler.angle - 0.25) * mapLayout.mapRadius} L ${mapCenterX + Math.cos(state.sprinkler.angle + 0.25) * mapLayout.mapRadius} ${mapCenterY + Math.sin(state.sprinkler.angle + 0.25) * mapLayout.mapRadius} Z`}
-          fill="#90CDF4"
-          opacity={0.22 + waterOpacity}
+          d={`M ${mapCenterX} ${mapCenterY} L ${mapCenterX + Math.cos(beaconAngle - 0.18) * mapLayout.mapRadius} ${mapCenterY + Math.sin(beaconAngle - 0.18) * mapLayout.mapRadius} L ${mapCenterX + Math.cos(beaconAngle + 0.18) * mapLayout.mapRadius} ${mapCenterY + Math.sin(beaconAngle + 0.18) * mapLayout.mapRadius} Z`}
+          fill="#FFF4B0"
+          opacity={0.12 + beaconOpacity}
         />
-        {[0.34, 0.57, 0.8].map((factor, index) => (
-          <Circle
-            key={`water_drop_${index}`}
-            cx={mapCenterX + Math.cos(state.sprinkler.angle) * mapLayout.mapRadius * factor}
-            cy={mapCenterY + Math.sin(state.sprinkler.angle) * mapLayout.mapRadius * factor}
-            r={2.2 + (index % 2)}
-            fill="#D9F7FF"
-            opacity={0.75 - index * 0.12}
-          />
-        ))}
-
         <Line
           x1={mapCenterX}
           y1={mapCenterY}
-          x2={nozzleX}
-          y2={nozzleY}
-          stroke="#ebf8ff"
-          strokeWidth="4"
-          strokeLinecap="round"
+          x2={mapCenterX + Math.cos(beaconAngle) * mapLayout.mapRadius}
+          y2={mapCenterY + Math.sin(beaconAngle) * mapLayout.mapRadius}
+          stroke="#FFF8D0"
+          strokeWidth="3"
+          strokeDasharray="8 10"
+          opacity={0.72}
         />
-        <Circle cx={nozzleX} cy={nozzleY} r={6} fill="#63b3ed" stroke="#ffffff" strokeWidth="2" />
-
+        <Circle cx={mapCenterX} cy={mapCenterY + 17} r={23} fill="#213E37" opacity={0.32} />
         <Path
-          d={`M ${mapCenterX} ${mapCenterY - 9} C ${mapCenterX - 8} ${mapCenterY + 1}, ${mapCenterX - 7} ${mapCenterY + 8}, ${mapCenterX} ${mapCenterY + 10} C ${mapCenterX + 7} ${mapCenterY + 8}, ${mapCenterX + 8} ${mapCenterY + 1}, ${mapCenterX} ${mapCenterY - 9} Z`}
-          fill="#A7E6FF"
-          stroke="#1B5F7A"
-          strokeWidth={1.5}
+          d={`M ${mapCenterX - 14} ${mapCenterY + 15} L ${mapCenterX - 10} ${mapCenterY - 12} L ${mapCenterX + 10} ${mapCenterY - 12} L ${mapCenterX + 14} ${mapCenterY + 15} Z`}
+          fill="#596B67"
+          stroke="#263A37"
+          strokeWidth="2"
         />
+        <Rect
+          x={mapCenterX - 17}
+          y={mapCenterY + 12}
+          width={34}
+          height={9}
+          rx={3}
+          fill="#263A37"
+          stroke="#D7B35C"
+          strokeWidth="2"
+        />
+        <Rect
+          x={mapCenterX - 9}
+          y={mapCenterY - 20}
+          width={18}
+          height={12}
+          rx={3}
+          fill="#F7D774"
+          stroke="#5A4930"
+          strokeWidth="2"
+        />
+        <Path
+          d={`M ${mapCenterX - 13} ${mapCenterY - 20} L ${mapCenterX} ${mapCenterY - 28} L ${mapCenterX + 13} ${mapCenterY - 20} Z`}
+          fill="#9E5B3C"
+          stroke="#5A4930"
+          strokeWidth="2"
+        />
+        <Circle cx={mapCenterX} cy={mapCenterY - 14} r={4} fill="#FFF8D0" opacity={0.95} />
 
         {state.guards.map((guard) => (
           <G key={guard.id}>
@@ -404,6 +410,26 @@ export function GameMap() {
               width={32}
               height={32}
             />
+            {guard.health < guard.maxHealth && (
+              <G>
+                <Rect
+                  x={Math.round(guard.x) - 16}
+                  y={Math.round(guard.y) - 23}
+                  width={32}
+                  height={4}
+                  fill="#251C18"
+                  rx={2}
+                />
+                <Rect
+                  x={Math.round(guard.x) - 16}
+                  y={Math.round(guard.y) - 23}
+                  width={Math.max(0, (guard.health / guard.maxHealth) * 32)}
+                  height={4}
+                  fill={guard.health / guard.maxHealth <= 0.3 ? '#F07863' : '#8DCB63'}
+                  rx={2}
+                />
+              </G>
+            )}
           </G>
         ))}
 
@@ -464,7 +490,7 @@ export function GameMap() {
           textAnchor="middle"
           fontWeight="bold"
         >
-          {`Plantação ${Math.floor(state.plantationHealth)}/${state.maxPlantationHealth}`}
+          {`Farol Central • Plantação ${Math.floor(state.plantationHealth)}/${state.maxPlantationHealth}`}
         </SvgText>
       </Svg>
 

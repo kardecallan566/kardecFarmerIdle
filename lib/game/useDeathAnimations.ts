@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { generateId } from './utils';
 
 export interface DeathAnimation {
   id: string;
@@ -35,7 +36,7 @@ export function useDeathAnimations() {
       const speed = 2 + Math.random() * 2;
 
       particles.push({
-        id: `particle_${Date.now()}_${i}`,
+        id: generateId(`particle_${i}`),
         x,
         y,
         vx: Math.cos(angle) * speed,
@@ -48,7 +49,7 @@ export function useDeathAnimations() {
     }
 
     const newAnimation: DeathAnimation = {
-      id: `death_${Date.now()}`,
+      id: generateId('death'),
       x,
       y,
       progress: 0,

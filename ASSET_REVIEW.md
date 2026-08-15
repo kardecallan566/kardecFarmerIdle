@@ -55,3 +55,7 @@ A Home atualizada foi carregada com briefing da arena, primeira wave, quantidade
 ## Verificação de tropas, estrada e regador
 
 Na prévia final, a estrada passou a aparecer como uma faixa central escura com bordas, marcação tracejada e setas de direção. O regador ficou no centro da arena, com os quatro canteiros orbitando o núcleo e o cone de água alinhado ao eixo rotativo. A partida carregou com o HUD de wave e o primeiro inimigo sendo gerado no caminho central.
+
+## Ajuste de regra do regador
+
+O regador é exclusivamente uma estrutura central: ele gira, irriga os canteiros e aciona a geração das tropas, mas não causa dano aos monstros. O dano da batalha permanece restrito às tropas.

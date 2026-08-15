@@ -16,6 +16,8 @@ import {
   generateUpgradeOptions,
 } from './utils';
 
+import { CropPlot, SprinklerState } from './types';
+
 type GameAction =
   | { type: 'INIT_GAME' }
   | { type: 'UPDATE_ENEMIES'; enemies: Enemy[] }
@@ -33,17 +35,76 @@ type GameAction =
   | { type: 'SET_PLACING_MODE'; enabled: boolean }
   | { type: 'UPDATE_CARD_COOLDOWN'; cardIndex: number }
   | { type: 'APPLY_UPGRADE'; upgradeIndex: number }
-  | { type: 'ENEMY_REACHED_CENTER'; enemyId: string };
+  | { type: 'ENEMY_REACHED_CENTER'; enemyId: string }
+  | { type: 'PLANT_CROP'; plotIndex: number; cropType: 'warrior' | 'archer' | 'tank' }
+  | { type: 'SELECT_PLOT'; plotIndex: number | null }
+  | { type: 'UPDATE_SPRINKLER'; angle: number }
+  | { type: 'SET_PLOT_WATERED'; plotIndex: number; watered: boolean }
+  | { type: 'RESET_WATERED_FLAGS' };
+
+const initialPlots: CropPlot[] = [
+  {
+    id: 'plot_0',
+    index: 0,
+    name: 'Quadrante Leste (NE)',
+    angleStart: -Math.PI / 4,
+    angleEnd: Math.PI / 4,
+    cropType: 'warrior',
+    cropLevel: 1,
+    x: 0,
+    y: 0,
+    isWateredThisCycle: false,
+  },
+  {
+    id: 'plot_1',
+    index: 1,
+    name: 'Quadrante Sul (SE)',
+    angleStart: Math.PI / 4,
+    angleEnd: (3 * Math.PI) / 4,
+    cropType: null,
+    cropLevel: 0,
+    x: 0,
+    y: 0,
+    isWateredThisCycle: false,
+  },
+  {
+    id: 'plot_2',
+    index: 2,
+    name: 'Quadrante Oeste (SO)',
+    angleStart: (3 * Math.PI) / 4,
+    angleEnd: (5 * Math.PI) / 4,
+    cropType: null,
+    cropLevel: 0,
+    x: 0,
+    y: 0,
+    isWateredThisCycle: false,
+  },
+  {
+    id: 'plot_3',
+    index: 3,
+    name: 'Quadrante Norte (NO)',
+    angleStart: (5 * Math.PI) / 4,
+    angleEnd: (7 * Math.PI) / 4,
+    cropType: null,
+    cropLevel: 0,
+    x: 0,
+    y: 0,
+    isWateredThisCycle: false,
+  },
+];
 
 const initialState: GameState = {
   wave: 1,
-  coins: 200,
+  coins: 250,
   plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
   maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
   gameActive: false,
   gameLost: false,
   enemies: [],
   guards: [],
+  plots: initialPlots,
+  sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 }, // 1 full turn per 4 seconds
+  selectedPlotIndex: null,
   waveEnemiesRemaining: 0,
   waveEnemiesTotal: 0,
   totalEnemiesDefeated: 0,
@@ -58,8 +119,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'INIT_GAME':
       return {
         ...initialState,
+        plots: initialPlots.map(p => ({ ...p, isWateredThisCycle: false })),
         wave: 1,
-        coins: 200,
+        coins: 250,
         plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
         maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
         gameActive: true,
@@ -67,6 +129,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         enemies: [],
         guards: [],
         upgrades: [],
+        sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 },
       };
 
     case 'UPDATE_ENEMIES':
@@ -131,6 +194,53 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_PLACING_MODE':
       return { ...state, placingMode: action.enabled };
 
+    case 'PLANT_CROP': {
+      const updatedPlots = state.plots.map((plot) => {
+        if (plot.index === action.plotIndex) {
+          return {
+            ...plot,
+            cropType: action.cropType,
+            cropLevel: 1,
+            isWateredThisCycle: false,
+          };
+        }
+        return plot;
+      });
+      return {
+        ...state,
+        plots: updatedPlots,
+        selectedPlotIndex: null,
+        selectedCardIndex: null,
+      };
+    }
+
+    case 'SELECT_PLOT':
+      return { ...state, selectedPlotIndex: action.plotIndex };
+
+    case 'UPDATE_SPRINKLER':
+      return {
+        ...state,
+        sprinkler: { ...state.sprinkler, angle: action.angle },
+      };
+
+    case 'SET_PLOT_WATERED': {
+      const updatedPlots = state.plots.map((plot) => {
+        if (plot.index === action.plotIndex) {
+          return { ...plot, isWateredThisCycle: action.watered };
+        }
+        return plot;
+      });
+      return { ...state, plots: updatedPlots };
+    }
+
+    case 'RESET_WATERED_FLAGS': {
+      const updatedPlots = state.plots.map((plot) => ({
+        ...plot,
+        isWateredThisCycle: false,
+      }));
+      return { ...state, plots: updatedPlots };
+    }
+
     case 'APPLY_UPGRADE':
       return { ...state, upgrades: [...state.upgrades] };
 
@@ -146,11 +256,6 @@ export const GameContext = createContext<{
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
-
-  // Initialize game
-  useEffect(() => {
-    dispatch({ type: 'INIT_GAME' });
-  }, []);
 
   // Game loop for passive coin generation
   useEffect(() => {

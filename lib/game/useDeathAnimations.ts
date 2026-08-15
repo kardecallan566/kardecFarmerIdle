@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface DeathAnimation {
   id: string;
@@ -26,7 +26,7 @@ export function useDeathAnimations() {
   const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Add new death animation
-  const addDeathAnimation = (x: number, y: number, color: string = '#FF4444') => {
+  const addDeathAnimation = useCallback((x: number, y: number, color: string = '#FF4444') => {
     const particles: Particle[] = [];
 
     // Create explosion particles
@@ -57,7 +57,7 @@ export function useDeathAnimations() {
     };
 
     setDeathAnimations((prev) => [...prev, newAnimation]);
-  };
+  }, []);
 
   // Update animation progress
   useEffect(() => {

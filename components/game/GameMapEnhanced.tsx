@@ -119,6 +119,7 @@ export function GameMapEnhanced() {
 
       const newGuard = {
         id: `guard_${Date.now()}`,
+        plotIndex: 0,
         x: locationX,
         y: locationY,
         type: guardType,

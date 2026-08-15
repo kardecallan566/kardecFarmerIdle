@@ -14,7 +14,7 @@ const GUARD_NAMES = {
 };
 
 export function CardBar() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const { selectCard, isCardAvailable, getCardCooldown, getCardMaxCooldown } = useCardSystem();
   const [cooldowns, setCooldowns] = useState<number[]>([0, 0, 0]);
 
@@ -26,13 +26,24 @@ export function CardBar() {
         getCardCooldown(1),
         getCardCooldown(2),
       ]);
-    }, 100);
+    }, 150);
 
     return () => clearInterval(interval);
-  }, [getCardCooldown]);
+  }, []);
 
   const handleCardPress = (cardIndex: number) => {
-    selectCard(cardIndex);
+    const cropTypes = ['warrior', 'archer', 'tank'] as const;
+    const cropType = cropTypes[cardIndex];
+    const config = GUARD_CONFIGS[cropType];
+
+    if (state.coins < config.cost) return;
+
+    if (state.selectedPlotIndex !== null) {
+      dispatch({ type: 'SUBTRACT_COINS', amount: config.cost });
+      dispatch({ type: 'PLANT_CROP', plotIndex: state.selectedPlotIndex, cropType });
+    } else {
+      selectCard(cardIndex);
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface CoinAnimation {
   id: string;
@@ -16,7 +16,7 @@ export function useCoinAnimations() {
   const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Add new coin animation
-  const addCoinAnimation = (
+  const addCoinAnimation = useCallback((
     startX: number,
     startY: number,
     targetX: number,
@@ -35,7 +35,7 @@ export function useCoinAnimations() {
     };
 
     setCoinAnimations((prev) => [...prev, newAnimation]);
-  };
+  }, []);
 
   // Update animation progress
   useEffect(() => {

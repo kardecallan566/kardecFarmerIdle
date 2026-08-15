@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface AttackAnimation {
   id: string;
@@ -17,7 +17,7 @@ export function useAttackAnimations() {
   const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Add new attack animation
-  const addAttackAnimation = (
+  const addAttackAnimation = useCallback((
     fromX: number,
     fromY: number,
     toX: number,
@@ -38,7 +38,7 @@ export function useAttackAnimations() {
     };
 
     setAnimations((prev) => [...prev, newAnimation]);
-  };
+  }, []);
 
   // Update animation progress
   useEffect(() => {

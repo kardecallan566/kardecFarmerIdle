@@ -17,9 +17,9 @@ export function GameHUD() {
         </Text>
       </View>
 
-      {/* Center: Plantation Health */}
+      {/* Center: Regador Health */}
       <View className="gap-1 items-center">
-        <Text className="text-xs text-muted">Plantação</Text>
+        <Text className="text-xs text-muted font-semibold">Regador 💧</Text>
         <View className="w-24 h-2 bg-border rounded-full overflow-hidden">
           <View
             className="h-full bg-success"

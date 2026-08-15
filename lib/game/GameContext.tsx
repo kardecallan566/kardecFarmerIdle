@@ -108,7 +108,8 @@ const initialState: GameState = {
   sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 }, // 1 full turn per 4 seconds
   selectedPlotIndex: null,
   waveEnemiesRemaining: 0,
-  waveEnemiesTotal: 0,
+  waveEnemiesTotal: getWaveConfig(1).enemyCount,
+  waveEnemiesSpawned: 0,
   totalEnemiesDefeated: 0,
   totalCoinsEarned: 0,
   upgrades: [],
@@ -131,6 +132,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         enemies: [],
         guards: [],
         upgrades: [],
+        waveEnemiesRemaining: 0,
+        waveEnemiesTotal: getWaveConfig(1).enemyCount,
+        waveEnemiesSpawned: 0,
         sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 },
       };
 
@@ -150,7 +154,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         enemies: [...state.enemies, action.enemy],
         waveEnemiesRemaining: state.waveEnemiesRemaining + 1,
-        waveEnemiesTotal: state.waveEnemiesTotal + 1,
+        waveEnemiesSpawned: state.waveEnemiesSpawned + 1,
       };
 
     case 'ADD_ENEMIES':
@@ -158,6 +162,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         enemies: [...state.enemies, ...action.enemies],
         waveEnemiesRemaining: state.waveEnemiesRemaining + action.enemies.length,
+        waveEnemiesSpawned: state.waveEnemiesSpawned + action.enemies.length,
         waveEnemiesTotal: state.waveEnemiesTotal + action.enemies.length,
       };
 
@@ -178,6 +183,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         coins: state.coins + coinsGained,
         totalEnemiesDefeated: state.totalEnemiesDefeated + 1,
         totalCoinsEarned: state.totalCoinsEarned + coinsGained,
+      };
+    }
+
+    case 'ENEMY_REACHED_CENTER': {
+      const enemyExists = state.enemies.some((enemy) => enemy.id === action.enemyId);
+      if (!enemyExists) return state;
+      return {
+        ...state,
+        enemies: state.enemies.filter((enemy) => enemy.id !== action.enemyId),
+        waveEnemiesRemaining: Math.max(0, state.waveEnemiesRemaining - 1),
       };
     }
 
@@ -202,7 +217,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         wave: state.wave + 1,
         waveEnemiesRemaining: 0,
-        waveEnemiesTotal: 0,
+        waveEnemiesTotal: getWaveConfig(state.wave + 1).enemyCount,
+        waveEnemiesSpawned: 0,
       };
 
     case 'GAME_OVER':

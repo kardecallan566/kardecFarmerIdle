@@ -37,6 +37,7 @@ export interface GameState {
   selectedPlotIndex: number | null;
   waveEnemiesRemaining: number;
   waveEnemiesTotal: number;
+  waveEnemiesSpawned: number;
   totalEnemiesDefeated: number;
   totalCoinsEarned: number;
   upgrades: Upgrade[];
@@ -168,6 +169,15 @@ export const INITIAL_GAME_CONFIG: GameConfig = {
   initialPlantationHealth: 100,
   waveInterval: 3,
 };
+
+export function getWavesUntilBoss(waveNumber: number): number {
+  const remainder = waveNumber % 5;
+  return remainder === 0 ? 0 : 5 - remainder;
+}
+
+export function getNextBossWave(waveNumber: number): number {
+  return waveNumber + getWavesUntilBoss(waveNumber);
+}
 
 export function getWaveConfig(waveNumber: number): WaveConfig {
   const isBossWave = waveNumber % 5 === 0;

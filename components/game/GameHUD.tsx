@@ -1,54 +1,100 @@
 import React from 'react';
 import { Text, View } from 'react-native';
+import { getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 
 export function GameHUD() {
   const { state } = useGame();
+  const nextBossWave = getNextBossWave(state.wave);
+  const wavesUntilBoss = getWavesUntilBoss(state.wave);
   const healthPercent = Math.max(
     0,
     Math.min(100, (state.plantationHealth / state.maxPlantationHealth) * 100),
   );
+  const spawnPercent = state.waveEnemiesTotal > 0
+    ? Math.min(100, (state.waveEnemiesSpawned / state.waveEnemiesTotal) * 100)
+    : 0;
+  const isBossWave = wavesUntilBoss === 0;
 
   return (
-    <View className="bg-[#163B2B] border-b border-[#315F40] px-3 py-2.5">
+    <View className="bg-[#102A1D] border-b border-[#315F40] px-3 pt-2.5 pb-2">
       <View className="flex-row items-center justify-between gap-2">
         <View className="flex-1 min-w-0">
           <View className="flex-row items-center gap-1.5">
-            <GameIcon name="wave" size={17} color="#F7C948" secondaryColor="#8DCB63" />
-            <Text numberOfLines={1} className="text-xs font-bold text-[#FFF3C4]">
-              Wave {state.wave}
+            <GameIcon name="wave" size={18} color="#F7C948" secondaryColor="#8DCB63" />
+            <Text numberOfLines={1} className="text-sm font-black tracking-wide text-[#FFF3C4]">
+              WAVE {state.wave}
             </Text>
+            {isBossWave && (
+              <View className="rounded-full bg-[#9E3F2B] px-1.5 py-0.5">
+                <Text className="text-[9px] font-black text-[#FFE7C2]">CHEFE</Text>
+              </View>
+            )}
           </View>
           <Text numberOfLines={1} className="text-[10px] text-[#B6D3B0]">
-            {state.waveEnemiesRemaining}/{state.waveEnemiesTotal} inimigos
+            {isBossWave ? 'O chefe está nesta arena' : `Próximo chefe: wave ${nextBossWave} (${wavesUntilBoss} waves)`}
           </Text>
         </View>
 
-        <View className="flex-[1.2] min-w-0 items-center">
+        <View className="items-end">
           <View className="flex-row items-center gap-1.5">
-            <GameIcon name="health" size={17} color="#65C7F4" secondaryColor="#8DCB63" />
-            <Text numberOfLines={1} className="text-[10px] text-[#E2F1D5] font-bold">
-              Plantação
-            </Text>
+            <GameIcon name="coin" size={18} color="#F7C948" secondaryColor="#7D4E1F" />
+            <Text className="text-sm font-black text-[#FFF3C4]">{Math.floor(state.coins)}</Text>
           </View>
-          <View className="w-full max-w-[126px] h-2 bg-[#0B2419] rounded-full overflow-hidden border border-[#44704C]">
-            <View className="h-full bg-[#8DCB63]" style={{ width: `${healthPercent}%` }} />
+          <Text className="text-[9px] text-[#B6D3B0]">MOEDAS</Text>
+        </View>
+      </View>
+
+      <View className="mt-2 flex-row gap-2">
+        <View className="flex-1 rounded-xl border border-[#3E6849] bg-[#1A3B29] px-2.5 py-2">
+          <View className="flex-row items-center gap-1.5">
+            <GameIcon name="wave" size={15} color="#F7C948" secondaryColor="#8DCB63" />
+            <Text className="text-[10px] font-bold text-[#B6D3B0]">INIMIGOS NO CAMPO</Text>
           </View>
-          <Text className="text-[10px] text-[#FFF3C4] font-bold">
-            {Math.floor(state.plantationHealth)}/{state.maxPlantationHealth}
+          <Text className="mt-0.5 text-base font-black text-[#FFF3C4]">
+            {state.waveEnemiesRemaining}
+            <Text className="text-[10px] font-normal text-[#B6D3B0]"> ativos</Text>
+          </Text>
+          <Text className="text-[9px] text-[#8FB08D]">
+            {state.waveEnemiesSpawned}/{state.waveEnemiesTotal} gerados
           </Text>
         </View>
 
-        <View className="flex-1 min-w-0 items-end">
-          <View className="flex-row items-center gap-1.5">
-            <GameIcon name="coin" size={17} color="#F7C948" secondaryColor="#7D4E1F" />
-            <Text numberOfLines={1} className="text-xs font-bold text-[#FFF3C4]">
-              {Math.floor(state.coins)}
+        <View className="flex-[1.2] rounded-xl border border-[#3E6849] bg-[#1A3B29] px-2.5 py-2">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1.5">
+              <GameIcon name="health" size={15} color="#65C7F4" secondaryColor="#8DCB63" />
+              <Text className="text-[10px] font-bold text-[#B6D3B0]">PLANTAÇÃO</Text>
+            </View>
+            <Text className="text-[10px] font-black text-[#FFF3C4]">
+              {Math.floor(state.plantationHealth)}/{state.maxPlantationHealth}
             </Text>
           </View>
-          <Text className="text-[10px] text-[#B6D3B0]">Moedas</Text>
+          <View className="mt-1.5 h-2.5 overflow-hidden rounded-full border border-[#44704C] bg-[#0B2419]">
+            <View className="h-full rounded-full bg-[#8DCB63]" style={{ width: `${healthPercent}%` }} />
+          </View>
+          <Text className="mt-0.5 text-[9px] text-[#8FB08D]">Proteja o regador central</Text>
         </View>
+      </View>
+
+      <View className="mt-2 rounded-xl border border-[#3E6849] bg-[#0B2419] px-2.5 py-1.5">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-[10px] font-bold text-[#DDEFC8]">PROGRESSO DA WAVE</Text>
+          <Text className="text-[10px] font-black text-[#F7C948]">
+            {state.waveEnemiesSpawned}/{state.waveEnemiesTotal}
+          </Text>
+        </View>
+        <View className="mt-1 h-2 overflow-hidden rounded-full bg-[#244831]">
+          <View className="h-full rounded-full bg-[#F7C948]" style={{ width: `${spawnPercent}%` }} />
+        </View>
+        <Text className="mt-1 text-[9px] text-[#8FB08D]">
+          {state.waveEnemiesRemaining === 0 && state.waveEnemiesSpawned < state.waveEnemiesTotal
+            ? 'Preparando os próximos inimigos...'
+            : state.waveEnemiesRemaining > 0
+              ? `${state.waveEnemiesRemaining} inimigo(s) ainda precisam ser derrotados ou escapar`
+              : 'Arena limpa — próxima wave em breve'}
+        </Text>
       </View>
     </View>
   );

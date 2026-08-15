@@ -31,6 +31,7 @@ export function GameMap() {
   const mapLayout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
   const [animationTick, setAnimationTick] = useState(0);
   const lastEnemyPositionsRef = React.useRef<Map<string, { x: number; y: number }>>(new Map());
+  const lastDefeatedCountRef = React.useRef(state.totalEnemiesDefeated);
   
   const { animations: attackAnimations, addAttackAnimation } = useAttackAnimations();
   const { deathAnimations, addDeathAnimation } = useDeathAnimations();
@@ -55,26 +56,28 @@ export function GameMap() {
   ];
 
   useEffect(() => {
-    const currentEnemyIds = new Set(state.enemies.map(e => e.id));
-    const lastEnemyIds = new Set(lastEnemyPositionsRef.current.keys());
+    const currentEnemyIds = new Set(state.enemies.map((enemy) => enemy.id));
+    const removedPositions = Array.from(lastEnemyPositionsRef.current.entries())
+      .filter(([id]) => !currentEnemyIds.has(id))
+      .map(([, position]) => position);
+    const defeatedSinceLastRender = Math.max(
+      0,
+      state.totalEnemiesDefeated - lastDefeatedCountRef.current,
+    );
 
-    lastEnemyIds.forEach(id => {
-      if (!currentEnemyIds.has(id)) {
-        const lastPos = lastEnemyPositionsRef.current.get(id);
-        if (lastPos) {
-          addDeathAnimation(lastPos.x, lastPos.y, '#FF4444');
-          const coinValue = Math.floor(Math.random() * 4) + 1;
-          addCoinAnimation(lastPos.x, lastPos.y, mapLayout.width - 40, 40, coinValue);
-        }
-      }
+    removedPositions.slice(0, defeatedSinceLastRender).forEach((lastPos) => {
+      addDeathAnimation(lastPos.x, lastPos.y, '#FF4444');
+      const coinValue = Math.floor(Math.random() * 4) + 1;
+      addCoinAnimation(lastPos.x, lastPos.y, mapLayout.width - 40, 40, coinValue);
     });
 
     const newPositions = new Map<string, { x: number; y: number }>();
-    state.enemies.forEach(enemy => {
+    state.enemies.forEach((enemy) => {
       newPositions.set(enemy.id, { x: enemy.x, y: enemy.y });
     });
     lastEnemyPositionsRef.current = newPositions;
-  }, [state.enemies, addDeathAnimation, addCoinAnimation, mapLayout.width]);
+    lastDefeatedCountRef.current = state.totalEnemiesDefeated;
+  }, [state.enemies, state.totalEnemiesDefeated, addDeathAnimation, addCoinAnimation, mapLayout.width]);
 
   useEffect(() => {
     state.guards.forEach(guard => {

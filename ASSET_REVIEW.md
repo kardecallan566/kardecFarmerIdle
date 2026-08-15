@@ -47,3 +47,7 @@ Na partida observada, a tropa foi vista avançando do canteiro até o corredor s
 ## Validação do layout ajustado
 
 Após aumentar a área útil do mapa, a composição ficou mais preenchida verticalmente, com o regador, canteiros e faixa de tropas ocupando melhor a tela. O HUD permanece compacto, a barra inferior continua legível e o efeito de água no centro aparece como cone e pulsos. A validação final da caminhada da tropa segue sendo feita por observação temporal da partida.
+
+## Validação do tower defense e modo vertical
+
+A Home atualizada foi carregada com briefing da arena, primeira wave, quantidade de inimigos e próxima wave de chefe. Na partida, a HUD passou a exibir `WAVE 1`, `Próximo chefe: wave 5 (4 waves)`, inimigos ativos, inimigos gerados, barra de progresso, vida da plantação e moedas. A composição foi verificada em viewport vertical, com HUD em duas linhas, mapa central e barra de tropas na base.

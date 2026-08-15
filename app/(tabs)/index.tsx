@@ -68,10 +68,14 @@ export default function GameScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <ScreenContainer
+      edges={['top', 'left', 'right']}
+      className="bg-background"
+      safeAreaClassName="bg-background"
+    >
       <GameHUD />
       <GameMap />
       <CardBar />
-    </View>
+    </ScreenContainer>
   );
 }

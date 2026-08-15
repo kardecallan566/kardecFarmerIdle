@@ -155,7 +155,7 @@ export function useGameLoop() {
 
           if (distToCenter < INITIAL_GAME_CONFIG.plantationRadius + 15) {
             dispatch({ type: 'DAMAGE_PLANTATION', amount: enemy.damage });
-            dispatch({ type: 'REMOVE_ENEMY', enemyId: enemy.id });
+            dispatch({ type: 'ENEMY_REACHED_CENTER', enemyId: enemy.id });
             return null;
           }
 

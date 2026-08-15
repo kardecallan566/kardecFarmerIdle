@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, Text, Pressable } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { GameMap } from '@/components/game/GameMap';
@@ -29,11 +29,6 @@ export default function GameScreen() {
     setGameStarted(false);
     setShowRewards(false);
     dispatch({ type: 'INIT_GAME' });
-  };
-
-  const handleSelectUpgrade = (upgradeIndex: number) => {
-    dispatch({ type: 'APPLY_UPGRADE', upgradeIndex });
-    setShowRewards(false);
   };
 
   if (!gameStarted) {

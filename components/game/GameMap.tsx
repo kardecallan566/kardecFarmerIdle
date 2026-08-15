@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Dimensions, Pressable } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Dimensions } from 'react-native';
 import Svg, { Circle, Line, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useGame } from '@/lib/game/GameContext';
 import { INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
@@ -23,6 +23,8 @@ const ENEMY_IMAGES = {
   normal: require('@/assets/images/enemy-normal.png'),
   boss: require('@/assets/images/enemy-boss.png'),
 };
+
+const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
 
 export function GameMap() {
   const { state, dispatch } = useGame();
@@ -117,8 +119,18 @@ export function GameMap() {
         </Defs>
 
         <Rect width={screenWidth} height={screenHeight / 2 + 40} fill="url(#farmBg)" />
+          <SvgImage
+            href={FARM_BACKGROUND}
+            x={0}
+            y={0}
+            width={screenWidth}
+            height={screenHeight / 2 + 40}
+            preserveAspectRatio="xMidYMid slice"
+            opacity={0.44}
+          />
 
-        <Rect
+          <Rect
+
           x={mapCenterX - 30}
           y={0}
           width={60}
@@ -191,15 +203,20 @@ export function GameMap() {
                 </G>
               ) : (
                 <G onPress={() => handlePlotPress(pos.index)}>
-                  <SvgText
-                    x={pos.x}
-                    y={pos.y - 4}
-                    fontSize={18}
-                    fill="#d4a373"
-                    textAnchor="middle"
-                  >
-                    🌱
-                  </SvgText>
+                  <Circle
+                    cx={pos.x}
+                    cy={pos.y - 2}
+                    r={5}
+                    fill="#F7C948"
+                    stroke="#3A2417"
+                    strokeWidth={1.5}
+                  />
+                  <Path
+                    d={`M ${pos.x} ${pos.y + 2} C ${pos.x - 8} ${pos.y - 3}, ${pos.x - 7} ${pos.y - 10}, ${pos.x - 2} ${pos.y - 6} C ${pos.x + 3} ${pos.y - 11}, ${pos.x + 7} ${pos.y - 5}, ${pos.x} ${pos.y + 2}`}
+                    fill="#78B84A"
+                    stroke="#3A2417"
+                    strokeWidth={1.2}
+                  />
                   <SvgText
                     x={pos.x}
                     y={pos.y + 16}
@@ -248,14 +265,12 @@ export function GameMap() {
         />
         <Circle cx={nozzleX} cy={nozzleY} r={6} fill="#63b3ed" stroke="#ffffff" strokeWidth="2" />
 
-        <SvgText
-          x={mapCenterX}
-          y={mapCenterY + 5}
-          fontSize={16}
-          textAnchor="middle"
-        >
-          💧
-        </SvgText>
+        <Path
+          d={`M ${mapCenterX} ${mapCenterY - 9} C ${mapCenterX - 8} ${mapCenterY + 1}, ${mapCenterX - 7} ${mapCenterY + 8}, ${mapCenterX} ${mapCenterY + 10} C ${mapCenterX + 7} ${mapCenterY + 8}, ${mapCenterX + 8} ${mapCenterY + 1}, ${mapCenterX} ${mapCenterY - 9} Z`}
+          fill="#A7E6FF"
+          stroke="#1B5F7A"
+          strokeWidth={1.5}
+        />
 
         {state.guards.map((guard) => (
           <G key={guard.id}>
@@ -335,7 +350,7 @@ export function GameMap() {
           textAnchor="middle"
           fontWeight="bold"
         >
-          {`💧 ${Math.floor(state.plantationHealth)}/${state.maxPlantationHealth}`}
+          {`Plantação ${Math.floor(state.plantationHealth)}/${state.maxPlantationHealth}`}
         </SvgText>
       </Svg>
 

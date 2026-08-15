@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Image, ImageBackground, View, Text, Pressable, ScrollView } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
+
+const GAME_LOGO = require('@/assets/images/logo-kardec-farmer.png');
+const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
 
 interface HomeScreenProps {
   onStartGame?: () => void;
@@ -15,11 +18,22 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-      <View className="flex-1 bg-background justify-center items-center p-6 gap-8">
-        {/* Title */}
-        <View className="gap-2 items-center">
-          <Text className="text-5xl font-bold text-primary">🌾</Text>
+    <ImageBackground
+      source={FARM_BACKGROUND}
+      resizeMode="cover"
+      imageStyle={{ opacity: 0.28 }}
+      style={{ flex: 1 }}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <View className="flex-1 bg-background/75 justify-center items-center p-6 gap-8">
+          {/* Title */}
+          <View className="gap-2 items-center">
+            <Image
+              source={GAME_LOGO}
+              accessibilityLabel="Emblema de trigo e defesa agrícola"
+              style={{ width: 132, height: 132 }}
+              resizeMode="contain"
+            />
           <Text className="text-4xl font-bold text-foreground text-center">
             Kardec Farmer Idle TD
           </Text>
@@ -62,11 +76,12 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
           </View>
         </Pressable>
 
-        {/* Footer */}
-        <Text className="text-xs text-muted mt-4">
-          Versão 1.0 • Desenvolvido com Expo
-        </Text>
-      </View>
-    </ScrollView>
+          {/* Footer */}
+          <Text className="text-xs text-muted mt-4">
+            Versão 1.0 • Defesa da plantação em andamento
+          </Text>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }

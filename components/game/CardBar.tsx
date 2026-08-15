@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Dimensions } from 'react-native';
+import { Image, View, Text, Pressable, Dimensions } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
 import { GUARD_CONFIGS } from '@/lib/game/types';
+import { GameIcon } from './GameIcon';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -11,6 +12,18 @@ const GUARD_NAMES = {
   warrior: 'Guerreiro',
   archer: 'Arqueiro',
   tank: 'Tanque',
+};
+
+const GUARD_IMAGES = {
+  warrior: require('@/assets/images/guard-warrior.png'),
+  archer: require('@/assets/images/guard-archer.png'),
+  tank: require('@/assets/images/guard-tank.png'),
+};
+
+const GUARD_ACCENTS = {
+  warrior: '#4C8DDB',
+  archer: '#78B84A',
+  tank: '#A7B3C2',
 };
 
 export function CardBar() {
@@ -29,7 +42,7 @@ export function CardBar() {
     }, 150);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [getCardCooldown]);
 
   const handleCardPress = (cardIndex: number) => {
     const cropTypes = ['warrior', 'archer', 'tank'] as const;
@@ -85,25 +98,45 @@ export function CardBar() {
                 />
               )}
 
-              {/* Card Title */}
-              <Text className="text-sm font-bold text-foreground mb-1">
-                {GUARD_NAMES[guardType]}
-              </Text>
+              {/* Card Header */}
+              <View className="flex-row items-center gap-2 mb-2">
+                <Image
+                  source={GUARD_IMAGES[guardType]}
+                  accessibilityLabel={`Ícone do ${GUARD_NAMES[guardType]}`}
+                  resizeMode="contain"
+                  style={{ width: 42, height: 42 }}
+                />
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-foreground">
+                    {GUARD_NAMES[guardType]}
+                  </Text>
+                  <Text className="text-[10px] text-muted">
+                    {isSelected ? 'Selecione um terreno' : 'Toque para invocar'}
+                  </Text>
+                </View>
+              </View>
 
               {/* Card Stats */}
-              <View className="gap-0.5 mb-2">
-                <Text className="text-xs text-muted">
-                  💚 {config.health} | 🗡️ {config.damage}
-                </Text>
-                <Text className="text-xs text-muted">
-                  📏 {config.range} | ⚡ {config.attackSpeed}
-                </Text>
+              <View className="gap-1 mb-2">
+                <View className="flex-row items-center gap-1">
+                  <GameIcon name="health" size={14} color="#8DCB63" secondaryColor={GUARD_ACCENTS[guardType]} />
+                  <Text className="text-xs text-muted">{config.health}</Text>
+                  <GameIcon name="damage" size={14} color="#F17C52" secondaryColor={GUARD_ACCENTS[guardType]} />
+                  <Text className="text-xs text-muted">{config.damage}</Text>
+                </View>
+                <View className="flex-row items-center gap-1">
+                  <GameIcon name="range" size={14} color="#F7C948" secondaryColor={GUARD_ACCENTS[guardType]} />
+                  <Text className="text-xs text-muted">{config.range}</Text>
+                  <GameIcon name="speed" size={14} color="#65C7F4" secondaryColor={GUARD_ACCENTS[guardType]} />
+                  <Text className="text-xs text-muted">{config.attackSpeed}</Text>
+                </View>
               </View>
 
               {/* Cost */}
-              <View className="bg-warning/20 rounded px-2 py-1">
+              <View className="bg-[#F7C948]/20 border border-[#C89A2C]/50 rounded px-2 py-1 flex-row items-center gap-1">
+                <GameIcon name="coin" size={14} color="#F7C948" secondaryColor="#7D4E1F" />
                 <Text className="text-xs font-semibold text-warning">
-                  💰 {config.cost}
+                  {config.cost}
                 </Text>
               </View>
 

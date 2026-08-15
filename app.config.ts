@@ -30,9 +30,8 @@ const env = {
   // App branding - update these values directly (do not use env vars)
   appName: "Kardec Farmer Idle TD",
   appSlug: "kardecFarmerIdle",
-  // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
-  // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "/manus-storage/icon_57e67d28.png",
+  // Branding local do jogo; o mesmo símbolo é usado como ícone, favicon e splash.
+  logoUrl: "./assets/images/logo-kardec-farmer.png",
   scheme: "kardecfarmeridletd",
   iosBundleId: "space.manus.kardec.farmer.idle.td",
   androidPackage: "space.manus.kardec.farmer.idle.td",
@@ -56,7 +55,7 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: "#E6F4FE",
+      backgroundColor: "#183A27",
       foregroundImage: "./assets/images/android-icon-foreground.png",
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -106,9 +105,9 @@ const config: ExpoConfig = {
         image: "./assets/images/splash-icon.png",
         imageWidth: 200,
         resizeMode: "contain",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#F5E6D3",
         dark: {
-          backgroundColor: "#000000",
+          backgroundColor: "#101B13",
         },
       },
     ],

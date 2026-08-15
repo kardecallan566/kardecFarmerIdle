@@ -59,3 +59,15 @@ Na prévia final, a estrada passou a aparecer como uma faixa central escura com 
 ## Ajuste de regra do regador
 
 O regador é exclusivamente uma estrutura central: ele gira, irriga os canteiros e aciona a geração das tropas, mas não causa dano aos monstros. O dano da batalha permanece restrito às tropas.
+
+## Verificação do spawn e Game Over
+
+Após a correção da transformação SVG, a Home carregou normalmente e a partida iniciou sem erro. O primeiro inimigo foi criado pela HUD e a estrada central ficou alinhada ao regador. A observação temporal continuará para confirmar o deslocamento pelo eixo e validar o novo feedback de dano antes da derrota.
+
+## Verificação temporal do dano e percurso
+
+A observação do build corrigido mostrou os inimigos alinhados na faixa central da estrada, avançando em direção ao regador. A vida da plantação caiu de 100 para 60 e depois para 20, com a barra da HUD mudando para estado crítico. Isso confirma que o dano acontece de forma progressiva e visível, sem derrota instantânea ou inimigos nascendo no canto superior direito.
+
+## Validação de derrota e reinício
+
+A partida foi observada até a plantação chegar a 0/100. A tela de Game Over exibiu o motivo, o regador sem vida e as estatísticas finais. Ao pressionar `Jogar Novamente`, o jogo retornou imediatamente para uma nova `Wave 1`, com plantação 100/100, moedas iniciais e contadores reiniciados.

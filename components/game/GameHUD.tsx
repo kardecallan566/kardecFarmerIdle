@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
@@ -16,6 +16,19 @@ export function GameHUD() {
     ? Math.min(100, (state.waveEnemiesSpawned / state.waveEnemiesTotal) * 100)
     : 0;
   const isBossWave = wavesUntilBoss === 0;
+  const previousHealthRef = useRef(state.plantationHealth);
+  const [damageNotice, setDamageNotice] = useState<number | null>(null);
+
+  useEffect(() => {
+    const previousHealth = previousHealthRef.current;
+    if (state.plantationHealth < previousHealth) {
+      setDamageNotice(Math.ceil(previousHealth - state.plantationHealth));
+      const timeout = setTimeout(() => setDamageNotice(null), 1000);
+      previousHealthRef.current = state.plantationHealth;
+      return () => clearTimeout(timeout);
+    }
+    previousHealthRef.current = state.plantationHealth;
+  }, [state.plantationHealth]);
 
   return (
     <View className="bg-[#102A1D] border-b border-[#315F40] px-3 pt-2.5 pb-2">
@@ -46,6 +59,15 @@ export function GameHUD() {
         </View>
       </View>
 
+      {damageNotice !== null && (
+        <View className="mt-2 flex-row items-center justify-center gap-2 rounded-xl border border-[#F07863] bg-[#6F2B28] px-3 py-1.5">
+          <GameIcon name="health" size={16} color="#FFD1C9" secondaryColor="#F07863" />
+          <Text className="text-[10px] font-black tracking-wide text-[#FFE4DF]">
+            PLANTAÇÃO ATINGIDA  −{damageNotice} VIDA
+          </Text>
+        </View>
+      )}
+
       <View className="mt-2 flex-row gap-2">
         <View className="flex-1 rounded-xl border border-[#3E6849] bg-[#1A3B29] px-2.5 py-2">
           <View className="flex-row items-center gap-1.5">
@@ -72,7 +94,10 @@ export function GameHUD() {
             </Text>
           </View>
           <View className="mt-1.5 h-2.5 overflow-hidden rounded-full border border-[#44704C] bg-[#0B2419]">
-            <View className="h-full rounded-full bg-[#8DCB63]" style={{ width: `${healthPercent}%` }} />
+            <View
+              className={`h-full rounded-full ${healthPercent <= 30 ? 'bg-[#F07863]' : 'bg-[#8DCB63]'}`}
+              style={{ width: `${healthPercent}%` }}
+            />
           </View>
           <Text className="mt-0.5 text-[9px] text-[#8FB08D]">Proteja o regador central</Text>
         </View>

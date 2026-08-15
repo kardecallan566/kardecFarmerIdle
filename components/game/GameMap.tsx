@@ -30,9 +30,11 @@ export function GameMap() {
   const { width, height: windowHeight } = useWindowDimensions();
   const mapLayout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
   const [animationTick, setAnimationTick] = useState(0);
+  const [plantationHit, setPlantationHit] = useState(false);
   const lastEnemyPositionsRef = React.useRef<Map<string, { x: number; y: number }>>(new Map());
   const lastDefeatedCountRef = React.useRef(state.totalEnemiesDefeated);
-  
+  const previousPlantationHealthRef = React.useRef(state.plantationHealth);
+
   const { animations: attackAnimations, addAttackAnimation } = useAttackAnimations();
   const { deathAnimations, addDeathAnimation } = useDeathAnimations();
   const { coinAnimations, addCoinAnimation } = useCoinAnimations();
@@ -47,6 +49,17 @@ export function GameMap() {
     }, 50);
     return () => clearInterval(animationInterval);
   }, []);
+
+  useEffect(() => {
+    const previousHealth = previousPlantationHealthRef.current;
+    if (state.plantationHealth < previousHealth) {
+      setPlantationHit(true);
+      const timeout = setTimeout(() => setPlantationHit(false), 850);
+      previousPlantationHealthRef.current = state.plantationHealth;
+      return () => clearTimeout(timeout);
+    }
+    previousPlantationHealthRef.current = state.plantationHealth;
+  }, [state.plantationHealth]);
 
   const plotPositions = [
     { index: 0, name: 'Quadrante Leste', x: mapCenterX + plotDist, y: mapCenterY },
@@ -317,6 +330,15 @@ export function GameMap() {
         <Circle
           cx={mapCenterX}
           cy={mapCenterY}
+          r={plantationHit ? 48 : 36}
+          fill="none"
+          stroke="#F07863"
+          strokeWidth={plantationHit ? 5 : 1}
+          opacity={plantationHit ? 0.95 : 0}
+        />
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
           r={52 * (2 - waterPulse)}
           fill="none"
           stroke="#63B3ED"
@@ -392,7 +414,7 @@ export function GameMap() {
           const scale = 1 + Math.sin(phase * 1.2) * (enemy.isBoss ? 0.035 : 0.02);
           const x = Math.round(enemy.x);
           const y = Math.round(enemy.y);
-          const transform = `translate(${x * (1 - scale)} ${y * (1 - scale) + bob}) scale(${scale})`;
+          const transform = `translate(${x} ${y + bob}) scale(${scale})`;
 
           return (
             <G key={enemy.id} transform={transform}>

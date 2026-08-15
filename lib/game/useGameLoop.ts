@@ -52,7 +52,7 @@ export function useGameLoop() {
 
       const newEnemy: Enemy = {
         id: generateId('enemy'),
-        x: layout.centerX + (Math.random() * 24 - 12),
+        x: layout.centerX,
         y: layout.centerY - layout.spawnDistance,
         pathIndex: 0,
         pathProgress: 0,

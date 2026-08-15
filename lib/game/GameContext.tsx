@@ -20,6 +20,7 @@ import { CropPlot, SprinklerState } from './types';
 
 type GameAction =
   | { type: 'INIT_GAME' }
+  | { type: 'RESET_GAME' }
   | { type: 'UPDATE_ENEMIES'; enemies: Enemy[] }
   | { type: 'UPDATE_ENEMY'; enemyId: string; patch: Partial<Enemy> }
   | { type: 'ADD_ENEMIES'; enemies: Enemy[] }
@@ -119,6 +120,12 @@ const initialState: GameState = {
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case 'RESET_GAME':
+      return {
+        ...initialState,
+        plots: initialPlots.map((plot) => ({ ...plot, isWateredThisCycle: false })),
+      };
+
     case 'INIT_GAME':
       return {
         ...initialState,

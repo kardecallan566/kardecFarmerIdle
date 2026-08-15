@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from './GameContext';
 import { Enemy } from './types';
-import { getPositionOnPath, distance } from './utils';
-import { INITIAL_GAME_CONFIG } from './types';
 
 export function useBossWaves() {
   const { state, dispatch } = useGame();
@@ -32,24 +30,21 @@ export function useBossWaves() {
           if (currentCooldown <= 0) {
             // Execute ability
             if (ability.type === 'speedBoost') {
-              // Temporarily increase boss speed
-              const updatedEnemies = currentState.enemies.map((e) => {
-                if (e.id === boss.id) {
-                  return { ...e, speed: e.speed * 1.5 };
-                }
-                return e;
+              // Atualiza somente o chefe; o loop principal continua dono das posições.
+              const boostedSpeed = boss.speed * 1.5;
+              dispatch({
+                type: 'UPDATE_ENEMY',
+                enemyId: boss.id,
+                patch: { speed: boostedSpeed },
               });
-              dispatch({ type: 'UPDATE_ENEMIES', enemies: updatedEnemies });
 
-              // Revert speed after 5 seconds
+              // Reverte somente a velocidade após o impulso.
               setTimeout(() => {
-                const revertedEnemies = stateRef.current.enemies.map((e) => {
-                  if (e.id === boss.id) {
-                    return { ...e, speed: e.speed / 1.5 };
-                  }
-                  return e;
+                dispatch({
+                  type: 'UPDATE_ENEMY',
+                  enemyId: boss.id,
+                  patch: { speed: boss.speed },
                 });
-                dispatch({ type: 'UPDATE_ENEMIES', enemies: revertedEnemies });
               }, 5000);
 
               bossAbilityCooldownsRef.current.set(
@@ -80,10 +75,7 @@ export function useBossWaves() {
                 });
               }
 
-              dispatch({
-                type: 'UPDATE_ENEMIES',
-                enemies: [...currentState.enemies, ...newMinions],
-              });
+              dispatch({ type: 'ADD_ENEMIES', enemies: newMinions });
 
               bossAbilityCooldownsRef.current.set(
                 `${boss.id}_${ability.type}`,

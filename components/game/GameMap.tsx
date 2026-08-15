@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, Dimensions } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Line, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useGame } from '@/lib/game/GameContext';
 import { INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
+import { getMapLayout } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
 import { useDeathAnimations } from '@/lib/game/useDeathAnimations';
 import { useCoinAnimations } from '@/lib/game/useCoinAnimations';
 import { AttackAnimationsLayer } from './AttackAnimationsLayer';
 import { DeathAnimationsLayer } from './DeathAnimationsLayer';
 import { CoinAnimationsLayer } from './CoinAnimationsLayer';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const GUARD_IMAGES = {
   warrior: require('@/assets/images/guard-warrior.png'),
@@ -28,15 +27,25 @@ const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
 
 export function GameMap() {
   const { state, dispatch } = useGame();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const mapLayout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
+  const [animationTick, setAnimationTick] = useState(0);
   const lastEnemyPositionsRef = React.useRef<Map<string, { x: number; y: number }>>(new Map());
   
   const { animations: attackAnimations, addAttackAnimation } = useAttackAnimations();
   const { deathAnimations, addDeathAnimation } = useDeathAnimations();
   const { coinAnimations, addCoinAnimation } = useCoinAnimations();
 
-  const mapCenterX = screenWidth / 2;
-  const mapCenterY = screenHeight / 2 - 80;
-  const plotDist = 80;
+  const mapCenterX = mapLayout.centerX;
+  const mapCenterY = mapLayout.centerY;
+  const plotDist = mapLayout.plotDistance;
+
+  useEffect(() => {
+    const animationInterval = setInterval(() => {
+      setAnimationTick((tick) => (tick + 1) % 360);
+    }, 50);
+    return () => clearInterval(animationInterval);
+  }, []);
 
   const plotPositions = [
     { index: 0, name: 'Quadrante Leste', x: mapCenterX + plotDist, y: mapCenterY },
@@ -55,7 +64,7 @@ export function GameMap() {
         if (lastPos) {
           addDeathAnimation(lastPos.x, lastPos.y, '#FF4444');
           const coinValue = Math.floor(Math.random() * 4) + 1;
-          addCoinAnimation(lastPos.x, lastPos.y, screenWidth - 40, 40, coinValue);
+          addCoinAnimation(lastPos.x, lastPos.y, mapLayout.width - 40, 40, coinValue);
         }
       }
     });
@@ -65,7 +74,7 @@ export function GameMap() {
       newPositions.set(enemy.id, { x: enemy.x, y: enemy.y });
     });
     lastEnemyPositionsRef.current = newPositions;
-  }, [state.enemies, addDeathAnimation, addCoinAnimation]);
+  }, [state.enemies, addDeathAnimation, addCoinAnimation, mapLayout.width]);
 
   useEffect(() => {
     state.guards.forEach(guard => {
@@ -99,13 +108,24 @@ export function GameMap() {
   const sprinklerArmLen = 35;
   const nozzleX = mapCenterX + Math.cos(state.sprinkler.angle) * sprinklerArmLen;
   const nozzleY = mapCenterY + Math.sin(state.sprinkler.angle) * sprinklerArmLen;
+  const waterPulse = 1 + Math.sin(animationTick * 0.14) * 0.08;
+  const waterOpacity = 0.22 + (Math.sin(animationTick * 0.14) + 1) * 0.06;
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+    <View
+      style={{
+        flex: 1,
+        width: '100%',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        position: 'relative',
+        backgroundColor: '#F5E6D3',
+      }}
+    >
       <Svg
-        width={screenWidth}
-        height={screenHeight / 2 + 40}
-        viewBox={`0 0 ${screenWidth} ${screenHeight / 2 + 40}`}
+        width={mapLayout.width}
+        height={mapLayout.height}
+        viewBox={`0 0 ${mapLayout.width} ${mapLayout.height}`}
       >
         <Defs>
           <LinearGradient id="farmBg" x1="0" y1="0" x2="0" y2="1">
@@ -118,16 +138,16 @@ export function GameMap() {
           </LinearGradient>
         </Defs>
 
-        <Rect width={screenWidth} height={screenHeight / 2 + 40} fill="url(#farmBg)" />
-          <SvgImage
-            href={FARM_BACKGROUND}
-            x={0}
-            y={0}
-            width={screenWidth}
-            height={screenHeight / 2 + 40}
-            preserveAspectRatio="xMidYMid slice"
-            opacity={0.44}
-          />
+        <Rect width={mapLayout.width} height={mapLayout.height} fill="url(#farmBg)" />
+        <SvgImage
+          href={FARM_BACKGROUND}
+          x={0}
+          y={0}
+          width={mapLayout.width}
+          height={mapLayout.height}
+          preserveAspectRatio="xMidYMid slice"
+          opacity={0.44}
+        />
 
           <Rect
 
@@ -248,11 +268,39 @@ export function GameMap() {
           fill="#2b6cb0"
         />
 
-        <Path
-          d={`M ${mapCenterX} ${mapCenterY} L ${mapCenterX + Math.cos(state.sprinkler.angle - 0.25) * 110} ${mapCenterY + Math.sin(state.sprinkler.angle - 0.25) * 110} L ${mapCenterX + Math.cos(state.sprinkler.angle + 0.25) * 110} ${mapCenterY + Math.sin(state.sprinkler.angle + 0.25) * 110} Z`}
-          fill="#90cdf4"
-          opacity={0.35}
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
+          r={42 * waterPulse}
+          fill="none"
+          stroke="#A7E6FF"
+          strokeWidth="2"
+          opacity={waterOpacity}
         />
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
+          r={52 * (2 - waterPulse)}
+          fill="none"
+          stroke="#63B3ED"
+          strokeWidth="1"
+          opacity={waterOpacity * 0.7}
+        />
+        <Path
+          d={`M ${mapCenterX} ${mapCenterY} L ${mapCenterX + Math.cos(state.sprinkler.angle - 0.25) * mapLayout.mapRadius} ${mapCenterY + Math.sin(state.sprinkler.angle - 0.25) * mapLayout.mapRadius} L ${mapCenterX + Math.cos(state.sprinkler.angle + 0.25) * mapLayout.mapRadius} ${mapCenterY + Math.sin(state.sprinkler.angle + 0.25) * mapLayout.mapRadius} Z`}
+          fill="#90CDF4"
+          opacity={0.22 + waterOpacity}
+        />
+        {[0.34, 0.57, 0.8].map((factor, index) => (
+          <Circle
+            key={`water_drop_${index}`}
+            cx={mapCenterX + Math.cos(state.sprinkler.angle) * mapLayout.mapRadius * factor}
+            cy={mapCenterY + Math.sin(state.sprinkler.angle) * mapLayout.mapRadius * factor}
+            r={2.2 + (index % 2)}
+            fill="#D9F7FF"
+            opacity={0.75 - index * 0.12}
+          />
+        ))}
 
         <Line
           x1={mapCenterX}
@@ -300,37 +348,44 @@ export function GameMap() {
           </G>
         ))}
 
-        {state.enemies.map((enemy) => {
+        {state.enemies.map((enemy, enemyIndex) => {
           const imgSize = enemy.isBoss ? 44 : 30;
+          const phase = animationTick * 0.16 + enemyIndex * 0.9;
+          const bob = Math.sin(phase) * (enemy.isBoss ? 2 : 1.2);
+          const scale = 1 + Math.sin(phase * 1.2) * (enemy.isBoss ? 0.035 : 0.02);
+          const x = Math.round(enemy.x);
+          const y = Math.round(enemy.y);
+          const transform = `translate(${x * (1 - scale)} ${y * (1 - scale) + bob}) scale(${scale})`;
+
           return (
-            <G key={enemy.id}>
+            <G key={enemy.id} transform={transform}>
               <Circle
-                cx={Math.round(enemy.x) + 1}
-                cy={Math.round(enemy.y) + 2}
+                cx={1}
+                cy={2}
                 r={imgSize / 2}
                 fill="#000"
                 opacity={0.25}
               />
               <SvgImage
                 href={ENEMY_IMAGES[enemy.isBoss ? 'boss' : 'normal']}
-                x={Math.round(enemy.x) - imgSize / 2}
-                y={Math.round(enemy.y) - imgSize / 2}
+                x={-imgSize / 2}
+                y={-imgSize / 2}
                 width={imgSize}
                 height={imgSize}
               />
               {enemy.health < enemy.maxHealth && (
                 <G>
                   <Rect
-                    x={Math.round(enemy.x) - 14}
-                    y={Math.round(enemy.y) - imgSize / 2 - 6}
+                    x={-14}
+                    y={-imgSize / 2 - 6}
                     width={28}
                     height={4}
                     fill="#333"
                     rx={2}
                   />
                   <Rect
-                    x={Math.round(enemy.x) - 14}
-                    y={Math.round(enemy.y) - imgSize / 2 - 6}
+                    x={-14}
+                    y={-imgSize / 2 - 6}
                     width={(enemy.health / enemy.maxHealth) * 28}
                     height={4}
                     fill="#FF4444"

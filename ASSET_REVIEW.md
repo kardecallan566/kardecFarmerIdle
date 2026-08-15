@@ -35,3 +35,15 @@ O build exportado carregou a Home sem erro, exibindo o cenário agrícola e o no
 ## Revalidação final
 
 A exportação web final foi concluída com sucesso e a Home recarregada no navegador mostrou o cenário agrícola e o emblema renovado, sem erro de runtime visível. O erro anterior de SHA-1 do NativeWind foi resolvido ao deixar o CSS virtual do Metro habilitado.
+
+## Verificação da segunda iteração
+
+A partida abriu com o contador `1/1 inimigos`, confirmando que o estado das waves passou a refletir os spawns reais. A nova barra de tropas está horizontalmente rolável e os cartões permanecem legíveis. O mapa responsivo carregou, porém a composição ainda deixa uma faixa bege vazia entre o HUD e o mapa por causa do alinhamento vertical central; esse espaço será removido na próxima correção de layout.
+
+## Verificação de movimento e efeitos
+
+Na partida observada, a tropa foi vista avançando do canteiro até o corredor superior, enquanto partículas de morte, moedas e o cone de água do regador apareciam durante o ciclo. Isso confirma que o problema de tropas paradas foi corrigido. A recarga do build para testar o novo tamanho do mapa encontrou apenas o servidor temporário encerrado, sem indicar erro no bundle.
+
+## Validação do layout ajustado
+
+Após aumentar a área útil do mapa, a composição ficou mais preenchida verticalmente, com o regador, canteiros e faixa de tropas ocupando melhor a tela. O HUD permanece compacto, a barra inferior continua legível e o efeito de água no centro aparece como cone e pulsos. A validação final da caminhada da tropa segue sendo feita por observação temporal da partida.

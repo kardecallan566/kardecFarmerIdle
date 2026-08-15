@@ -21,6 +21,8 @@ import { CropPlot, SprinklerState } from './types';
 type GameAction =
   | { type: 'INIT_GAME' }
   | { type: 'UPDATE_ENEMIES'; enemies: Enemy[] }
+  | { type: 'UPDATE_ENEMY'; enemyId: string; patch: Partial<Enemy> }
+  | { type: 'ADD_ENEMIES'; enemies: Enemy[] }
   | { type: 'UPDATE_GUARDS'; guards: Guard[] }
   | { type: 'ADD_GUARD'; guard: Guard }
   | { type: 'SPAWN_ENEMY'; enemy: Enemy }
@@ -135,8 +137,29 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'UPDATE_ENEMIES':
       return { ...state, enemies: action.enemies };
 
+    case 'UPDATE_ENEMY':
+      return {
+        ...state,
+        enemies: state.enemies.map((enemy) =>
+          enemy.id === action.enemyId ? { ...enemy, ...action.patch } : enemy,
+        ),
+      };
+
     case 'SPAWN_ENEMY':
-      return { ...state, enemies: [...state.enemies, action.enemy] };
+      return {
+        ...state,
+        enemies: [...state.enemies, action.enemy],
+        waveEnemiesRemaining: state.waveEnemiesRemaining + 1,
+        waveEnemiesTotal: state.waveEnemiesTotal + 1,
+      };
+
+    case 'ADD_ENEMIES':
+      return {
+        ...state,
+        enemies: [...state.enemies, ...action.enemies],
+        waveEnemiesRemaining: state.waveEnemiesRemaining + action.enemies.length,
+        waveEnemiesTotal: state.waveEnemiesTotal + action.enemies.length,
+      };
 
     case 'UPDATE_GUARDS':
       return { ...state, guards: action.guards };

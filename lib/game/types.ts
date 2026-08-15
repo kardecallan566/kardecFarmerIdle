@@ -78,6 +78,8 @@ export interface Guard {
   range: number;
   attackSpeed: number;
   attackCooldown: number;
+  /** Velocidade visual de avanço em pixels por segundo até a distância de combate. */
+  moveSpeed?: number;
   color: string;
   targetId?: string;
 }
@@ -127,6 +129,7 @@ export const GUARD_CONFIGS = {
     damage: 15,
     range: 90,
     attackSpeed: 1.0,
+    moveSpeed: 40,
     color: '#4169E1',
     name: 'Guerreiro',
     cropName: 'Trigo de Guerra',
@@ -137,6 +140,7 @@ export const GUARD_CONFIGS = {
     damage: 12,
     range: 160,
     attackSpeed: 1.4,
+    moveSpeed: 46,
     color: '#32CD32',
     name: 'Arqueiro',
     cropName: 'Milho de Arco',
@@ -147,6 +151,7 @@ export const GUARD_CONFIGS = {
     damage: 8,
     range: 70,
     attackSpeed: 0.6,
+    moveSpeed: 28,
     color: '#A9A9A9',
     name: 'Tanque',
     cropName: 'Abóbora Blindada',
@@ -168,7 +173,8 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
   const isBossWave = waveNumber % 5 === 0;
   const baseEnemyCount = 4 + Math.floor(waveNumber * 1.5);
   const baseHealth = 25 + waveNumber * 4;
-  const baseSpeed = 0.6 + waveNumber * 0.04;
+  // Escala em pixels por segundo; o loop converte diretamente para o deslocamento do mapa.
+  const baseSpeed = 32 + waveNumber * 2.2;
   const baseDamage = 5 + Math.floor(waveNumber / 2);
 
   return {

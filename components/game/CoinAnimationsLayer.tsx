@@ -1,61 +1,58 @@
-import React from 'react';
-import { View, Dimensions, Text } from 'react-native';
+import { useWindowDimensions, View, Text } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { CoinAnimation } from '@/lib/game/useCoinAnimations';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import { getMapLayout } from '@/lib/game/layout';
 
 interface CoinAnimationsLayerProps {
   animations: CoinAnimation[];
 }
 
 export function CoinAnimationsLayer({ animations }: CoinAnimationsLayerProps) {
+  const { width, height } = useWindowDimensions();
+  const mapLayout = getMapLayout(width, height);
+
   return (
     <View
       style={{
         position: 'absolute',
         top: 0,
         left: 0,
-        width: screenWidth,
-        height: screenHeight / 2,
+        width: mapLayout.width,
+        height: mapLayout.height,
         pointerEvents: 'none',
       }}
     >
-      <Svg width={screenWidth} height={screenHeight / 2}>
+      <Svg width={mapLayout.width} height={mapLayout.height}>
         {animations.map((anim) => {
-          const progress = anim.progress / anim.duration;
-          const opacity = Math.max(0, 1 - progress * 0.3); // Slight fade
-          const scale = 1 + progress * 0.2; // Slight grow
+          const progress = Math.min(1, anim.progress / anim.duration);
+          const opacity = Math.max(0, 1 - progress * 0.3);
+          const scale = 1 + progress * 0.2;
 
           return (
             <G key={anim.id} opacity={opacity}>
-              {/* Coin circle */}
               <Circle
                 cx={Math.round(anim.x)}
                 cy={Math.round(anim.y)}
                 r={6 * scale}
                 fill="#FFD700"
-                stroke="#FFA500"
+                stroke="#8B5A1D"
                 strokeWidth="1"
               />
-
-              {/* Coin shine */}
               <Circle
                 cx={Math.round(anim.x) - 2}
                 cy={Math.round(anim.y) - 2}
                 r={2 * scale}
-                fill="#FFF"
-                opacity="0.6"
+                fill="#FFF8D1"
+                opacity="0.8"
               />
             </G>
           );
         })}
       </Svg>
 
-      {/* Coin counter floating text */}
       {animations.map((anim) => {
-        const progress = anim.progress / anim.duration;
-        if (progress < 0.3) return null; // Only show at end of animation
+        const progress = Math.min(1, anim.progress / anim.duration);
+        if (progress < 0.3) return null;
 
         return (
           <View

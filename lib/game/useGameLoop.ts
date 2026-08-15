@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { Dimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useGame } from './GameContext';
 import {
   Enemy,
@@ -9,45 +9,51 @@ import {
   GUARD_CONFIGS,
 } from './types';
 import { distance, generateId } from './utils';
+import { getMapLayout } from './layout';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const GAME_TICK_MS = 33;
+const GAME_DT = GAME_TICK_MS / 1000;
+const GUARD_COMBAT_BUFFER = 0.82;
 
 export function useGameLoop() {
   const { state, dispatch } = useGame();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const layout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const waveSpawnerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const waveTransitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enemySpawnCountRef = useRef(0);
-
-  const mapCenterX = screenWidth / 2;
-  const mapCenterY = screenHeight / 2 - 80;
-
+  const waveTransitionRef = useRef(false);
   const stateRef = useRef(state);
+
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
-  // Spawn enemies for current wave down the top single lane
   const spawnWaveEnemies = useCallback(() => {
     const currentState = stateRef.current;
     if (!currentState.gameActive || currentState.gameLost) return;
+
+    if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
+    enemySpawnCountRef.current = 0;
+    waveTransitionRef.current = false;
 
     const waveConfig = getWaveConfig(currentState.wave);
     const enemiesPerSecond = Math.max(0.8, waveConfig.enemyCount / 6);
 
     waveSpawnerRef.current = setInterval(() => {
+      const latestState = stateRef.current;
+      if (!latestState.gameActive || latestState.gameLost) return;
+
       if (enemySpawnCountRef.current >= waveConfig.enemyCount) {
         if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
         return;
       }
 
-      // Single lane coming from top (mapCenterX, mapCenterY - spawnDistance)
-      const spawnX = mapCenterX + (Math.random() * 24 - 12);
-      const spawnY = mapCenterY - INITIAL_GAME_CONFIG.spawnDistance;
-
       const newEnemy: Enemy = {
         id: generateId('enemy'),
-        x: spawnX,
-        y: spawnY,
+        x: layout.centerX + (Math.random() * 24 - 12),
+        y: layout.centerY - layout.spawnDistance,
         pathIndex: 0,
         pathProgress: 0,
         health: waveConfig.enemyHealth,
@@ -66,184 +72,202 @@ export function useGameLoop() {
       };
 
       dispatch({ type: 'SPAWN_ENEMY', enemy: newEnemy });
-      enemySpawnCountRef.current++;
+      enemySpawnCountRef.current += 1;
     }, 1000 / enemiesPerSecond);
-  }, [dispatch]);
+  }, [dispatch, layout.centerX, layout.centerY, layout.spawnDistance]);
 
-  // Main game loop: update sprinkler rotation, spawn soldiers on watering, move enemies, handle attacks
   useEffect(() => {
     if (!state.gameActive || state.gameLost) return;
-
-    const dt = 0.033; // ~30fps step (33ms)
 
     gameLoopRef.current = setInterval(() => {
       const currentState = stateRef.current;
       if (!currentState.gameActive || currentState.gameLost) return;
 
-      // 1. Update Sprinkler rotation angle
-      const prevAngle = currentState.sprinkler.angle;
-      let newAngle = (prevAngle + currentState.sprinkler.rotationSpeed * dt) % (2 * Math.PI);
+      const previousAngle = currentState.sprinkler.angle;
+      const newAngle =
+        (previousAngle + currentState.sprinkler.rotationSpeed * GAME_DT) % (2 * Math.PI);
       dispatch({ type: 'UPDATE_SPRINKLER', angle: newAngle });
 
-      // Check if full 360 rotation wrapped around (prev > new angle)
-      const fullRotationCompleted = newAngle < prevAngle;
-
-      if (fullRotationCompleted) {
+      if (newAngle < previousAngle) {
         dispatch({ type: 'RESET_WATERED_FLAGS' });
       }
 
-      // 2. Check plots watering & spawn defending soldiers from watered planted crops
-      const plotRadius = 75; // Distance of plot centers from Regador
+      const normAngle = (newAngle + 2 * Math.PI) % (2 * Math.PI);
       const newGuards: Guard[] = [];
 
       currentState.plots.forEach((plot) => {
-        if (!plot.cropType) return; // Empty plot
+        if (!plot.cropType) return;
 
-        // Check if sprinkler angle is sweeping over this plot's quadrant
-        const normAngle = (newAngle + 2 * Math.PI) % (2 * Math.PI);
         const normStart = (plot.angleStart + 2 * Math.PI) % (2 * Math.PI);
         const normEnd = (plot.angleEnd + 2 * Math.PI) % (2 * Math.PI);
+        const isOverPlot =
+          normStart <= normEnd
+            ? normAngle >= normStart && normAngle <= normEnd
+            : normAngle >= normStart || normAngle <= normEnd;
 
-        let isOverPlot = false;
-        if (normStart <= normEnd) {
-          isOverPlot = normAngle >= normStart && normAngle <= normEnd;
-        } else {
-          isOverPlot = normAngle >= normStart || normAngle <= normEnd;
-        }
+        if (!isOverPlot || plot.isWateredThisCycle) return;
 
-        if (isOverPlot && !plot.isWateredThisCycle) {
-          dispatch({ type: 'SET_PLOT_WATERED', plotIndex: plot.index, watered: true });
+        dispatch({ type: 'SET_PLOT_WATERED', plotIndex: plot.index, watered: true });
 
-          // SPAWN SOLDIER FROM WATERED CROP!
-          const config = GUARD_CONFIGS[plot.cropType];
-          
-          // Plot center position
-          const plotAngleCenter = (plot.angleStart + plot.angleEnd) / 2;
-          const plotX = mapCenterX + Math.cos(plotAngleCenter) * plotRadius;
-          const plotY = mapCenterY + Math.sin(plotAngleCenter) * plotRadius;
+        const config = GUARD_CONFIGS[plot.cropType];
+        const plotAngleCenter = (plot.angleStart + plot.angleEnd) / 2;
+        const plotX = layout.centerX + Math.cos(plotAngleCenter) * layout.plotDistance;
+        const plotY = layout.centerY + Math.sin(plotAngleCenter) * layout.plotDistance;
+        const guardsFromPlot = currentState.guards.filter((guard) => guard.plotIndex === plot.index);
 
-          // Soldier steps out slightly towards defense line
-          const guardX = plotX + (mapCenterX - plotX) * 0.2;
-          const guardY = plotY + (mapCenterY - plotY) * 0.2;
-
-          // Limit total active guards per plot to max 4
-          const guardsFromPlot = currentState.guards.filter(g => g.plotIndex === plot.index);
-          if (guardsFromPlot.length < 4) {
-            newGuards.push({
-              id: generateId('guard'),
-              plotIndex: plot.index,
-              x: guardX,
-              y: guardY,
-              type: plot.cropType,
-              health: config.health,
-              maxHealth: config.health,
-              damage: config.damage,
-              range: config.range,
-              attackSpeed: config.attackSpeed,
-              attackCooldown: 0,
-              color: config.color,
-            });
-          }
+        if (guardsFromPlot.length < 4) {
+          newGuards.push({
+            id: generateId('guard'),
+            plotIndex: plot.index,
+            x: plotX,
+            y: plotY,
+            type: plot.cropType,
+            health: config.health,
+            maxHealth: config.health,
+            damage: config.damage,
+            range: config.range,
+            attackSpeed: config.attackSpeed,
+            attackCooldown: 0,
+            moveSpeed: config.moveSpeed,
+            color: config.color,
+          });
         }
       });
 
-      let allGuards = [...currentState.guards];
-      if (newGuards.length > 0) {
-        allGuards = [...allGuards, ...newGuards];
-      }
+      const allGuards = newGuards.length > 0
+        ? [...currentState.guards, ...newGuards]
+        : currentState.guards;
 
-      // 3. Move Enemies down top single lane towards center Regador
       const updatedEnemies = currentState.enemies
         .map((enemy) => {
           const newProgress = Math.min(
             1,
-            enemy.pathProgress + (enemy.speed * dt) / 25
+            enemy.pathProgress + (enemy.speed * GAME_DT) / Math.max(layout.spawnDistance, 1),
           );
-
-          // Position moving down from top (mapCenterY - spawnDistance) to mapCenterY
-          const startY = mapCenterY - INITIAL_GAME_CONFIG.spawnDistance;
-          const currentY = startY + newProgress * INITIAL_GAME_CONFIG.spawnDistance;
-          const currentX = enemy.x; // Keep lane alignment
-
-          // Check if reached Regador at center
+          const position = {
+            x: layout.centerX,
+            y: layout.centerY - layout.spawnDistance * (1 - newProgress),
+          };
           const distToCenter = distance(
-            { x: mapCenterX, y: mapCenterY },
-            { x: currentX, y: currentY }
+            { x: layout.centerX, y: layout.centerY },
+            position,
           );
 
           if (distToCenter < INITIAL_GAME_CONFIG.plantationRadius + 15) {
-            dispatch({
-              type: 'DAMAGE_PLANTATION',
-              amount: enemy.damage,
-            });
+            dispatch({ type: 'DAMAGE_PLANTATION', amount: enemy.damage });
             dispatch({ type: 'REMOVE_ENEMY', enemyId: enemy.id });
             return null;
           }
 
           return {
             ...enemy,
-            x: currentX,
-            y: currentY,
+            x: position.x,
+            y: position.y,
             pathProgress: newProgress,
           };
         })
-        .filter((e) => e !== null) as Enemy[];
+        .filter((enemy): enemy is Enemy => enemy !== null);
 
-      // 4. Soldier combat & guard attack updates
       const remainingEnemies = [...updatedEnemies];
+      const defeatedEnemyIds = new Set<string>();
       const updatedGuards = allGuards
         .map((guard) => {
-          let newCooldown = Math.max(0, guard.attackCooldown - dt);
+          const target = remainingEnemies
+            .filter((enemy) => enemy.health > 0)
+            .sort(
+              (first, second) =>
+                distance({ x: guard.x, y: guard.y }, { x: first.x, y: first.y }) -
+                distance({ x: guard.x, y: guard.y }, { x: second.x, y: second.y }),
+            )[0];
 
-          // Find target enemy within attack range
-          const target = remainingEnemies.find(
-            (e) => e.health > 0 && distance({ x: guard.x, y: guard.y }, { x: e.x, y: e.y }) <= guard.range
-          );
+          let nextX = guard.x;
+          let nextY = guard.y;
+          let nextCooldown = Math.max(0, guard.attackCooldown - GAME_DT);
+          let targetId: string | undefined;
 
-          if (target && newCooldown <= 0) {
-            target.health -= guard.damage;
-            newCooldown = 1 / guard.attackSpeed;
+          if (target) {
+            targetId = target.id;
+            const targetDistance = distance(
+              { x: guard.x, y: guard.y },
+              { x: target.x, y: target.y },
+            );
+            const desiredDistance = guard.range * GUARD_COMBAT_BUFFER;
 
-            if (target.health <= 0) {
-              dispatch({ type: 'REMOVE_ENEMY', enemyId: target.id });
+            if (targetDistance > desiredDistance) {
+              const moveDistance = Math.min(
+                targetDistance - desiredDistance,
+                (guard.moveSpeed ?? 42) * GAME_DT,
+              );
+              const ratio = moveDistance / Math.max(targetDistance, 1);
+              nextX += (target.x - guard.x) * ratio;
+              nextY += (target.y - guard.y) * ratio;
+            }
+
+            const distanceAfterMove = distance(
+              { x: nextX, y: nextY },
+              { x: target.x, y: target.y },
+            );
+            if (distanceAfterMove <= guard.range && nextCooldown <= 0) {
+              target.health -= guard.damage;
+              nextCooldown = 1 / Math.max(guard.attackSpeed, 0.1);
+              if (target.health <= 0) defeatedEnemyIds.add(target.id);
             }
           }
 
-          return { ...guard, attackCooldown: newCooldown };
+          return {
+            ...guard,
+            x: nextX,
+            y: nextY,
+            targetId,
+            attackCooldown: nextCooldown,
+          };
         })
-        .filter(g => g.health > 0);
+        .filter((guard) => guard.health > 0);
 
-      const aliveEnemies = remainingEnemies.filter((e) => e.health > 0);
+      defeatedEnemyIds.forEach((enemyId) => {
+        dispatch({ type: 'REMOVE_ENEMY', enemyId });
+      });
 
+      const aliveEnemies = remainingEnemies.filter((enemy) => enemy.health > 0);
       dispatch({ type: 'UPDATE_ENEMIES', enemies: aliveEnemies });
       dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
 
-      // 5. Check wave completion
+      const waveConfig = getWaveConfig(currentState.wave);
       if (
-        updatedEnemies.length === 0 &&
-        enemySpawnCountRef.current >= getWaveConfig(currentState.wave).enemyCount
+        aliveEnemies.length === 0 &&
+        enemySpawnCountRef.current >= waveConfig.enemyCount &&
+        !waveTransitionRef.current
       ) {
-        setTimeout(() => {
-          dispatch({ type: 'NEXT_WAVE' });
+        waveTransitionRef.current = true;
+        waveTransitionTimeoutRef.current = setTimeout(() => {
           enemySpawnCountRef.current = 0;
-        }, 3000);
+          waveTransitionRef.current = false;
+          dispatch({ type: 'NEXT_WAVE' });
+        }, INITIAL_GAME_CONFIG.waveInterval * 1000);
       }
-    }, 33); // ~30fps
+    }, GAME_TICK_MS);
 
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+      if (waveTransitionTimeoutRef.current) clearTimeout(waveTransitionTimeoutRef.current);
+      waveTransitionRef.current = false;
     };
-  }, [state.gameActive, state.gameLost, dispatch]);
+  }, [
+    dispatch,
+    layout.centerX,
+    layout.centerY,
+    layout.plotDistance,
+    layout.spawnDistance,
+    state.gameActive,
+    state.gameLost,
+  ]);
 
-  // Start wave spawning
   useEffect(() => {
     if (!state.gameActive || state.gameLost) return;
 
-    enemySpawnCountRef.current = 0;
     spawnWaveEnemies();
-
     return () => {
       if (waveSpawnerRef.current) clearInterval(waveSpawnerRef.current);
     };
-  }, [state.wave, state.gameActive, state.gameLost, spawnWaveEnemies]);
+  }, [spawnWaveEnemies, state.gameActive, state.gameLost, state.wave]);
 }

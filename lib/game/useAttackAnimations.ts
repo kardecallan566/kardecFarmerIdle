@@ -32,7 +32,7 @@ export function useAttackAnimations() {
       toX,
       toY,
       progress: 0,
-      duration: 300, // 300ms animation
+      duration: type === 'projectile' ? 110 : 85,
       type,
       color,
     };

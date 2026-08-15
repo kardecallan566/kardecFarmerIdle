@@ -14,6 +14,8 @@ import { getMapLayout } from './layout';
 const GAME_TICK_MS = 33;
 const GAME_DT = GAME_TICK_MS / 1000;
 const GUARD_COMBAT_BUFFER = 0.82;
+const SPRINKLER_DAMAGE_PER_SECOND = 7;
+const SPRINKLER_CONE_HALF_ANGLE = 0.25;
 
 export function useGameLoop() {
   const { state, dispatch } = useGame();
@@ -138,6 +140,7 @@ export function useGameLoop() {
         ? [...currentState.guards, ...newGuards]
         : currentState.guards;
 
+      const defeatedEnemyIds = new Set<string>();
       const updatedEnemies = currentState.enemies
         .map((enemy) => {
           const newProgress = Math.min(
@@ -159,17 +162,36 @@ export function useGameLoop() {
             return null;
           }
 
+          const angleToEnemy = Math.atan2(
+            position.y - layout.centerY,
+            position.x - layout.centerX,
+          );
+          const angleDelta = Math.atan2(
+            Math.sin(angleToEnemy - currentState.sprinkler.angle),
+            Math.cos(angleToEnemy - currentState.sprinkler.angle),
+          );
+          const isInWaterStream =
+            distToCenter <= layout.mapRadius * 0.92 &&
+            Math.abs(angleDelta) <= SPRINKLER_CONE_HALF_ANGLE;
+          const nextHealth = isInWaterStream
+            ? enemy.health - SPRINKLER_DAMAGE_PER_SECOND * GAME_DT
+            : enemy.health;
+
+          if (nextHealth <= 0) {
+            defeatedEnemyIds.add(enemy.id);
+          }
+
           return {
             ...enemy,
             x: position.x,
             y: position.y,
             pathProgress: newProgress,
+            health: Math.max(0, nextHealth),
           };
         })
         .filter((enemy): enemy is Enemy => enemy !== null);
 
       const remainingEnemies = [...updatedEnemies];
-      const defeatedEnemyIds = new Set<string>();
       const updatedGuards = allGuards
         .map((guard) => {
           const target = remainingEnemies

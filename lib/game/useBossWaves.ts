@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from './GameContext';
 import { Enemy } from './types';
+import { generateId } from './utils';
 
 export function useBossWaves() {
   const { state, dispatch } = useGame();
@@ -55,21 +56,21 @@ export function useBossWaves() {
               // Spawn small enemies around boss
               const newMinions: Enemy[] = [];
               for (let i = 0; i < 3; i++) {
-                const angle = (Math.PI * 2 * i) / 3;
-                const minionX = boss.x + Math.cos(angle) * 30;
-                const minionY = boss.y + Math.sin(angle) * 30;
+                const minionHealth = Math.max(12, Math.round(boss.maxHealth * 0.14));
+                const minionX = boss.x;
+                const minionY = boss.y + (i - 1) * 14;
 
                 newMinions.push({
-                  id: `minion_${boss.id}_${Date.now()}_${i}`,
+                  id: generateId(`minion_${boss.id}`),
                   x: minionX,
                   y: minionY,
                   pathIndex: boss.pathIndex,
-                  pathProgress: boss.pathProgress,
-                  health: 5,
-                  maxHealth: 5,
-                  speed: boss.speed * 0.8,
-                  damage: boss.damage * 0.5,
-                  radius: 4,
+                  pathProgress: Math.max(0, boss.pathProgress - 0.02 * (i + 1)),
+                  health: minionHealth,
+                  maxHealth: minionHealth,
+                  speed: boss.speed * 0.82,
+                  damage: Math.max(2, boss.damage * 0.55),
+                  radius: 8,
                   color: '#DC143C',
                   isBoss: false,
                 });

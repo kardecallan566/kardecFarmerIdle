@@ -51,3 +51,7 @@ Após aumentar a área útil do mapa, a composição ficou mais preenchida verti
 ## Validação do tower defense e modo vertical
 
 A Home atualizada foi carregada com briefing da arena, primeira wave, quantidade de inimigos e próxima wave de chefe. Na partida, a HUD passou a exibir `WAVE 1`, `Próximo chefe: wave 5 (4 waves)`, inimigos ativos, inimigos gerados, barra de progresso, vida da plantação e moedas. A composição foi verificada em viewport vertical, com HUD em duas linhas, mapa central e barra de tropas na base.
+
+## Verificação de tropas, estrada e regador
+
+Na prévia final, a estrada passou a aparecer como uma faixa central escura com bordas, marcação tracejada e setas de direção. O regador ficou no centro da arena, com os quatro canteiros orbitando o núcleo e o cone de água alinhado ao eixo rotativo. A partida carregou com o HUD de wave e o primeiro inimigo sendo gerado no caminho central.

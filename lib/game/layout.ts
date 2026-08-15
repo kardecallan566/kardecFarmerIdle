@@ -15,7 +15,7 @@ function clamp(value: number, min: number, max: number) {
 export function getMapLayout(width: number, windowHeight: number): MapLayout {
   const height = clamp(windowHeight * 0.66, 360, 560);
   const mapRadius = clamp(Math.min(width * 0.38, height * 0.36), 112, 168);
-  const centerY = height * 0.72;
+  const centerY = clamp(height * 0.52, mapRadius + 78, height - 96);
 
   return {
     width,

@@ -87,8 +87,15 @@ export function GameMap() {
       });
 
       if (nearestEnemy && guard.attackCooldown <= 0) {
-        const color = guard.type === 'archer' ? '#FFD700' : '#FF6B6B';
-        addAttackAnimation(guard.x, guard.y, nearestEnemy.x, nearestEnemy.y, 'projectile', color);
+        const isRanged = guard.type === 'archer';
+        addAttackAnimation(
+          guard.x,
+          guard.y,
+          nearestEnemy.x,
+          nearestEnemy.y,
+          isRanged ? 'projectile' : 'slash',
+          isRanged ? '#FFD700' : '#FF6B6B',
+        );
       }
     });
   }, [state.guards, state.enemies, addAttackAnimation]);
@@ -152,15 +159,42 @@ export function GameMap() {
           opacity={0.44}
         />
 
-          <Rect
-
-          x={mapCenterX - 30}
+        <Rect
+          x={mapCenterX - 40}
           y={0}
-          width={60}
+          width={80}
           height={mapCenterY}
           fill="url(#laneBg)"
-          rx={6}
-          opacity={0.85}
+          rx={8}
+          opacity={0.94}
+        />
+        <Line
+          x1={mapCenterX - 39}
+          y1={0}
+          x2={mapCenterX - 39}
+          y2={mapCenterY}
+          stroke="#C9955C"
+          strokeWidth="2"
+          opacity={0.7}
+        />
+        <Line
+          x1={mapCenterX + 39}
+          y1={0}
+          x2={mapCenterX + 39}
+          y2={mapCenterY}
+          stroke="#C9955C"
+          strokeWidth="2"
+          opacity={0.7}
+        />
+        <Line
+          x1={mapCenterX}
+          y1={10}
+          x2={mapCenterX}
+          y2={Math.max(10, mapCenterY - 10)}
+          stroke="#E5B978"
+          strokeWidth="3"
+          strokeDasharray="12 14"
+          opacity={0.72}
         />
         {[0.15, 0.4, 0.65, 0.85].map((pct, idx) => (
           <Path

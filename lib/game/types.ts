@@ -181,18 +181,19 @@ export function getNextBossWave(waveNumber: number): number {
 
 export function getWaveConfig(waveNumber: number): WaveConfig {
   const isBossWave = waveNumber % 5 === 0;
+  const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
   const baseEnemyCount = 4 + Math.floor(waveNumber * 1.5);
-  const baseHealth = 25 + waveNumber * 4;
-  // Escala em pixels por segundo; o loop converte diretamente para o deslocamento do mapa.
-  const baseSpeed = 32 + waveNumber * 2.2;
-  const baseDamage = 5 + Math.floor(waveNumber / 2);
+  const baseHealth = Math.round(28 * waveScale);
+  // Escala em pixels por segundo; a estrada continua legível sem acelerar demais.
+  const baseSpeed = 34 + waveNumber * 3;
+  const baseDamage = Math.max(5, Math.round(5 * waveScale));
 
   return {
     waveNumber,
     enemyCount: isBossWave ? 1 : baseEnemyCount,
-    enemyHealth: isBossWave ? baseHealth * 4 : baseHealth,
-    enemySpeed: isBossWave ? baseSpeed * 1.3 : baseSpeed,
-    enemyDamage: isBossWave ? baseDamage * 2 : baseDamage,
+    enemyHealth: isBossWave ? Math.round(baseHealth * 4.5) : baseHealth,
+    enemySpeed: isBossWave ? baseSpeed * 1.22 : baseSpeed,
+    enemyDamage: isBossWave ? Math.round(baseDamage * 2.2) : baseDamage,
     isBossWave,
   };
 }

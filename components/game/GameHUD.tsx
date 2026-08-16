@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
+import { getBeaconStats, getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 
@@ -16,6 +16,8 @@ export function GameHUD() {
     ? Math.min(100, (state.waveEnemiesSpawned / state.waveEnemiesTotal) * 100)
     : 0;
   const isBossWave = wavesUntilBoss === 0;
+  const beaconStats = getBeaconStats(state.beaconUpgradeLevels);
+  const activePlotCount = state.plots.filter((plot) => plot.unlocked).length;
   const previousHealthRef = useRef(state.plantationHealth);
   const [damageNotice, setDamageNotice] = useState<number | null>(null);
 
@@ -57,6 +59,13 @@ export function GameHUD() {
           </View>
           <Text className="text-[9px] text-[#B6D3B0]">MOEDAS</Text>
         </View>
+      </View>
+
+      <View className="mt-2 flex-row items-center justify-between rounded-xl border border-[#3E6849] bg-[#0B2419] px-2.5 py-1.5">
+        <Text className="text-[10px] font-bold text-[#B6D3B0]">FAROL CENTRAL</Text>
+        <Text className="text-[10px] font-black text-[#F7D774]">
+          Pulso {beaconStats.spawnBatch}x • {activePlotCount}/8 pátios
+        </Text>
       </View>
 
       {damageNotice !== null && (

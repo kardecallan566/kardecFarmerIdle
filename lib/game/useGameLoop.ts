@@ -1,19 +1,42 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useGame } from './GameContext';
 import {
   Enemy,
   Guard,
-  INITIAL_GAME_CONFIG,
+  getBeaconStats,
+  getGuardStats,
   getWaveConfig,
-  GUARD_CONFIGS,
+  INITIAL_GAME_CONFIG,
 } from './types';
 import { distance, generateId } from './utils';
-import { getMapLayout } from './layout';
+import { getMapLayout, getPlotPosition } from './layout';
 
 const GAME_TICK_MS = 33;
 const GAME_DT = GAME_TICK_MS / 1000;
 const GUARD_COMBAT_BUFFER = 0.82;
+const MAX_GUARDS_PER_PLOT = 4;
+
+function clampGuardToHoldRadius(
+  centerX: number,
+  centerY: number,
+  x: number,
+  y: number,
+  holdRadius: number,
+) {
+  const offsetX = x - centerX;
+  const offsetY = y - centerY;
+  const currentRadius = Math.hypot(offsetX, offsetY);
+  if (currentRadius >= holdRadius || currentRadius < 0.001) {
+    return { x, y };
+  }
+
+  const scale = holdRadius / currentRadius;
+  return {
+    x: centerX + offsetX * scale,
+    y: centerY + offsetY * scale,
+  };
+}
 
 export function useGameLoop() {
   const { state, dispatch } = useGame();
@@ -48,8 +71,8 @@ export function useGameLoop() {
         enemySpawnCountRef.current = 0;
         waveTransitionRef.current = false;
       }
+
       enemySpawnTimerRef.current += GAME_DT;
-      const spawnedEnemiesThisTick: Enemy[] = [];
       const spawnInterval = 1 / Math.max(0.8, waveConfig.enemyCount / 6);
       if (
         enemySpawnCountRef.current < waveConfig.enemyCount &&
@@ -66,6 +89,7 @@ export function useGameLoop() {
           maxHealth: waveConfig.enemyHealth,
           speed: waveConfig.enemySpeed,
           damage: waveConfig.enemyDamage,
+          troopDamage: waveConfig.troopDamage,
           radius: waveConfig.isBossWave ? 18 : 12,
           color: waveConfig.isBossWave ? '#8B0000' : '#DC143C',
           isBoss: waveConfig.isBossWave,
@@ -77,7 +101,6 @@ export function useGameLoop() {
               ]
             : undefined,
         };
-        spawnedEnemiesThisTick.push(newEnemy);
         dispatch({ type: 'SPAWN_ENEMY', enemy: newEnemy });
         enemySpawnCountRef.current += 1;
       }
@@ -93,9 +116,10 @@ export function useGameLoop() {
 
       const normAngle = (newAngle + 2 * Math.PI) % (2 * Math.PI);
       const newGuards: Guard[] = [];
+      const beaconStats = getBeaconStats(currentState.beaconUpgradeLevels);
 
       currentState.plots.forEach((plot) => {
-        if (!plot.cropType) return;
+        if (!plot.cropType || !plot.unlocked) return;
 
         const normStart = (plot.angleStart + 2 * Math.PI) % (2 * Math.PI);
         const normEnd = (plot.angleEnd + 2 * Math.PI) % (2 * Math.PI);
@@ -108,18 +132,26 @@ export function useGameLoop() {
 
         dispatch({ type: 'SET_PLOT_WATERED', plotIndex: plot.index, watered: true });
 
-        const config = GUARD_CONFIGS[plot.cropType];
-        const plotAngleCenter = (plot.angleStart + plot.angleEnd) / 2;
-        const plotX = layout.centerX + Math.cos(plotAngleCenter) * layout.plotDistance;
-        const plotY = layout.centerY + Math.sin(plotAngleCenter) * layout.plotDistance;
+        const config = getGuardStats(plot.cropType, currentState.troopUpgradeLevels[plot.cropType]);
+        const plotPosition = getPlotPosition(
+          plot.index,
+          layout.centerX,
+          layout.centerY,
+          layout.plotDistance,
+        );
+        const plotX = plotPosition.x;
+        const plotY = plotPosition.y;
         const guardsFromPlot = currentState.guards.filter((guard) => guard.plotIndex === plot.index);
+        const availableSlots = Math.max(0, MAX_GUARDS_PER_PLOT - guardsFromPlot.length);
+        const spawnCount = Math.min(beaconStats.spawnBatch, availableSlots);
 
-        if (guardsFromPlot.length < 4) {
+        for (let spawnIndex = 0; spawnIndex < spawnCount; spawnIndex += 1) {
+          const centeredIndex = spawnIndex - (spawnCount - 1) / 2;
           newGuards.push({
             id: generateId('guard'),
             plotIndex: plot.index,
-            x: plotX,
-            y: plotY,
+            x: plotX + centeredIndex * 6,
+            y: plotY + Math.abs(centeredIndex) * 3,
             type: plot.cropType,
             health: config.health,
             maxHealth: config.health,
@@ -138,7 +170,7 @@ export function useGameLoop() {
         : currentState.guards;
 
       const defeatedEnemyIds = new Set<string>();
-      const enemiesForTick = [...currentState.enemies, ...spawnedEnemiesThisTick];
+      const enemiesForTick = [...currentState.enemies];
       const updatedEnemies = enemiesForTick
         .map((enemy) => {
           const newProgress = Math.min(
@@ -169,9 +201,8 @@ export function useGameLoop() {
         })
         .filter((enemy): enemy is Enemy => enemy !== null);
 
-      const remainingEnemies = [...updatedEnemies];
       const incomingDamageByGuard = new Map<string, number>();
-      const combatEnemies = remainingEnemies.map((enemy) => {
+      const combatEnemies = updatedEnemies.map((enemy) => {
         const nextEnemyCooldown = Math.max(0, (enemy.attackCooldown ?? 0) - GAME_DT);
         const guardTarget = allGuards
           .filter((guard) =>
@@ -187,17 +218,18 @@ export function useGameLoop() {
         if (guardTarget && attackCooldown <= 0) {
           incomingDamageByGuard.set(
             guardTarget.id,
-            (incomingDamageByGuard.get(guardTarget.id) ?? 0) + enemy.damage,
+            (incomingDamageByGuard.get(guardTarget.id) ?? 0) + enemy.troopDamage,
           );
           attackCooldown = 0.9;
         }
 
         return { ...enemy, attackCooldown };
       });
+
       const guardsAfterDamage = allGuards
         .map((guard) => ({
           ...guard,
-          health: Math.max(0, guard.health - (incomingDamageByGuard.get(guard.id) ?? 0) * GAME_DT),
+          health: Math.max(0, guard.health - (incomingDamageByGuard.get(guard.id) ?? 0)),
         }))
         .filter((guard) => guard.health > 0);
 
@@ -230,8 +262,15 @@ export function useGameLoop() {
                 (guard.moveSpeed ?? 42) * GAME_DT,
               );
               const ratio = moveDistance / Math.max(targetDistance, 1);
-              nextX += (target.x - guard.x) * ratio;
-              nextY += (target.y - guard.y) * ratio;
+              const candidate = clampGuardToHoldRadius(
+                layout.centerX,
+                layout.centerY,
+                guard.x + (target.x - guard.x) * ratio,
+                guard.y + (target.y - guard.y) * ratio,
+                layout.guardHoldDistance,
+              );
+              nextX = candidate.x;
+              nextY = candidate.y;
             }
 
             const distanceAfterMove = distance(
@@ -289,8 +328,8 @@ export function useGameLoop() {
     layout.centerY,
     layout.plotDistance,
     layout.spawnDistance,
+    layout.guardHoldDistance,
     state.gameActive,
     state.gameLost,
   ]);
-
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
-import { GUARD_CONFIGS } from '@/lib/game/types';
+import { getGuardStats, GUARD_CONFIGS } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 
 const GUARD_TYPES = ['warrior', 'archer', 'tank'] as const;
@@ -69,6 +69,7 @@ export function CardBar() {
       >
         {GUARD_TYPES.map((guardType, index) => {
           const config = GUARD_CONFIGS[guardType];
+          const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
           const isSelected = state.selectedCardIndex === index;
           const canAfford = state.coins >= config.cost;
           const unlocked = isTroopUnlocked(index);
@@ -115,7 +116,12 @@ export function CardBar() {
                     style={{ width: 42, height: 42 }}
                   />
                   <View className="flex-1">
-                    <Text className="text-sm font-bold text-[#FFF3C4]">{GUARD_NAMES[guardType]}</Text>
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-sm font-bold text-[#FFF3C4]">{GUARD_NAMES[guardType]}</Text>
+                      <Text className="rounded-full bg-[#DDECC8] px-1.5 py-0.5 text-[8px] font-black text-[#4C7742]">
+                        LV {state.troopUpgradeLevels[guardType] + 1}
+                      </Text>
+                    </View>
                     <Text className="text-[10px] text-[#B6D3B0]">
                       {isSelected ? 'Selecione um terreno' : 'Toque para invocar'}
                     </Text>
@@ -125,13 +131,13 @@ export function CardBar() {
                 <View className="gap-1 mb-2">
                   <View className="flex-row items-center gap-1">
                     <GameIcon name="health" size={14} color="#8DCB63" secondaryColor={GUARD_ACCENTS[guardType]} />
-                    <Text className="text-xs text-[#DDEFC8]">{config.health}</Text>
+                    <Text className="text-xs text-[#DDEFC8]">{stats.health}</Text>
                     <GameIcon name="damage" size={14} color="#F17C52" secondaryColor={GUARD_ACCENTS[guardType]} />
-                    <Text className="text-xs text-[#DDEFC8]">{config.damage}</Text>
+                    <Text className="text-xs text-[#DDEFC8]">{stats.damage}</Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     <GameIcon name="range" size={14} color="#F7C948" secondaryColor={GUARD_ACCENTS[guardType]} />
-                    <Text className="text-xs text-[#DDEFC8]">{config.range}</Text>
+                    <Text className="text-xs text-[#DDEFC8]">{stats.range}</Text>
                     <GameIcon name="speed" size={14} color="#65C7F4" secondaryColor={GUARD_ACCENTS[guardType]} />
                     <Text className="text-xs text-[#DDEFC8]">{config.attackSpeed}</Text>
                   </View>

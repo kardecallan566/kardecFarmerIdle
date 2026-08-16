@@ -1,11 +1,25 @@
 // Game types and interfaces
 
 export type GuardType = 'warrior' | 'archer' | 'tank';
+export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
+
+export interface BeaconUpgradeLevels {
+  lightSpeed: number;
+  multiSpawn: number;
+  extraSlots: number;
+}
+
+export const DEFAULT_BEACON_UPGRADE_LEVELS: BeaconUpgradeLevels = {
+  lightSpeed: 0,
+  multiSpawn: 0,
+  extraSlots: 0,
+};
 
 export interface PersistentProgress {
   bankGold: number;
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;
+  beaconUpgradeLevels: BeaconUpgradeLevels;
   bestWave: number;
   totalGames: number;
 }
@@ -23,14 +37,15 @@ export interface CropPlot {
   angleEnd: number;
   cropType: GuardType | null;
   cropLevel: number;
+  unlocked: boolean;
   x: number;
   y: number;
   isWateredThisCycle: boolean;
 }
 
 export interface SprinklerState {
-  angle: number; // angle in radians (0 to 2*PI)
-  rotationSpeed: number; // radians per second
+  angle: number;
+  rotationSpeed: number;
 }
 
 export interface GameState {
@@ -56,6 +71,7 @@ export interface GameState {
   bankGold: number;
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;
+  beaconUpgradeLevels: BeaconUpgradeLevels;
   bestWave: number;
   totalGames: number;
   progressLoaded: boolean;
@@ -68,11 +84,12 @@ export interface Enemy {
   x: number;
   y: number;
   pathIndex: number;
-  pathProgress: number; // 0 to 1 down the main lane
+  pathProgress: number;
   health: number;
   maxHealth: number;
   speed: number;
   damage: number;
+  troopDamage: number;
   radius: number;
   color: string;
   isBoss: boolean;
@@ -90,7 +107,7 @@ export interface Guard {
   id: string;
   x: number;
   y: number;
-  plotIndex: number; // Which quadrant spawned this guard
+  plotIndex: number;
   type: GuardType;
   health: number;
   maxHealth: number;
@@ -98,7 +115,7 @@ export interface Guard {
   range: number;
   attackSpeed: number;
   attackCooldown: number;
-  /** Velocidade visual de avanço em pixels por segundo até a distância de combate. */
+  /** Velocidade de avanço até a linha segura de combate. */
   moveSpeed?: number;
   color: string;
   targetId?: string;
@@ -128,6 +145,7 @@ export interface WaveConfig {
   enemyHealth: number;
   enemySpeed: number;
   enemyDamage: number;
+  troopDamage: number;
   isBossWave: boolean;
 }
 
@@ -190,7 +208,7 @@ export const GUARD_CONFIGS = {
 
 export function getGuardStats(type: GuardType, upgradeLevel = 0) {
   const base = GUARD_CONFIGS[type];
-  const levelMultiplier = 1 + upgradeLevel * 0.12;
+  const levelMultiplier = 1 + Math.max(0, upgradeLevel) * 0.12;
   return {
     ...base,
     health: Math.round(base.health * levelMultiplier),
@@ -199,10 +217,22 @@ export function getGuardStats(type: GuardType, upgradeLevel = 0) {
   };
 }
 
+export function getBeaconStats(levels: BeaconUpgradeLevels = DEFAULT_BEACON_UPGRADE_LEVELS) {
+  const lightSpeedLevel = Math.min(5, Math.max(0, levels.lightSpeed));
+  const multiSpawnLevel = Math.min(2, Math.max(0, levels.multiSpawn));
+  const extraSlotsLevel = Math.min(4, Math.max(0, levels.extraSlots));
+
+  return {
+    rotationSpeed: (Math.PI / 2) * (1 + lightSpeedLevel * 0.2),
+    spawnBatch: 1 + multiSpawnLevel,
+    unlockedPlotCount: 4 + extraSlotsLevel,
+  };
+}
+
 export const INITIAL_GAME_CONFIG: GameConfig = {
   mapRadius: 150,
   plantationRadius: 30,
-  pathCount: 1, // Single lane path from top
+  pathCount: 1,
   spawnDistance: 220,
   coinGainPerSecond: 2,
   coinGainPerKill: 15,
@@ -224,9 +254,9 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
   const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
   const baseEnemyCount = 4 + Math.floor(waveNumber * 1.5);
   const baseHealth = Math.round(28 * waveScale);
-  // Escala em pixels por segundo; a estrada continua legível sem acelerar demais.
   const baseSpeed = 34 + waveNumber * 3;
   const baseDamage = Math.max(5, Math.round(5 * waveScale));
+  const baseTroopDamage = Math.max(16, Math.round(16 * (1 + Math.max(0, waveNumber - 1) * 0.14)));
 
   return {
     waveNumber,
@@ -234,6 +264,7 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
     enemyHealth: isBossWave ? Math.round(baseHealth * 4.5) : baseHealth,
     enemySpeed: isBossWave ? baseSpeed * 1.22 : baseSpeed,
     enemyDamage: isBossWave ? Math.round(baseDamage * 2.2) : baseDamage,
+    troopDamage: isBossWave ? Math.round(baseTroopDamage * 1.65) : baseTroopDamage,
     isBossWave,
   };
 }

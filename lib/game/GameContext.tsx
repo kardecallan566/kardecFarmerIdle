@@ -1,34 +1,26 @@
-import React, { createContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useEffect, useReducer } from 'react';
 import {
+  BeaconUpgradeType,
+  CropPlot,
+  DEFAULT_BEACON_UPGRADE_LEVELS,
   GameState,
-  Enemy,
-  Guard,
-  Card,
-  GUARD_CONFIGS,
-  INITIAL_GAME_CONFIG,
+  getBeaconStats,
   getWaveConfig,
   GuardType,
+  INITIAL_GAME_CONFIG,
+  PersistentProgress,
 } from './types';
-import {
-  getSpawnPoint,
-  getPositionOnPath,
-  distance,
-  generateId,
-  generateUpgradeOptions,
-} from './utils';
-
-import { CropPlot, SprinklerState } from './types';
 import { getPersistentProgress, savePersistentProgress } from './storage';
 
-type GameAction =
+export type GameAction =
   | { type: 'INIT_GAME' }
   | { type: 'RESET_GAME' }
-  | { type: 'UPDATE_ENEMIES'; enemies: Enemy[] }
-  | { type: 'UPDATE_ENEMY'; enemyId: string; patch: Partial<Enemy> }
-  | { type: 'ADD_ENEMIES'; enemies: Enemy[] }
-  | { type: 'UPDATE_GUARDS'; guards: Guard[] }
-  | { type: 'ADD_GUARD'; guard: Guard }
-  | { type: 'SPAWN_ENEMY'; enemy: Enemy }
+  | { type: 'UPDATE_ENEMIES'; enemies: GameState['enemies'] }
+  | { type: 'UPDATE_ENEMY'; enemyId: string; patch: Partial<GameState['enemies'][number]> }
+  | { type: 'ADD_ENEMIES'; enemies: GameState['enemies'] }
+  | { type: 'UPDATE_GUARDS'; guards: GameState['guards'] }
+  | { type: 'ADD_GUARD'; guard: GameState['guards'][number] }
+  | { type: 'SPAWN_ENEMY'; enemy: GameState['enemies'][number] }
   | { type: 'REMOVE_ENEMY'; enemyId: string }
   | { type: 'DAMAGE_PLANTATION'; amount: number }
   | { type: 'ADD_COINS'; amount: number }
@@ -41,66 +33,61 @@ type GameAction =
   | { type: 'UPDATE_CARD_COOLDOWN'; cardIndex: number }
   | { type: 'APPLY_UPGRADE'; upgradeIndex: number }
   | { type: 'ENEMY_REACHED_CENTER'; enemyId: string }
-  | { type: 'PLANT_CROP'; plotIndex: number; cropType: 'warrior' | 'archer' | 'tank' }
+  | { type: 'PLANT_CROP'; plotIndex: number; cropType: GuardType }
   | { type: 'SELECT_PLOT'; plotIndex: number | null }
   | { type: 'UPDATE_SPRINKLER'; angle: number }
   | { type: 'SET_PLOT_WATERED'; plotIndex: number; watered: boolean }
   | { type: 'RESET_WATERED_FLAGS' }
-  | { type: 'LOAD_PROGRESS'; progress: { bankGold: number; unlockedTroops: GuardType[]; troopUpgradeLevels: Record<GuardType, number>; bestWave: number; totalGames: number } }
+  | { type: 'LOAD_PROGRESS'; progress: PersistentProgress }
   | { type: 'CLAIM_RUN_REWARD' }
   | { type: 'UNLOCK_TROOP'; troopType: GuardType; cost: number }
-  | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; cost: number };
+  | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; cost: number }
+  | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; cost: number };
+
+function createPlot(
+  index: number,
+  name: string,
+  angleStart: number,
+  angleEnd: number,
+  unlocked: boolean,
+  cropType: GuardType | null = null,
+): CropPlot {
+  return {
+    id: `plot_${index}`,
+    index,
+    name,
+    angleStart,
+    angleEnd,
+    cropType,
+    cropLevel: cropType ? 1 : 0,
+    unlocked,
+    x: 0,
+    y: 0,
+    isWateredThisCycle: false,
+  };
+}
 
 const initialPlots: CropPlot[] = [
-  {
-    id: 'plot_0',
-    index: 0,
-    name: 'Quadrante Leste (NE)',
-    angleStart: -Math.PI / 4,
-    angleEnd: Math.PI / 4,
-    cropType: 'warrior',
-    cropLevel: 1,
-    x: 0,
-    y: 0,
-    isWateredThisCycle: false,
-  },
-  {
-    id: 'plot_1',
-    index: 1,
-    name: 'Quadrante Sul (SE)',
-    angleStart: Math.PI / 4,
-    angleEnd: (3 * Math.PI) / 4,
-    cropType: null,
-    cropLevel: 0,
-    x: 0,
-    y: 0,
-    isWateredThisCycle: false,
-  },
-  {
-    id: 'plot_2',
-    index: 2,
-    name: 'Quadrante Oeste (SO)',
-    angleStart: (3 * Math.PI) / 4,
-    angleEnd: (5 * Math.PI) / 4,
-    cropType: null,
-    cropLevel: 0,
-    x: 0,
-    y: 0,
-    isWateredThisCycle: false,
-  },
-  {
-    id: 'plot_3',
-    index: 3,
-    name: 'Quadrante Norte (NO)',
-    angleStart: (5 * Math.PI) / 4,
-    angleEnd: (7 * Math.PI) / 4,
-    cropType: null,
-    cropLevel: 0,
-    x: 0,
-    y: 0,
-    isWateredThisCycle: false,
-  },
+  createPlot(0, 'Pátio Leste', -Math.PI / 8, Math.PI / 8, true, 'warrior'),
+  createPlot(1, 'Pátio Sudeste', Math.PI / 8, 3 * Math.PI / 8, true),
+  createPlot(2, 'Pátio Sul', 3 * Math.PI / 8, 5 * Math.PI / 8, true),
+  createPlot(3, 'Pátio Sudoeste', 5 * Math.PI / 8, 7 * Math.PI / 8, true),
+  createPlot(4, 'Pátio Oeste', 7 * Math.PI / 8, 9 * Math.PI / 8, false),
+  createPlot(5, 'Pátio Noroeste', 9 * Math.PI / 8, 11 * Math.PI / 8, false),
+  createPlot(6, 'Pátio Norte', 11 * Math.PI / 8, 13 * Math.PI / 8, false),
+  createPlot(7, 'Pátio Nordeste', 13 * Math.PI / 8, 15 * Math.PI / 8, false),
 ];
+
+function createRunPlots(beaconUpgradeLevels = DEFAULT_BEACON_UPGRADE_LEVELS): CropPlot[] {
+  const unlockedPlotCount = getBeaconStats(beaconUpgradeLevels).unlockedPlotCount;
+  return initialPlots.map((plot) => ({
+    ...plot,
+    unlocked: plot.index < unlockedPlotCount,
+    cropType: plot.index === 0 ? 'warrior' : null,
+    cropLevel: plot.index === 0 ? 1 : 0,
+    isWateredThisCycle: false,
+  }));
+}
 
 const initialState: GameState = {
   wave: 1,
@@ -111,8 +98,8 @@ const initialState: GameState = {
   gameLost: false,
   enemies: [],
   guards: [],
-  plots: initialPlots,
-  sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 }, // 1 full turn per 4 seconds
+  plots: createRunPlots(),
+  sprinkler: { angle: 0, rotationSpeed: getBeaconStats().rotationSpeed },
   selectedPlotIndex: null,
   waveEnemiesRemaining: 0,
   waveEnemiesTotal: getWaveConfig(1).enemyCount,
@@ -125,6 +112,7 @@ const initialState: GameState = {
   bankGold: 0,
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
+  beaconUpgradeLevels: { ...DEFAULT_BEACON_UPGRADE_LEVELS },
   bestWave: 0,
   totalGames: 0,
   progressLoaded: false,
@@ -134,12 +122,20 @@ const initialState: GameState = {
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'LOAD_PROGRESS':
+    case 'LOAD_PROGRESS': {
+      const beaconUpgradeLevels = action.progress.beaconUpgradeLevels ?? DEFAULT_BEACON_UPGRADE_LEVELS;
       return {
         ...state,
         ...action.progress,
+        beaconUpgradeLevels,
+        plots: createRunPlots(beaconUpgradeLevels),
+        sprinkler: {
+          ...state.sprinkler,
+          rotationSpeed: getBeaconStats(beaconUpgradeLevels).rotationSpeed,
+        },
         progressLoaded: true,
       };
+    }
 
     case 'CLAIM_RUN_REWARD': {
       if (!state.gameLost || state.runRewardClaimed) return state;
@@ -176,16 +172,48 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       };
 
+    case 'BUY_BEACON_UPGRADE': {
+      const currentLevel = state.beaconUpgradeLevels[action.upgradeType];
+      const maxLevel = action.upgradeType === 'multiSpawn' ? 2 : action.upgradeType === 'extraSlots' ? 4 : 5;
+      if (currentLevel >= maxLevel || state.bankGold < action.cost) return state;
+
+      const beaconUpgradeLevels = {
+        ...state.beaconUpgradeLevels,
+        [action.upgradeType]: currentLevel + 1,
+      };
+      return {
+        ...state,
+        bankGold: state.bankGold - action.cost,
+        beaconUpgradeLevels,
+        plots: createRunPlots(beaconUpgradeLevels),
+        sprinkler: {
+          ...state.sprinkler,
+          rotationSpeed: getBeaconStats(beaconUpgradeLevels).rotationSpeed,
+        },
+      };
+    }
+
     case 'RESET_GAME':
       return {
         ...initialState,
-        plots: initialPlots.map((plot) => ({ ...plot, isWateredThisCycle: false })),
+        plots: createRunPlots(state.beaconUpgradeLevels),
+        beaconUpgradeLevels: state.beaconUpgradeLevels,
+        bankGold: state.bankGold,
+        unlockedTroops: state.unlockedTroops,
+        troopUpgradeLevels: state.troopUpgradeLevels,
+        bestWave: state.bestWave,
+        totalGames: state.totalGames,
+        progressLoaded: state.progressLoaded,
+        sprinkler: {
+          angle: 0,
+          rotationSpeed: getBeaconStats(state.beaconUpgradeLevels).rotationSpeed,
+        },
       };
 
     case 'INIT_GAME':
       return {
         ...initialState,
-        plots: initialPlots.map(p => ({ ...p, isWateredThisCycle: false })),
+        plots: createRunPlots(state.beaconUpgradeLevels),
         wave: 1,
         coins: 250,
         plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
@@ -198,10 +226,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         waveEnemiesRemaining: 0,
         waveEnemiesTotal: getWaveConfig(1).enemyCount,
         waveEnemiesSpawned: 0,
-        sprinkler: { angle: 0, rotationSpeed: Math.PI / 2 },
+        sprinkler: {
+          angle: 0,
+          rotationSpeed: getBeaconStats(state.beaconUpgradeLevels).rotationSpeed,
+        },
         bankGold: state.bankGold,
         unlockedTroops: state.unlockedTroops,
         troopUpgradeLevels: state.troopUpgradeLevels,
+        beaconUpgradeLevels: state.beaconUpgradeLevels,
         bestWave: state.bestWave,
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
@@ -311,6 +343,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, placingMode: action.enabled };
 
     case 'PLANT_CROP': {
+      const selectedPlot = state.plots.find((plot) => plot.index === action.plotIndex);
+      if (!selectedPlot?.unlocked) return state;
       const updatedPlots = state.plots.map((plot) => {
         if (plot.index === action.plotIndex) {
           return {
@@ -327,11 +361,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         plots: updatedPlots,
         selectedPlotIndex: null,
         selectedCardIndex: null,
+        placingMode: false,
       };
     }
 
     case 'SELECT_PLOT':
-      return { ...state, selectedPlotIndex: action.plotIndex };
+      return {
+        ...state,
+        selectedPlotIndex: state.plots.some((plot) => plot.index === action.plotIndex && plot.unlocked)
+          ? action.plotIndex
+          : null,
+      };
 
     case 'UPDATE_SPRINKLER':
       return {
@@ -349,13 +389,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, plots: updatedPlots };
     }
 
-    case 'RESET_WATERED_FLAGS': {
-      const updatedPlots = state.plots.map((plot) => ({
-        ...plot,
-        isWateredThisCycle: false,
-      }));
-      return { ...state, plots: updatedPlots };
-    }
+    case 'RESET_WATERED_FLAGS':
+      return {
+        ...state,
+        plots: state.plots.map((plot) => ({ ...plot, isWateredThisCycle: false })),
+      };
 
     case 'APPLY_UPGRADE':
       return { ...state, upgrades: [...state.upgrades] };
@@ -381,7 +419,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     if (!state.progressLoaded) return;
@@ -389,6 +427,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       bankGold: state.bankGold,
       unlockedTroops: state.unlockedTroops,
       troopUpgradeLevels: state.troopUpgradeLevels,
+      beaconUpgradeLevels: state.beaconUpgradeLevels,
       bestWave: state.bestWave,
       totalGames: state.totalGames,
     });
@@ -397,11 +436,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     state.bankGold,
     state.unlockedTroops,
     state.troopUpgradeLevels,
+    state.beaconUpgradeLevels,
     state.bestWave,
     state.totalGames,
   ]);
 
-  // Game loop for passive coin generation
   useEffect(() => {
     if (!state.gameActive) return;
 
@@ -410,10 +449,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'ADD_COINS', amount: coinsPerFrame });
     }, 100);
 
-    return () => {
-      clearInterval(loopInterval);
-    };
-  }, [state.gameActive, dispatch]);
+    return () => clearInterval(loopInterval);
+  }, [state.gameActive]);
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

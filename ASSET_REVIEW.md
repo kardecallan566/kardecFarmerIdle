@@ -111,3 +111,19 @@ A segunda partida permaneceu estável após o reinício e avançou até a Wave 5
 ## Validação direta de Acampamento e Home no Game Over
 
 Na segunda tela real de Game Over, `Abrir Acampamento` abriu o Acampamento do Farol com a recompensa da run e os controles de upgrades. Em seguida, `Voltar ao menu principal` retornou à Home, que voltou a exibir os botões `INICIAR DEFESA` e `ACAMPAMENTO DO FAROL` funcionando.
+
+## Expansão do farol e novo cenário
+
+O build atualizado carregou o novo cenário de bosque com pequena vila, riachos, casas e clareira central. O Acampamento passou a exibir `Feixe mais veloz`, `Pulso duplo` e `Pátios da vila`; após comprar velocidade e um pátio, a arena mostrou `Pulso 1x • 5/8 pátios`, oito posições visuais com bloqueios e a `LINHA DE DEFESA` ao redor do farol.
+
+## Persistência e multi-geração
+
+Um perfil de teste com upgrades persistidos foi recarregado sem perda. A arena exibiu `Pulso 3x • 8/8 pátios`; os cards mostraram Guerreiro `Vida 68 • Dano 20`, Arqueiro `Vida 37 • Dano 15` e Tanque `Vida 124 • Dano 10`. O farol percorreu a arena e uma tropa foi vista avançando pela estrada sem ocupar o centro.
+
+## Confirmação objetiva do pulso múltiplo
+
+Com `multiSpawn: 2`, a arena exibiu `Pulso 3x`. A inspeção dos elementos SVG encontrou o sprite do Guerreiro no plot e mais três sprites de Guerreiro gerados em posições distintas, confirmando que a melhoria gera múltiplas tropas de fato.
+
+## Pressão de combate contra tropas
+
+Com upgrades do farol e tropas fortalecidas, a run avançou até a Wave 6 e terminou em Game Over com apenas duas guardas colocadas. Isso confirma que o dano direto contra tropas está ativo e que inimigos de waves avançadas conseguem eliminar unidades, em vez de apenas causar dano visual à plantação.

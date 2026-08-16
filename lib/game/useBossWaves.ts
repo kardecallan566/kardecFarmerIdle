@@ -70,6 +70,7 @@ export function useBossWaves() {
                   maxHealth: minionHealth,
                   speed: boss.speed * 0.82,
                   damage: Math.max(2, boss.damage * 0.55),
+                  troopDamage: Math.max(8, boss.troopDamage * 0.55),
                   radius: 8,
                   color: '#DC143C',
                   isBoss: false,

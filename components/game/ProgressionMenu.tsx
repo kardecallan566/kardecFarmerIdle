@@ -1,9 +1,9 @@
 import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
-import { GUARD_CONFIGS, GuardType } from '@/lib/game/types';
+import { BeaconUpgradeType, getBeaconStats, getGuardStats, GUARD_CONFIGS, GuardType } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 
-const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
+const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 const GUARD_IMAGES = {
   warrior: require('@/assets/images/guard-warrior.png'),
   archer: require('@/assets/images/guard-archer.png'),
@@ -13,6 +13,36 @@ const GUARD_IMAGES = {
 const TROOP_ORDER: GuardType[] = ['warrior', 'archer', 'tank'];
 const UNLOCK_COSTS: Record<GuardType, number> = { warrior: 0, archer: 180, tank: 360 };
 const UPGRADE_BASE_COSTS: Record<GuardType, number> = { warrior: 120, archer: 160, tank: 200 };
+
+const BEACON_UPGRADES: {
+  type: BeaconUpgradeType;
+  name: string;
+  description: string;
+  maxLevel: number;
+  getCost: (level: number) => number;
+}[] = [
+  {
+    type: 'lightSpeed',
+    name: 'Feixe mais veloz',
+    description: 'Acelera a rotação do farol em 20% por nível.',
+    maxLevel: 5,
+    getCost: (level) => 180 + level * 120,
+  },
+  {
+    type: 'multiSpawn',
+    name: 'Pulso duplo',
+    description: 'Cada iluminação pode gerar mais de uma tropa.',
+    maxLevel: 2,
+    getCost: (level) => 320 + level * 220,
+  },
+  {
+    type: 'extraSlots',
+    name: 'Pátios da vila',
+    description: 'Libera novos locais ao redor do farol para posicionar tropas.',
+    maxLevel: 4,
+    getCost: (level) => 220 + level * 160,
+  },
+];
 
 interface ProgressionMenuProps {
   onStartGame: () => void;
@@ -24,12 +54,13 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
   const { width } = useWindowDimensions();
   const isCompact = width < 390;
   const nextUnlock = TROOP_ORDER.find((type) => !state.unlockedTroops.includes(type));
+  const beaconStats = getBeaconStats(state.beaconUpgradeLevels);
 
   const claimReward = () => dispatch({ type: 'CLAIM_RUN_REWARD' });
 
   return (
     <ImageBackground
-      source={FARM_BACKGROUND}
+      source={FOREST_VILLAGE_BACKGROUND}
       resizeMode="cover"
       imageStyle={{ opacity: 0.3 }}
       style={{ flex: 1 }}
@@ -101,11 +132,68 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             <Text className="mt-1 text-[10px] text-[#71835E]">{state.unlockedTroops.length}/{TROOP_ORDER.length} tropas disponíveis</Text>
           </View>
 
+          <View className="rounded-3xl border border-[#B8C99A] bg-[#F1F8E8]/95 p-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-[10px] font-black tracking-[1.5px] text-[#71835E]">EVOLUÇÃO DO FAROL</Text>
+                <Text className="mt-1 text-lg font-black text-[#294F2E]">Mais luz, mais defesa</Text>
+                <Text className="mt-1 text-xs leading-4 text-[#71835E]">Aprimore a estrutura central para acelerar a geração e abrir novos pátios.</Text>
+              </View>
+              <View className="ml-3 items-center rounded-2xl bg-[#DDECC8] px-3 py-2">
+                <Text className="text-xl font-black text-[#315F40]">{beaconStats.spawnBatch}x</Text>
+                <Text className="text-[9px] font-black text-[#71835E]">PULSO</Text>
+              </View>
+            </View>
+
+            {BEACON_UPGRADES.map((upgrade) => {
+              const level = state.beaconUpgradeLevels[upgrade.type];
+              const isMaxed = level >= upgrade.maxLevel;
+              const cost = upgrade.getCost(level);
+              const canBuy = !isMaxed && state.bankGold >= cost;
+              const valueLabel = upgrade.type === 'lightSpeed'
+                ? `Velocidade do feixe: +${level * 20}%`
+                : upgrade.type === 'multiSpawn'
+                  ? `Geração por pulso: ${beaconStats.spawnBatch} tropa(s)`
+                  : `Pátios ativos: ${beaconStats.unlockedPlotCount}/8`;
+
+              return (
+                <View key={upgrade.type} className="mt-3 rounded-2xl border border-[#C9D9BC] bg-[#F9FCEB] p-3">
+                  <View className="flex-row items-center justify-between gap-3">
+                    <View className="flex-1">
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-sm font-black text-[#294F2E]">{upgrade.name}</Text>
+                        <Text className="rounded-full bg-[#DDECC8] px-2 py-0.5 text-[9px] font-black text-[#4C7742]">LV {level}/{upgrade.maxLevel}</Text>
+                      </View>
+                      <Text className="mt-1 text-[10px] leading-4 text-[#71835E]">{upgrade.description}</Text>
+                      <Text className="mt-1 text-[10px] font-bold text-[#4C7742]">{valueLabel}</Text>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => dispatch({ type: 'BUY_BEACON_UPGRADE', upgradeType: upgrade.type, cost })}
+                    disabled={!canBuy}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Melhorar ${upgrade.name}`}
+                    style={({ pressed }) => ({
+                      marginTop: 10,
+                      transform: [{ scale: pressed && canBuy ? 0.98 : 1 }],
+                      opacity: pressed && canBuy ? 0.9 : 1,
+                    })}
+                  >
+                    <View className={`items-center rounded-xl px-3 py-2.5 ${isMaxed ? 'bg-[#8AA47A]' : canBuy ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
+                      <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${cost} GOLD`}</Text>
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+
           <View className="gap-2">
             {TROOP_ORDER.map((troopType) => {
               const config = GUARD_CONFIGS[troopType];
               const unlocked = state.unlockedTroops.includes(troopType);
               const level = state.troopUpgradeLevels[troopType];
+              const stats = getGuardStats(troopType, level);
               const unlockCost = UNLOCK_COSTS[troopType];
               const upgradeCost = UPGRADE_BASE_COSTS[troopType] * (level + 1);
               const canBuyUnlock = state.bankGold >= unlockCost;
@@ -122,7 +210,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                         <Text className="text-base font-black text-[#294F2E]">{config.name}</Text>
                         <Text className="rounded-full bg-[#DDECC8] px-2 py-0.5 text-[9px] font-black text-[#4C7742]">LV {level + 1}</Text>
                       </View>
-                      <Text className="mt-1 text-[10px] leading-4 text-[#71835E]">Vida {config.health} • Dano {config.damage} • Alcance {config.range}</Text>
+                      <Text className="mt-1 text-[10px] leading-4 text-[#71835E]">Vida {stats.health} • Dano {stats.damage} • Alcance {stats.range}</Text>
                     </View>
                   </View>
 

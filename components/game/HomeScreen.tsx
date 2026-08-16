@@ -4,7 +4,7 @@ import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 
 const GAME_LOGO = require('@/assets/images/logo-kardec-farmer.png');
-const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
+const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 
 interface HomeScreenProps {
   onStartGame?: () => void;
@@ -20,7 +20,7 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
 
   return (
     <ImageBackground
-      source={FARM_BACKGROUND}
+      source={FOREST_VILLAGE_BACKGROUND}
       resizeMode="cover"
       imageStyle={{ opacity: 0.32 }}
       style={{ flex: 1 }}
@@ -48,7 +48,7 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
               Tower Defense agrícola
             </Text>
             <Text className="mt-1 text-center text-xs text-[#6F765F]">
-              Organize suas tropas, segure a estrada e proteja o farol central.
+              Organize suas tropas, proteja o farol e resista no bosque da vila.
             </Text>
           </View>
 

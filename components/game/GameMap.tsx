@@ -4,7 +4,7 @@ import Svg, { Circle, Line, Rect, G, Text as SvgText, Image as SvgImage, Path, D
 import { useGame } from '@/lib/game/GameContext';
 import { INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
-import { getMapLayout } from '@/lib/game/layout';
+import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
 import { useDeathAnimations } from '@/lib/game/useDeathAnimations';
 import { useCoinAnimations } from '@/lib/game/useCoinAnimations';
@@ -23,7 +23,7 @@ const ENEMY_IMAGES = {
   boss: require('@/assets/images/enemy-boss.png'),
 };
 
-const FARM_BACKGROUND = require('@/assets/images/farm-background.png');
+const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 
 export function GameMap() {
   const { state, dispatch } = useGame();
@@ -61,12 +61,11 @@ export function GameMap() {
     previousPlantationHealthRef.current = state.plantationHealth;
   }, [state.plantationHealth]);
 
-  const plotPositions = [
-    { index: 0, name: 'Quadrante Leste', x: mapCenterX + plotDist, y: mapCenterY },
-    { index: 1, name: 'Quadrante Sul', x: mapCenterX, y: mapCenterY + plotDist },
-    { index: 2, name: 'Quadrante Oeste', x: mapCenterX - plotDist, y: mapCenterY },
-    { index: 3, name: 'Quadrante Norte', x: mapCenterX, y: mapCenterY - plotDist },
-  ];
+  const plotPositions = state.plots.map((plot) => ({
+    ...getPlotPosition(plot.index, mapCenterX, mapCenterY, plotDist),
+    index: plot.index,
+    name: plot.name,
+  }));
 
   useEffect(() => {
     const currentEnemyIds = new Set(state.enemies.map((enemy) => enemy.id));
@@ -114,6 +113,9 @@ export function GameMap() {
   }, [state.guards, state.enemies, addAttackAnimation]);
 
   const handlePlotPress = (plotIndex: number) => {
+    const selectedPlot = state.plots.find((plot) => plot.index === plotIndex);
+    if (!selectedPlot?.unlocked) return;
+
     if (state.selectedCardIndex !== null) {
       const cropTypes = ['warrior', 'archer', 'tank'] as const;
       const cropType = cropTypes[state.selectedCardIndex];
@@ -149,9 +151,10 @@ export function GameMap() {
         viewBox={`0 0 ${mapLayout.width} ${mapLayout.height}`}
       >
         <Defs>
-          <LinearGradient id="farmBg" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#e2d2b4" />
-            <Stop offset="100%" stopColor="#c8b48c" />
+          <LinearGradient id="forestBg" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#183A2A" />
+            <Stop offset="55%" stopColor="#315941" />
+            <Stop offset="100%" stopColor="#203C2B" />
           </LinearGradient>
           <LinearGradient id="laneBg" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0%" stopColor="#7a5530" />
@@ -159,15 +162,15 @@ export function GameMap() {
           </LinearGradient>
         </Defs>
 
-        <Rect width={mapLayout.width} height={mapLayout.height} fill="url(#farmBg)" />
+        <Rect width={mapLayout.width} height={mapLayout.height} fill="url(#forestBg)" />
         <SvgImage
-          href={FARM_BACKGROUND}
+          href={FOREST_VILLAGE_BACKGROUND}
           x={0}
           y={0}
           width={mapLayout.width}
           height={mapLayout.height}
           preserveAspectRatio="xMidYMid slice"
-          opacity={0.44}
+          opacity={0.62}
         />
 
         <Rect
@@ -222,6 +225,7 @@ export function GameMap() {
           const plot = state.plots.find((p) => p.index === pos.index);
           const isSelected = state.selectedPlotIndex === pos.index;
           const isIlluminated = plot?.isWateredThisCycle;
+          const isLocked = !plot?.unlocked;
 
           return (
             <G key={`plot_group_${pos.index}`}>
@@ -231,13 +235,20 @@ export function GameMap() {
                 width={68}
                 height={68}
                 rx={14}
-                fill={isIlluminated ? '#3d6330' : '#5c3d2e'}
-                stroke={isSelected ? '#3182ce' : isIlluminated ? '#F7D774' : '#8c5e47'}
+                fill={isLocked ? '#243D35' : isIlluminated ? '#3d6330' : '#5c3d2e'}
+                stroke={isLocked ? '#78927C' : isSelected ? '#3182ce' : isIlluminated ? '#F7D774' : '#8c5e47'}
                 strokeWidth={isSelected ? 3 : 2}
+                strokeDasharray={isLocked ? '5 4' : undefined}
                 onPress={() => handlePlotPress(pos.index)}
               />
 
-              {isIlluminated && (
+              {isLocked ? (
+                <G>
+                  <Circle cx={pos.x} cy={pos.y - 5} r={8} fill="#9BB4A0" opacity={0.9} />
+                  <Path d={`M ${pos.x - 5} ${pos.y - 5} L ${pos.x - 5} ${pos.y - 1} L ${pos.x + 5} ${pos.y - 1} L ${pos.x + 5} ${pos.y - 5}`} fill="none" stroke="#243D35" strokeWidth="2" />
+                  <SvgText x={pos.x} y={pos.y + 18} fontSize={8} fill="#DDEFC8" fontWeight="bold" textAnchor="middle">BLOQUEADO</SvgText>
+                </G>
+              ) : isIlluminated && (
                 <Circle
                   cx={pos.x}
                   cy={pos.y}
@@ -301,6 +312,28 @@ export function GameMap() {
             </G>
           );
         })}
+
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
+          r={mapLayout.guardHoldDistance}
+          fill="none"
+          stroke="#B8D491"
+          strokeWidth="2"
+          strokeDasharray="6 8"
+          opacity={0.56}
+        />
+        <SvgText
+          x={mapCenterX}
+          y={mapCenterY - mapLayout.guardHoldDistance - 8}
+          fontSize={8}
+          fill="#DDEFC8"
+          textAnchor="middle"
+          fontWeight="bold"
+          opacity={0.8}
+        >
+          LINHA DE DEFESA
+        </SvgText>
 
         <Circle
           cx={mapCenterX}

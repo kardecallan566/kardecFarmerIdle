@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { GuardType, PersistentProgress } from './types';
+import { DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
 
 const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
@@ -13,6 +14,7 @@ export const DEFAULT_PERSISTENT_PROGRESS: PersistentProgress = {
   bankGold: 0,
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
+  beaconUpgradeLevels: { ...DEFAULT_BEACON_UPGRADE_LEVELS },
   bestWave: 0,
   totalGames: 0,
 };
@@ -96,7 +98,7 @@ export async function getTotalCoinsEarned(): Promise<number> {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_COINS_EARNED);
     return value ? parseInt(value, 10) : 0;
   } catch (error) {
-    console.error('Error getting coins earned:', error);
+    console.error('Error getting total coins earned:', error);
     return 0;
   }
 }
@@ -116,6 +118,11 @@ function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentP
       archer: Math.max(0, Number(raw?.troopUpgradeLevels?.archer) || 0),
       tank: Math.max(0, Number(raw?.troopUpgradeLevels?.tank) || 0),
     },
+    beaconUpgradeLevels: {
+      lightSpeed: Math.min(5, Math.max(0, Number(raw?.beaconUpgradeLevels?.lightSpeed) || 0)),
+      multiSpawn: Math.min(2, Math.max(0, Number(raw?.beaconUpgradeLevels?.multiSpawn) || 0)),
+      extraSlots: Math.min(4, Math.max(0, Number(raw?.beaconUpgradeLevels?.extraSlots) || 0)),
+    },
     bestWave: Math.max(0, Number(raw?.bestWave) || 0),
     totalGames: Math.max(0, Number(raw?.totalGames) || 0),
   };
@@ -124,7 +131,9 @@ function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentP
 export async function getPersistentProgress(): Promise<PersistentProgress> {
   try {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.PERSISTENT_PROGRESS);
-    return value ? normalizeProgress(JSON.parse(value) as Partial<PersistentProgress>) : DEFAULT_PERSISTENT_PROGRESS;
+    return value
+      ? normalizeProgress(JSON.parse(value) as Partial<PersistentProgress>)
+      : DEFAULT_PERSISTENT_PROGRESS;
   } catch (error) {
     console.error('Error getting persistent progress:', error);
     return DEFAULT_PERSISTENT_PROGRESS;

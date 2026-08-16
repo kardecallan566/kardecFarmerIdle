@@ -123,9 +123,19 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
           </Pressable>
 
           {onOpenCamp && (
-            <Pressable onPress={onOpenCamp} className="items-center rounded-2xl border border-[#9EBC7A] bg-[#EAF4D8]/95 px-6 py-3 active:opacity-80">
-              <Text className="text-sm font-black tracking-wide text-[#376333]">ACAMPAMENTO DO FAROL</Text>
-              <Text className="mt-0.5 text-[10px] font-bold text-[#71835E]">Upgrades e desbloqueios persistentes</Text>
+            <Pressable
+              onPress={onOpenCamp}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir Acampamento do Farol"
+              style={({ pressed }) => ({
+                transform: [{ scale: pressed ? 0.98 : 1 }],
+                opacity: pressed ? 0.9 : 1,
+              })}
+            >
+              <View className="items-center rounded-2xl border border-[#9EBC7A] bg-[#EAF4D8]/95 px-6 py-3">
+                <Text className="text-sm font-black tracking-wide text-[#376333]">ACAMPAMENTO DO FAROL</Text>
+                <Text className="mt-0.5 text-[10px] font-bold text-[#71835E]">Upgrades e desbloqueios persistentes</Text>
+              </View>
             </Pressable>
           )}
 

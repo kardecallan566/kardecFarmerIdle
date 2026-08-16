@@ -87,3 +87,27 @@ No build final, a Wave 1 foi concluída com `5/5` inimigos gerados e a Wave 2 in
 ## Verificação de persistência entre partidas
 
 Foi semeado um perfil de teste no armazenamento web e a aplicação foi recarregada. A Home recuperou corretamente 600 gold, Wave máxima 4 e 2/3 tropas desbloqueadas, confirmando que a meta-progressão é lida fora da arena e não depende do estado temporário da run.
+
+## Auditoria de botões do Game Over — validação intermediária
+
+No build corrigido, o botão da Home abriu o Acampamento do Farol; o botão `Voltar ao menu principal` retornou à Home; `VOLTAR À ARENA` iniciou uma partida nova com Wave 1, 250 moedas e plantação 100/100. A árvore acessível do navegador reconheceu os controles corrigidos como `button`, incluindo as ações de treino, desbloqueio, arena e retorno.
+
+## Reprodução natural da derrota
+
+A partida de teste avançou até a Wave 5 e exibiu o aviso `PLANTAÇÃO ATINGIDA −20 VIDA`, reduzindo a plantação para 56/100. O loop continuou corretamente para a Wave 6, permitindo aguardar a tela de Game Over sem inserir um mecanismo de teste permanente.
+
+## Validação direta do botão Jogar Novamente
+
+Na tela real de Game Over (`Plantação: 0/100`), o botão `Jogar Novamente` respondeu ao toque e retornou para a arena na Wave 1, com plantação 100/100, 250 moedas, `0/5` inimigos gerados e sem estado residual da derrota.
+
+## Estabilidade após reinício
+
+Após usar `Jogar Novamente`, a segunda partida avançou normalmente da Wave 2 para a Wave 3, mantendo o loop, o HUD e o spawn ativos. Isso confirma que o reset não deixa a arena presa no estado de Game Over.
+
+## Segunda reprodução até o chefe
+
+A segunda partida permaneceu estável após o reinício e avançou até a Wave 5. O dano progressivo foi exibido na HUD e a plantação chegou a 56/100 durante a arena do chefe, sem travamento ou regressão de estado.
+
+## Validação direta de Acampamento e Home no Game Over
+
+Na segunda tela real de Game Over, `Abrir Acampamento` abriu o Acampamento do Farol com a recompensa da run e os controles de upgrades. Em seguida, `Voltar ao menu principal` retornou à Home, que voltou a exibir os botões `INICIAR DEFESA` e `ACAMPAMENTO DO FAROL` funcionando.

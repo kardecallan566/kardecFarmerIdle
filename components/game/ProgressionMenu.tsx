@@ -61,10 +61,18 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
               <Text className="mt-1 text-xs leading-4 text-[#9A7740]">Converta o desempenho da partida em gold permanente para comprar melhorias.</Text>
               <Pressable
                 onPress={claimReward}
-                className="mt-3 items-center rounded-2xl border-b-4 border-[#A26826] bg-[#D49B3C] px-4 py-3 active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel="Resgatar recompensa da última defesa"
+                style={({ pressed }) => ({
+                  marginTop: 12,
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                  opacity: pressed ? 0.9 : 1,
+                })}
               >
-                <Text className="text-sm font-black text-white">RESGATAR RECOMPENSA</Text>
-                <Text className="mt-0.5 text-[10px] font-bold text-[#FFF1C8]">Wave {state.wave} • {state.totalEnemiesDefeated} inimigos derrotados</Text>
+                <View className="items-center rounded-2xl border-b-4 border-[#A26826] bg-[#D49B3C] px-4 py-3">
+                  <Text className="text-sm font-black text-white">RESGATAR RECOMPENSA</Text>
+                  <Text className="mt-0.5 text-[10px] font-bold text-[#FFF1C8]">Wave {state.wave} • {state.totalEnemiesDefeated} inimigos derrotados</Text>
+                </View>
               </Pressable>
             </View>
           )}
@@ -122,19 +130,35 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     <Pressable
                       onPress={() => dispatch({ type: 'UNLOCK_TROOP', troopType, cost: unlockCost })}
                       disabled={!canBuyUnlock}
-                      className={`mt-3 items-center rounded-2xl px-3 py-2.5 ${canBuyUnlock ? 'bg-[#4E8B46]' : 'bg-[#A6B39A]'}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Desbloquear ${config.name}`}
+                      style={({ pressed }) => ({
+                        marginTop: 12,
+                        transform: [{ scale: pressed && canBuyUnlock ? 0.98 : 1 }],
+                        opacity: pressed && canBuyUnlock ? 0.9 : 1,
+                      })}
                     >
-                      <Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} GOLD</Text>
-                      <Text className="mt-0.5 text-[9px] font-bold text-[#E7F4D6]">{nextUnlock === troopType ? 'Próxima meta' : 'Complete a ordem de desbloqueio'}</Text>
+                      <View className={`items-center rounded-2xl px-3 py-2.5 ${canBuyUnlock ? 'bg-[#4E8B46]' : 'bg-[#A6B39A]'}`}>
+                        <Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} GOLD</Text>
+                        <Text className="mt-0.5 text-[9px] font-bold text-[#E7F4D6]">{nextUnlock === troopType ? 'Próxima meta' : 'Complete a ordem de desbloqueio'}</Text>
+                      </View>
                     </Pressable>
                   ) : (
                     <Pressable
                       onPress={() => dispatch({ type: 'BUY_TROOP_UPGRADE', troopType, cost: upgradeCost })}
                       disabled={!canBuyUpgrade}
-                      className={`mt-3 flex-row items-center justify-center gap-2 rounded-2xl px-3 py-2.5 ${canBuyUpgrade ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Treinar ${config.name}`}
+                      style={({ pressed }) => ({
+                        marginTop: 12,
+                        transform: [{ scale: pressed && canBuyUpgrade ? 0.98 : 1 }],
+                        opacity: pressed && canBuyUpgrade ? 0.9 : 1,
+                      })}
                     >
-                      <GameIcon name="damage" size={15} color="#F7D774" secondaryColor="#E7A93B" />
-                      <Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} GOLD</Text>
+                      <View className={`flex-row items-center justify-center gap-2 rounded-2xl px-3 py-2.5 ${canBuyUpgrade ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
+                        <GameIcon name="damage" size={15} color="#F7D774" secondaryColor="#E7A93B" />
+                        <Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} GOLD</Text>
+                      </View>
                     </Pressable>
                   )}
                 </View>
@@ -142,14 +166,31 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             })}
           </View>
 
-          <Pressable onPress={onStartGame} className="items-center rounded-2xl border-b-4 border-[#315F40] bg-[#4E8B46] px-6 py-4 active:opacity-80">
-            <Text className="text-lg font-black tracking-wide text-white">VOLTAR À ARENA</Text>
-            <Text className="mt-0.5 text-[10px] font-bold text-[#E7F4D6]">Continue a próxima defesa</Text>
+          <Pressable
+            onPress={onStartGame}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar à arena"
+            style={({ pressed }) => ({
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              opacity: pressed ? 0.9 : 1,
+            })}
+          >
+            <View className="items-center rounded-2xl border-b-4 border-[#315F40] bg-[#4E8B46] px-6 py-4">
+              <Text className="text-lg font-black tracking-wide text-white">VOLTAR À ARENA</Text>
+              <Text className="mt-0.5 text-[10px] font-bold text-[#E7F4D6]">Continue a próxima defesa</Text>
+            </View>
           </Pressable>
 
           {onBack && (
-            <Pressable onPress={onBack} className="items-center py-2">
-              <Text className="text-xs font-bold text-[#52664C]">Voltar ao menu principal</Text>
+            <Pressable
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel="Voltar ao menu principal"
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <View className="items-center py-2">
+                <Text className="text-xs font-bold text-[#52664C]">Voltar ao menu principal</Text>
+              </View>
             </Pressable>
           )}
         </View>

@@ -41,6 +41,12 @@ export default function GameScreen() {
     setGameStarted(true);
   };
 
+  const handleReturnHome = () => {
+    setShowCamp(false);
+    setShowRewards(false);
+    setGameStarted(false);
+  };
+
   if (showCamp) {
     return <ProgressionMenu onStartGame={handleStartGame} onBack={() => setShowCamp(false)} />;
   }
@@ -76,15 +82,42 @@ export default function GameScreen() {
             </View>
             <Pressable
               onPress={handleRestartGame}
-              className="bg-primary px-8 py-4 rounded-full active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Jogar novamente"
+              style={({ pressed }) => ({
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+                opacity: pressed ? 0.9 : 1,
+              })}
             >
-              <Text className="text-background font-bold text-lg">Jogar Novamente</Text>
+              <View className="items-center rounded-full bg-primary px-8 py-4">
+                <Text className="text-background font-bold text-lg">Jogar Novamente</Text>
+              </View>
             </Pressable>
             <Pressable
               onPress={handleOpenCamp}
-              className="rounded-full border border-[#8EAF6D] bg-[#EAF4D8] px-8 py-3 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Abrir Acampamento"
+              style={({ pressed }) => ({
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+                opacity: pressed ? 0.9 : 1,
+              })}
             >
-              <Text className="font-bold text-[#376333]">Abrir Acampamento</Text>
+              <View className="items-center rounded-full border border-[#8EAF6D] bg-[#EAF4D8] px-8 py-3">
+                <Text className="font-bold text-[#376333]">Abrir Acampamento</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={handleReturnHome}
+              accessibilityRole="button"
+              accessibilityLabel="Voltar para a Home"
+              style={({ pressed }) => ({
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <View className="items-center px-8 py-2">
+                <Text className="font-bold text-[#52664C]">Voltar para Home</Text>
+              </View>
             </Pressable>
           </View>
         </ScrollView>

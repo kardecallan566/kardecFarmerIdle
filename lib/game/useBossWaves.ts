@@ -61,8 +61,9 @@ export function useBossWaves() {
                 const minionY = boss.y + (i - 1) * 14;
 
                 newMinions.push({
-                  id: generateId(`minion_${boss.id}`),
-                  x: minionX,
+                  id: generateId('minion'),
+                  kind: 'runner',
+                  x: boss.x,
                   y: minionY,
                   pathIndex: boss.pathIndex,
                   pathProgress: Math.max(0, boss.pathProgress - 0.02 * (i + 1)),

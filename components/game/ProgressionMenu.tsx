@@ -1,16 +1,33 @@
 import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
-import { BeaconUpgradeType, getBeaconStats, getGuardStats, GUARD_CONFIGS, GuardType } from '@/lib/game/types';
+import { BeaconUpgradeType, getBeaconStats, getGuardStats, getGuardVisualProfile, getIdleGoldRate, getIdleUpgradeCost, GUARD_CONFIGS, GuardType } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 const GUARD_IMAGES = {
-  warrior: require('@/assets/images/guard-warrior.png'),
-  archer: require('@/assets/images/guard-archer.png'),
-  tank: require('@/assets/images/guard-tank.png'),
+  warrior: {
+    base: require('@/assets/images/guard-warrior.png'),
+    veteran: require('@/assets/images/guard-warrior-veteran-clean.png'),
+    elite: require('@/assets/images/guard-warrior-elite-clean.png'),
+    legendary: require('@/assets/images/guard-warrior-legendary-clean.png'),
+  },
+  archer: {
+    base: require('@/assets/images/guard-archer.png'),
+    veteran: require('@/assets/images/guard-archer-veteran-clean.png'),
+    elite: require('@/assets/images/guard-archer-veteran-clean.png'),
+    legendary: require('@/assets/images/guard-archer-legendary-clean.png'),
+  },
+  tank: {
+    base: require('@/assets/images/guard-tank.png'),
+    veteran: require('@/assets/images/guard-tank-veteran-clean.png'),
+    elite: require('@/assets/images/guard-tank-elite-clean.png'),
+    legendary: require('@/assets/images/guard-tank-legendary-clean.png'),
+  },
 };
 
 const TROOP_ORDER: GuardType[] = ['warrior', 'archer', 'tank'];
+const BESTIARY_ORDER = ['normal', 'runner', 'brute', 'healer', 'boss'] as const;
+const BESTIARY_NAMES = { normal: 'Batedor', runner: 'Corredor', brute: 'Bruto', healer: 'Curandeiro', boss: 'Chefe' };
 const UNLOCK_COSTS: Record<GuardType, number> = { warrior: 0, archer: 180, tank: 360 };
 const UPGRADE_BASE_COSTS: Record<GuardType, number> = { warrior: 120, archer: 160, tank: 200 };
 
@@ -115,6 +132,67 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             </View>
           )}
 
+          <View className="rounded-3xl border border-[#B8C99A] bg-[#F8F3DE]/95 p-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-[10px] font-black tracking-[1.5px] text-[#8A7040]">COLHEITA OCIOSA</Text>
+                <Text className="mt-1 text-lg font-black text-[#5B4827]">O bosque trabalha por você</Text>
+                <Text className="mt-1 text-xs leading-4 text-[#8A7040]">Enquanto você estiver fora, a vila acumula gold por até 8 horas.</Text>
+              </View>
+              <View className="ml-3 items-center rounded-2xl bg-[#F3D98C] px-3 py-2">
+                <Text className="text-xl font-black text-[#704D1B]">+{state.idleGoldAvailable}</Text>
+                <Text className="text-[9px] font-black text-[#8A7040]">GOLD OCIOSO</Text>
+              </View>
+            </View>
+            <View className="mt-3 flex-row gap-2">
+              <Pressable
+                onPress={() => dispatch({ type: 'CLAIM_IDLE_GOLD' })}
+                disabled={state.idleGoldAvailable <= 0}
+                accessibilityRole="button"
+                accessibilityLabel="Resgatar gold ocioso"
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.85 : state.idleGoldAvailable > 0 ? 1 : 0.55 })}
+              >
+                <View className="items-center rounded-xl bg-[#B97925] px-3 py-2.5">
+                  <Text className="text-[10px] font-black text-white">RESGATAR GOLD</Text>
+                  <Text className="mt-0.5 text-[9px] font-bold text-[#FFF1C8]">{getIdleGoldRate(state.idleUpgradeLevel)} gold/min</Text>
+                </View>
+              </Pressable>
+              <Pressable
+                onPress={() => dispatch({ type: 'BUY_IDLE_UPGRADE', cost: getIdleUpgradeCost(state.idleUpgradeLevel) })}
+                disabled={state.idleUpgradeLevel >= 5 || state.bankGold < getIdleUpgradeCost(state.idleUpgradeLevel)}
+                accessibilityRole="button"
+                accessibilityLabel="Melhorar colheita ociosa"
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.85 : 1 })}
+              >
+                <View className="items-center rounded-xl bg-[#6E8D47] px-3 py-2.5">
+                  <Text className="text-[10px] font-black text-white">{state.idleUpgradeLevel >= 5 ? 'IDLE MÁXIMO' : `MELHORAR • ${getIdleUpgradeCost(state.idleUpgradeLevel)}`}</Text>
+                  <Text className="mt-0.5 text-[9px] font-bold text-[#E7F4D6]">Nível {state.idleUpgradeLevel}/5</Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+
+          <View className="rounded-3xl border border-[#B8CDE0] bg-[#F1F8FC]/95 p-4">
+            <Text className="text-[10px] font-black tracking-[1.5px] text-[#5F7990]">BESTIÁRIO DO BOSQUE</Text>
+            <Text className="mt-1 text-lg font-black text-[#2D5367]">Conheça seus inimigos</Text>
+            <Text className="mt-1 text-xs leading-4 text-[#68859A]">Cada nova espécie descoberta rende uma recompensa e revela sua estratégia.</Text>
+            <View className="mt-3 gap-2">
+              {BESTIARY_ORDER.map((kind) => {
+                const defeated = state.bestiaryDefeated[kind];
+                const discovered = defeated > 0;
+                return (
+                  <View key={kind} className="flex-row items-center justify-between rounded-xl border border-[#C8DCE8] bg-white/70 px-3 py-2">
+                    <View className="flex-row items-center gap-2">
+                      <View className={`h-3 w-3 rounded-full ${discovered ? 'bg-[#5B8FD1]' : 'bg-[#B9C8D1]'}`} />
+                      <Text className="text-xs font-black text-[#36576A]">{BESTIARY_NAMES[kind]}</Text>
+                    </View>
+                    <Text className="text-[10px] font-bold text-[#6A879A]">{discovered ? `${defeated} derrotados` : 'Ainda não encontrado'}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
           <View className="rounded-3xl border border-[#C9D9BC] bg-[#F5FAEE]/95 p-4">
             <View className="flex-row items-center justify-between">
               <View>
@@ -194,6 +272,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
               const unlocked = state.unlockedTroops.includes(troopType);
               const level = state.troopUpgradeLevels[troopType];
               const stats = getGuardStats(troopType, level);
+              const visual = getGuardVisualProfile(troopType, level);
               const unlockCost = UNLOCK_COSTS[troopType];
               const upgradeCost = UPGRADE_BASE_COSTS[troopType] * (level + 1);
               const canBuyUnlock = state.bankGold >= unlockCost;
@@ -203,14 +282,16 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 <View key={troopType} className={`rounded-3xl border-2 p-3 ${unlocked ? 'border-[#B8D491] bg-[#F5FAEE]/95' : 'border-[#D7C9AA] bg-[#FFF9EA]/90'}`}>
                   <View className="flex-row items-center gap-3">
                     <View className="rounded-2xl bg-[#E5EFD7] p-2">
-                      <Image source={GUARD_IMAGES[troopType]} style={{ width: 56, height: 56 }} resizeMode="contain" />
+                      <Image source={GUARD_IMAGES[troopType][visual.tier]} style={{ width: 56, height: 56, borderColor: visual.armorColor, borderWidth: visual.tier === 'base' ? 0 : 1, borderRadius: 14 }} resizeMode="contain" />
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
                         <Text className="text-base font-black text-[#294F2E]">{config.name}</Text>
-                        <Text className="rounded-full bg-[#DDECC8] px-2 py-0.5 text-[9px] font-black text-[#4C7742]">LV {level + 1}</Text>
+                        <Text style={{ color: visual.accentColor }} className="text-[9px] font-black">{visual.title}</Text>
+                        <Text className="rounded-full bg-[#DDECC8] px-2 py-0.5 text-[9px] font-black text-[#4C7742]">{visual.badge} • LV {level + 1}</Text>
                       </View>
                       <Text className="mt-1 text-[10px] leading-4 text-[#71835E]">Vida {stats.health} • Dano {stats.damage} • Alcance {stats.range}</Text>
+                      <Text style={{ color: visual.armorColor }} className="mt-0.5 text-[9px] font-bold">Armadura evolutiva • {visual.tier}</Text>
                     </View>
                   </View>
 

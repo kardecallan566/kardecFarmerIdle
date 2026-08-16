@@ -1,5 +1,5 @@
 import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
-import { getNextBossWave, getWaveConfig } from '@/lib/game/types';
+import { getIdleGoldRate, getNextBossWave, getWaveConfig } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 
@@ -86,6 +86,18 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
               <Text className="text-sm font-black text-[#8B4F2C]">Wave {state.bestWave}</Text>
             </View>
             <Text className="mt-2 text-[10px] leading-4 text-[#71835E]">{state.unlockedTroops.length}/3 tropas desbloqueadas. Derrote monstros, resgate a run e treine sua defesa.</Text>
+            <View className="mt-3 flex-row gap-2">
+              <View className="flex-1 rounded-xl border border-[#F1DBAB] bg-[#FFF7DE] px-3 py-2">
+                <Text className="text-[9px] font-black text-[#9A7740]">GOLD OCIOSO</Text>
+                <Text className="mt-0.5 text-sm font-black text-[#8B4F2C]">+{Math.floor(state.idleGoldAvailable)}</Text>
+                <Text className="text-[9px] text-[#9A7740]">{getIdleGoldRate(state.idleUpgradeLevel)} por minuto</Text>
+              </View>
+              <View className="flex-1 rounded-xl border border-[#C8DCE8] bg-[#F1F8FC] px-3 py-2">
+                <Text className="text-[9px] font-black text-[#5F7990]">BESTIÁRIO</Text>
+                <Text className="mt-0.5 text-sm font-black text-[#2D5367]">{Object.values(state.bestiaryDefeated).filter((count) => count > 0).length}/5</Text>
+                <Text className="text-[9px] text-[#68859A]">espécies descobertas</Text>
+              </View>
+            </View>
           </View>
 
           <View className="rounded-3xl border border-[#C9D9BC] bg-[#F5FAEE]/95 p-4">

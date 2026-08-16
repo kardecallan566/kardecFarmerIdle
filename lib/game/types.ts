@@ -1,12 +1,30 @@
-// Game types and interfaces
-
 export type GuardType = 'warrior' | 'archer' | 'tank';
 export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
+export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
+export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 
 export interface BeaconUpgradeLevels {
   lightSpeed: number;
   multiSpawn: number;
   extraSlots: number;
+}
+
+export interface BestiaryProgress {
+  normal: number;
+  runner: number;
+  brute: number;
+  healer: number;
+  boss: number;
+}
+
+export interface GuardVisualProfile {
+  tier: GuardVisualTier;
+  assetKey: string;
+  title: string;
+  badge: string;
+  armorColor: string;
+  accentColor: string;
+  auraColor: string;
 }
 
 export const DEFAULT_BEACON_UPGRADE_LEVELS: BeaconUpgradeLevels = {
@@ -15,11 +33,22 @@ export const DEFAULT_BEACON_UPGRADE_LEVELS: BeaconUpgradeLevels = {
   extraSlots: 0,
 };
 
+export const DEFAULT_BESTIARY_PROGRESS: BestiaryProgress = {
+  normal: 0,
+  runner: 0,
+  brute: 0,
+  healer: 0,
+  boss: 0,
+};
+
 export interface PersistentProgress {
   bankGold: number;
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;
   beaconUpgradeLevels: BeaconUpgradeLevels;
+  idleUpgradeLevel: number;
+  lastOnlineAt: number;
+  bestiaryDefeated: BestiaryProgress;
   bestWave: number;
   totalGames: number;
 }
@@ -72,6 +101,10 @@ export interface GameState {
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;
   beaconUpgradeLevels: BeaconUpgradeLevels;
+  idleUpgradeLevel: number;
+  idleGoldAvailable: number;
+  lastOnlineAt: number;
+  bestiaryDefeated: BestiaryProgress;
   bestWave: number;
   totalGames: number;
   progressLoaded: boolean;
@@ -81,6 +114,7 @@ export interface GameState {
 
 export interface Enemy {
   id: string;
+  kind: EnemyKind;
   x: number;
   y: number;
   pathIndex: number;
@@ -93,6 +127,8 @@ export interface Enemy {
   radius: number;
   color: string;
   isBoss: boolean;
+  healingPower?: number;
+  abilityCooldown?: number;
   bossAbilities?: BossAbility[];
   attackCooldown?: number;
 }
@@ -115,7 +151,6 @@ export interface Guard {
   range: number;
   attackSpeed: number;
   attackCooldown: number;
-  /** Velocidade de avanço até a linha segura de combate. */
   moveSpeed?: number;
   color: string;
   targetId?: string;
@@ -147,6 +182,17 @@ export interface WaveConfig {
   enemyDamage: number;
   troopDamage: number;
   isBossWave: boolean;
+}
+
+export interface EnemyProfile {
+  kind: EnemyKind;
+  health: number;
+  speed: number;
+  damage: number;
+  troopDamage: number;
+  radius: number;
+  color: string;
+  healingPower?: number;
 }
 
 export interface GameConfig {
@@ -217,6 +263,51 @@ export function getGuardStats(type: GuardType, upgradeLevel = 0) {
   };
 }
 
+export function getGuardVisualProfile(type: GuardType, upgradeLevel = 0): GuardVisualProfile {
+  const tier: GuardVisualTier = upgradeLevel >= 6
+    ? 'legendary'
+    : upgradeLevel >= 4
+      ? 'elite'
+      : upgradeLevel >= 2
+        ? 'veteran'
+        : 'base';
+  const palettes: Record<GuardVisualTier, Omit<GuardVisualProfile, 'tier' | 'assetKey'>> = {
+    base: {
+      title: 'Recruta',
+      badge: 'I',
+      armorColor: '#4169E1',
+      accentColor: '#C9E6FF',
+      auraColor: '#8DCB63',
+    },
+    veteran: {
+      title: 'Veterano',
+      badge: 'II',
+      armorColor: '#B36B2C',
+      accentColor: '#FFE0A3',
+      auraColor: '#F2B84B',
+    },
+    elite: {
+      title: 'Elite',
+      badge: 'III',
+      armorColor: '#7B3FB5',
+      accentColor: '#F1C8FF',
+      auraColor: '#C98AF2',
+    },
+    legendary: {
+      title: 'Lendário',
+      badge: 'IV',
+      armorColor: '#B78A24',
+      accentColor: '#FFF3A8',
+      auraColor: '#F7D774',
+    },
+  };
+  return {
+    tier,
+    assetKey: `${type}-${tier}`,
+    ...palettes[tier],
+  };
+}
+
 export function getBeaconStats(levels: BeaconUpgradeLevels = DEFAULT_BEACON_UPGRADE_LEVELS) {
   const lightSpeedLevel = Math.min(5, Math.max(0, levels.lightSpeed));
   const multiSpawnLevel = Math.min(2, Math.max(0, levels.multiSpawn));
@@ -227,6 +318,64 @@ export function getBeaconStats(levels: BeaconUpgradeLevels = DEFAULT_BEACON_UPGR
     spawnBatch: 1 + multiSpawnLevel,
     unlockedPlotCount: 4 + extraSlotsLevel,
   };
+}
+
+export function getIdleGoldRate(idleUpgradeLevel: number): number {
+  return 2 + Math.min(5, Math.max(0, idleUpgradeLevel)) * 2;
+}
+
+export function getIdleUpgradeCost(idleUpgradeLevel: number): number {
+  return 500 + Math.min(5, Math.max(0, idleUpgradeLevel)) * 450;
+}
+
+export function getOfflineGold(lastOnlineAt: number, now = Date.now(), idleUpgradeLevel = 0): number {
+  if (!lastOnlineAt || lastOnlineAt > now) return 0;
+  const elapsedMinutes = Math.min(8 * 60, Math.max(0, now - lastOnlineAt) / 60000);
+  return Math.floor(elapsedMinutes * getIdleGoldRate(idleUpgradeLevel));
+}
+
+export function getBestiaryReward(kind: EnemyKind, previousCount: number, nextCount: number): number {
+  let reward = previousCount === 0 && nextCount > 0 ? 40 : 0;
+  const milestoneRewards: Record<number, number> = { 10: 60, 25: 120, 50: 250 };
+  Object.entries(milestoneRewards).forEach(([thresholdText, thresholdReward]) => {
+    const threshold = Number(thresholdText);
+    if (previousCount < threshold && nextCount >= threshold) reward += thresholdReward;
+  });
+  return reward;
+}
+
+export function getEnemyKindForSpawn(waveNumber: number, spawnIndex: number): EnemyKind {
+  if (waveNumber % 5 === 0 && spawnIndex === 0) return 'boss';
+  if (waveNumber >= 6 && spawnIndex % 7 === 0) return 'healer';
+  if (waveNumber >= 4 && spawnIndex % 5 === 0) return 'brute';
+  if (waveNumber >= 3 && spawnIndex % 4 === 0) return 'runner';
+  return 'normal';
+}
+
+export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfile {
+  const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
+  const troopScale = 1 + Math.max(0, waveNumber - 1) * 0.14;
+  const base = {
+    health: Math.round(28 * waveScale),
+    speed: 34 + waveNumber * 3,
+    damage: Math.max(5, Math.round(5 * waveScale)),
+    troopDamage: Math.max(16, Math.round(16 * troopScale)),
+    radius: 12,
+    color: '#DC143C',
+  };
+
+  switch (kind) {
+    case 'runner':
+      return { kind, ...base, health: Math.round(base.health * 0.62), speed: base.speed * 1.75, damage: Math.max(4, Math.round(base.damage * 0.75)), troopDamage: Math.max(12, Math.round(base.troopDamage * 0.75)), radius: 10, color: '#E7A93B' };
+    case 'brute':
+      return { kind, ...base, health: Math.round(base.health * 2.35), speed: base.speed * 0.62, damage: Math.round(base.damage * 1.8), troopDamage: Math.round(base.troopDamage * 1.35), radius: 19, color: '#7A3F2B' };
+    case 'healer':
+      return { kind, ...base, health: Math.round(base.health * 1.15), speed: base.speed * 0.82, damage: Math.max(3, Math.round(base.damage * 0.75)), troopDamage: Math.max(10, Math.round(base.troopDamage * 0.72)), radius: 14, color: '#5B8FD1', healingPower: Math.max(2, Math.round(base.health * 0.025)) };
+    case 'boss':
+      return { kind, ...base, health: Math.round(base.health * 4.5), speed: base.speed * 1.22, damage: Math.round(base.damage * 2.2), troopDamage: Math.round(base.troopDamage * 1.65), radius: 19, color: '#8B0000' };
+    default:
+      return { kind: 'normal', ...base };
+  }
 }
 
 export const INITIAL_GAME_CONFIG: GameConfig = {
@@ -251,20 +400,17 @@ export function getNextBossWave(waveNumber: number): number {
 
 export function getWaveConfig(waveNumber: number): WaveConfig {
   const isBossWave = waveNumber % 5 === 0;
-  const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
+  const normalProfile = getEnemyProfile('normal', waveNumber);
+  const bossProfile = getEnemyProfile('boss', waveNumber);
   const baseEnemyCount = 4 + Math.floor(waveNumber * 1.5);
-  const baseHealth = Math.round(28 * waveScale);
-  const baseSpeed = 34 + waveNumber * 3;
-  const baseDamage = Math.max(5, Math.round(5 * waveScale));
-  const baseTroopDamage = Math.max(16, Math.round(16 * (1 + Math.max(0, waveNumber - 1) * 0.14)));
 
   return {
     waveNumber,
     enemyCount: isBossWave ? 1 : baseEnemyCount,
-    enemyHealth: isBossWave ? Math.round(baseHealth * 4.5) : baseHealth,
-    enemySpeed: isBossWave ? baseSpeed * 1.22 : baseSpeed,
-    enemyDamage: isBossWave ? Math.round(baseDamage * 2.2) : baseDamage,
-    troopDamage: isBossWave ? Math.round(baseTroopDamage * 1.65) : baseTroopDamage,
+    enemyHealth: isBossWave ? bossProfile.health : normalProfile.health,
+    enemySpeed: isBossWave ? bossProfile.speed : normalProfile.speed,
+    enemyDamage: isBossWave ? bossProfile.damage : normalProfile.damage,
+    troopDamage: isBossWave ? bossProfile.troopDamage : normalProfile.troopDamage,
     isBossWave,
   };
 }

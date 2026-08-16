@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Line, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useGame } from '@/lib/game/GameContext';
-import { INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
+import { getGuardVisualProfile, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
 import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
@@ -13,9 +13,24 @@ import { DeathAnimationsLayer } from './DeathAnimationsLayer';
 import { CoinAnimationsLayer } from './CoinAnimationsLayer';
 
 const GUARD_IMAGES = {
-  warrior: require('@/assets/images/guard-warrior.png'),
-  archer: require('@/assets/images/guard-archer.png'),
-  tank: require('@/assets/images/guard-tank.png'),
+  warrior: {
+    base: require('@/assets/images/guard-warrior.png'),
+    veteran: require('@/assets/images/guard-warrior-veteran-clean.png'),
+    elite: require('@/assets/images/guard-warrior-elite-clean.png'),
+    legendary: require('@/assets/images/guard-warrior-legendary-clean.png'),
+  },
+  archer: {
+    base: require('@/assets/images/guard-archer.png'),
+    veteran: require('@/assets/images/guard-archer-veteran-clean.png'),
+    elite: require('@/assets/images/guard-archer-veteran-clean.png'),
+    legendary: require('@/assets/images/guard-archer-legendary-clean.png'),
+  },
+  tank: {
+    base: require('@/assets/images/guard-tank.png'),
+    veteran: require('@/assets/images/guard-tank-veteran-clean.png'),
+    elite: require('@/assets/images/guard-tank-elite-clean.png'),
+    legendary: require('@/assets/images/guard-tank-legendary-clean.png'),
+  },
 };
 
 const ENEMY_IMAGES = {
@@ -264,7 +279,7 @@ export function GameMap() {
               {plot?.cropType ? (
                 <G onPress={() => handlePlotPress(pos.index)}>
                   <SvgImage
-                    href={GUARD_IMAGES[plot.cropType]}
+                    href={GUARD_IMAGES[plot.cropType][getGuardVisualProfile(plot.cropType, state.troopUpgradeLevels[plot.cropType]).tier]}
                     x={pos.x - 18}
                     y={pos.y - 20}
                     width={36}
@@ -418,14 +433,27 @@ export function GameMap() {
         />
         <Circle cx={mapCenterX} cy={mapCenterY - 14} r={4} fill="#FFF8D0" opacity={0.95} />
 
-        {state.guards.map((guard) => (
+        {state.guards.map((guard) => {
+          const visual = getGuardVisualProfile(guard.type, state.troopUpgradeLevels[guard.type]);
+          return (
           <G key={guard.id}>
+            {visual.tier !== 'base' && (
+              <Circle
+                cx={Math.round(guard.x)}
+                cy={Math.round(guard.y)}
+                r={17 + (visual.tier === 'legendary' ? 3 : 0)}
+                fill="none"
+                stroke={visual.auraColor}
+                strokeWidth={visual.tier === 'legendary' ? 2.5 : 1.5}
+                opacity={0.5 + Math.sin(animationTick * 0.08) * 0.12}
+              />
+            )}
             <Circle
               cx={Math.round(guard.x)}
               cy={Math.round(guard.y)}
               r={guard.range}
               fill="none"
-              stroke={guard.color}
+              stroke={visual.auraColor}
               strokeWidth="1"
               opacity={0.12}
             />
@@ -437,12 +465,24 @@ export function GameMap() {
               opacity={0.25}
             />
             <SvgImage
-              href={GUARD_IMAGES[guard.type]}
+              href={GUARD_IMAGES[guard.type][visual.tier]}
               x={Math.round(guard.x) - 16}
               y={Math.round(guard.y) - 16}
               width={32}
               height={32}
             />
+            {visual.tier !== 'base' && (
+              <SvgText
+                x={Math.round(guard.x) + 14}
+                y={Math.round(guard.y) - 14}
+                fontSize={8}
+                fill={visual.accentColor}
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                {visual.badge}
+              </SvgText>
+            )}
             {guard.health < guard.maxHealth && (
               <G>
                 <Rect
@@ -464,10 +504,27 @@ export function GameMap() {
               </G>
             )}
           </G>
-        ))}
+          );
+        })}
 
         {state.enemies.map((enemy, enemyIndex) => {
-          const imgSize = enemy.isBoss ? 44 : 30;
+          const enemyAccent = enemy.kind === 'runner'
+            ? '#E7A93B'
+            : enemy.kind === 'brute'
+              ? '#7A3F2B'
+              : enemy.kind === 'healer'
+                ? '#63D9E8'
+                : enemy.isBoss
+                  ? '#8B0000'
+                  : '#DC143C';
+          const enemyLabel = enemy.kind === 'runner'
+            ? 'COR'
+            : enemy.kind === 'brute'
+              ? 'BRU'
+              : enemy.kind === 'healer'
+                ? 'CUR'
+                : '';
+          const imgSize = enemy.isBoss ? 44 : enemy.kind === 'brute' ? 38 : enemy.kind === 'healer' ? 32 : enemy.kind === 'runner' ? 26 : 30;
           const phase = animationTick * 0.16 + enemyIndex * 0.9;
           const bob = Math.sin(phase) * (enemy.isBoss ? 2 : 1.2);
           const scale = 1 + Math.sin(phase * 1.2) * (enemy.isBoss ? 0.035 : 0.02);
@@ -484,13 +541,34 @@ export function GameMap() {
                 fill="#000"
                 opacity={0.25}
               />
+              <Circle
+                cx={0}
+                cy={0}
+                r={imgSize / 2 + 4 + Math.sin(phase * 1.4) * (enemy.kind === 'healer' ? 2 : 0)}
+                fill="none"
+                stroke={enemyAccent}
+                strokeWidth={enemy.kind === 'brute' ? 3 : 2}
+                opacity={enemy.kind === 'healer' ? 0.78 : 0.55}
+              />
               <SvgImage
-                href={ENEMY_IMAGES[enemy.isBoss ? 'boss' : 'normal']}
+                href={ENEMY_IMAGES[enemy.isBoss || enemy.kind === 'brute' ? 'boss' : 'normal']}
                 x={-imgSize / 2}
                 y={-imgSize / 2}
                 width={imgSize}
                 height={imgSize}
               />
+              {enemyLabel && (
+                <SvgText
+                  x={0}
+                  y={imgSize / 2 + 13}
+                  fontSize={7}
+                  fill={enemyAccent}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  {enemyLabel}
+                </SvgText>
+              )}
               {enemy.health < enemy.maxHealth && (
                 <G>
                   <Rect

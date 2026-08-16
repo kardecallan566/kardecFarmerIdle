@@ -127,3 +127,26 @@ Com `multiSpawn: 2`, a arena exibiu `Pulso 3x`. A inspeção dos elementos SVG e
 ## Pressão de combate contra tropas
 
 Com upgrades do farol e tropas fortalecidas, a run avançou até a Wave 6 e terminou em Game Over com apenas duas guardas colocadas. Isso confirma que o dano direto contra tropas está ativo e que inimigos de waves avançadas conseguem eliminar unidades, em vez de apenas causar dano visual à plantação.
+
+## Expansão de progressão idle e tiers visuais — validação
+
+- A Home no build web exibiu o saldo de gold ocioso, a taxa por minuto e o contador de espécies descobertas do bestiário.
+- O Acampamento exibiu as seções Colheita Ociosa, Bestiário do Bosque e previews de Guerreiro, Arqueiro e Tanque com tier Veterano e cores de armadura bronze/verde.
+- O perfil persistido de teste carregou corretamente os níveis do farol, os três tipos de tropa e os valores derivados de vida/dano.
+- A geração de novos sprites de monstros atingiu o limite diário de imagens; os novos arquétipos usam a arte-base existente com diferenciação visual SVG por cor, escala, anel e etiqueta, mantendo a implementação jogável.
+
+## Validação da arena com tiers e novos arquétipos
+
+A arena carregou em viewport vertical com `Pulso 3x • 8/8 pátios`, três cards mostrando Guerreiro/Arqueiro/Tanque no tier Veterano e seus stats derivados. A Wave 1 foi concluída com `5/5` inimigos gerados e a plantação permaneceu em `100/100`, confirmando que a integração dos novos campos não quebrou o loop.
+
+## Verificação de espécies por wave
+
+A observação temporal confirmou o `COR` na Wave 3, correspondente ao novo Corredor, e o `BRU` na Wave 4, correspondente ao novo Bruto. A HUD manteve os contadores de spawn, o farol 3x e a plantação sem regressão durante a transição.
+
+## Validação do gold idle e do bestiário persistente
+
+Após simular uma hora offline e recarregar o build, a Home exibiu `+3 gold ocioso` na taxa atual e recuperou `2/5 espécies descobertas` do armazenamento. Isso confirma que o cálculo é feito no carregamento e que os dados do bestiário sobrevivem à navegação entre sessões.
+
+## Resgate do gold idle
+
+No Acampamento, o perfil exibiu `+3 GOLD OCIOSO`. Ao pressionar `RESGATAR GOLD`, o saldo do acampamento passou de 5000 para 5003 e o indicador idle foi zerado para `+0`, confirmando resgate único e persistência do ganho.

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
-import { getGuardStats, GUARD_CONFIGS } from '@/lib/game/types';
+import { getGuardStats, getGuardVisualProfile, GUARD_CONFIGS } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 
 const GUARD_TYPES = ['warrior', 'archer', 'tank'] as const;
@@ -13,9 +13,24 @@ const GUARD_NAMES = {
 };
 
 const GUARD_IMAGES = {
-  warrior: require('@/assets/images/guard-warrior.png'),
-  archer: require('@/assets/images/guard-archer.png'),
-  tank: require('@/assets/images/guard-tank.png'),
+  warrior: {
+    base: require('@/assets/images/guard-warrior.png'),
+    veteran: require('@/assets/images/guard-warrior-veteran-clean.png'),
+    elite: require('@/assets/images/guard-warrior-elite-clean.png'),
+    legendary: require('@/assets/images/guard-warrior-legendary-clean.png'),
+  },
+  archer: {
+    base: require('@/assets/images/guard-archer.png'),
+    veteran: require('@/assets/images/guard-archer-veteran-clean.png'),
+    elite: require('@/assets/images/guard-archer-veteran-clean.png'),
+    legendary: require('@/assets/images/guard-archer-legendary-clean.png'),
+  },
+  tank: {
+    base: require('@/assets/images/guard-tank.png'),
+    veteran: require('@/assets/images/guard-tank-veteran-clean.png'),
+    elite: require('@/assets/images/guard-tank-elite-clean.png'),
+    legendary: require('@/assets/images/guard-tank-legendary-clean.png'),
+  },
 };
 
 const GUARD_ACCENTS = {
@@ -70,6 +85,7 @@ export function CardBar() {
         {GUARD_TYPES.map((guardType, index) => {
           const config = GUARD_CONFIGS[guardType];
           const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
+          const visual = getGuardVisualProfile(guardType, state.troopUpgradeLevels[guardType]);
           const isSelected = state.selectedCardIndex === index;
           const canAfford = state.coins >= config.cost;
           const unlocked = isTroopUnlocked(index);
@@ -110,16 +126,17 @@ export function CardBar() {
 
                 <View className="flex-row items-center gap-2 mb-2">
                   <Image
-                    source={GUARD_IMAGES[guardType]}
+                    source={GUARD_IMAGES[guardType][visual.tier]}
                     accessibilityLabel={`Ícone do ${GUARD_NAMES[guardType]}`}
                     resizeMode="contain"
-                    style={{ width: 42, height: 42 }}
+                    style={{ width: 42, height: 42, borderColor: visual.armorColor, borderWidth: visual.tier === 'base' ? 0 : 1, borderRadius: 12 }}
                   />
                   <View className="flex-1">
                     <View className="flex-row items-center gap-1">
                       <Text className="text-sm font-bold text-[#FFF3C4]">{GUARD_NAMES[guardType]}</Text>
+                      <Text style={{ color: visual.accentColor }} className="text-[8px] font-black">{visual.title}</Text>
                       <Text className="rounded-full bg-[#DDECC8] px-1.5 py-0.5 text-[8px] font-black text-[#4C7742]">
-                        LV {state.troopUpgradeLevels[guardType] + 1}
+                        {visual.badge} • LV {state.troopUpgradeLevels[guardType] + 1}
                       </Text>
                     </View>
                     <Text className="text-[10px] text-[#B6D3B0]">

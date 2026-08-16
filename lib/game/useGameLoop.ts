@@ -5,6 +5,8 @@ import {
   Enemy,
   Guard,
   getBeaconStats,
+  getEnemyKindForSpawn,
+  getEnemyProfile,
   getGuardStats,
   getWaveConfig,
   INITIAL_GAME_CONFIG,
@@ -79,22 +81,27 @@ export function useGameLoop() {
         enemySpawnTimerRef.current >= spawnInterval
       ) {
         enemySpawnTimerRef.current -= spawnInterval;
+        const enemyKind = getEnemyKindForSpawn(currentState.wave, enemySpawnCountRef.current);
+        const enemyProfile = getEnemyProfile(enemyKind, currentState.wave);
         const newEnemy: Enemy = {
           id: generateId('enemy'),
+          kind: enemyKind,
           x: layout.centerX,
           y: layout.centerY - layout.spawnDistance,
           pathIndex: 0,
           pathProgress: 0,
-          health: waveConfig.enemyHealth,
-          maxHealth: waveConfig.enemyHealth,
-          speed: waveConfig.enemySpeed,
-          damage: waveConfig.enemyDamage,
-          troopDamage: waveConfig.troopDamage,
-          radius: waveConfig.isBossWave ? 18 : 12,
-          color: waveConfig.isBossWave ? '#8B0000' : '#DC143C',
-          isBoss: waveConfig.isBossWave,
+          health: enemyProfile.health,
+          maxHealth: enemyProfile.health,
+          speed: enemyProfile.speed,
+          damage: enemyProfile.damage,
+          troopDamage: enemyProfile.troopDamage,
+          radius: enemyProfile.radius,
+          color: enemyProfile.color,
+          isBoss: enemyKind === 'boss',
+          healingPower: enemyProfile.healingPower,
+          abilityCooldown: enemyProfile.healingPower ? 0 : undefined,
           attackCooldown: 0,
-          bossAbilities: waveConfig.isBossWave
+          bossAbilities: enemyKind === 'boss'
             ? [
                 { type: 'speedBoost', cooldown: 0, maxCooldown: 10 },
                 { type: 'spawnMinions', cooldown: 0, maxCooldown: 15 },
@@ -204,6 +211,18 @@ export function useGameLoop() {
       const incomingDamageByGuard = new Map<string, number>();
       const combatEnemies = updatedEnemies.map((enemy) => {
         const nextEnemyCooldown = Math.max(0, (enemy.attackCooldown ?? 0) - GAME_DT);
+        let nextAbilityCooldown = Math.max(0, (enemy.abilityCooldown ?? 0) - GAME_DT);
+
+        if (enemy.kind === 'healer' && nextAbilityCooldown <= 0) {
+          const healingTarget = updatedEnemies
+            .filter((ally) => ally.id !== enemy.id && ally.health > 0 && distance({ x: ally.x, y: ally.y }, { x: enemy.x, y: enemy.y }) <= 125)
+            .sort((first, second) => (second.maxHealth - second.health) - (first.maxHealth - first.health))[0];
+          if (healingTarget && healingTarget.health < healingTarget.maxHealth) {
+            healingTarget.health = Math.min(healingTarget.maxHealth, healingTarget.health + (enemy.healingPower ?? 0));
+            nextAbilityCooldown = 2.4;
+          }
+        }
+
         const guardTarget = allGuards
           .filter((guard) =>
             distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y }) <= enemy.radius + 18,
@@ -223,7 +242,7 @@ export function useGameLoop() {
           attackCooldown = 0.9;
         }
 
-        return { ...enemy, attackCooldown };
+        return { ...enemy, attackCooldown, abilityCooldown: nextAbilityCooldown };
       });
 
       const guardsAfterDamage = allGuards

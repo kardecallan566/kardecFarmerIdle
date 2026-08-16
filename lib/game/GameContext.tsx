@@ -2,9 +2,13 @@ import React, { createContext, useEffect, useReducer } from 'react';
 import {
   BeaconUpgradeType,
   CropPlot,
+  DEFAULT_BESTIARY_PROGRESS,
   DEFAULT_BEACON_UPGRADE_LEVELS,
   GameState,
+  getBestiaryReward,
   getBeaconStats,
+  getIdleUpgradeCost,
+  getOfflineGold,
   getWaveConfig,
   GuardType,
   INITIAL_GAME_CONFIG,
@@ -40,6 +44,8 @@ export type GameAction =
   | { type: 'RESET_WATERED_FLAGS' }
   | { type: 'LOAD_PROGRESS'; progress: PersistentProgress }
   | { type: 'CLAIM_RUN_REWARD' }
+  | { type: 'CLAIM_IDLE_GOLD' }
+  | { type: 'BUY_IDLE_UPGRADE'; cost: number }
   | { type: 'UNLOCK_TROOP'; troopType: GuardType; cost: number }
   | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; cost: number }
   | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; cost: number };
@@ -113,6 +119,10 @@ const initialState: GameState = {
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
   beaconUpgradeLevels: { ...DEFAULT_BEACON_UPGRADE_LEVELS },
+  idleUpgradeLevel: 0,
+  idleGoldAvailable: 0,
+  lastOnlineAt: Date.now(),
+  bestiaryDefeated: { ...DEFAULT_BESTIARY_PROGRESS },
   bestWave: 0,
   totalGames: 0,
   progressLoaded: false,
@@ -124,10 +134,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'LOAD_PROGRESS': {
       const beaconUpgradeLevels = action.progress.beaconUpgradeLevels ?? DEFAULT_BEACON_UPGRADE_LEVELS;
+      const bestiaryDefeated = action.progress.bestiaryDefeated ?? DEFAULT_BESTIARY_PROGRESS;
       return {
         ...state,
         ...action.progress,
         beaconUpgradeLevels,
+        bestiaryDefeated,
+        idleGoldAvailable: getOfflineGold(
+          action.progress.lastOnlineAt,
+          Date.now(),
+          action.progress.idleUpgradeLevel,
+        ),
         plots: createRunPlots(beaconUpgradeLevels),
         sprinkler: {
           ...state.sprinkler,
@@ -153,6 +170,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case 'CLAIM_IDLE_GOLD':
+      if (state.idleGoldAvailable <= 0) {
+        return { ...state, lastOnlineAt: Date.now() };
+      }
+      return {
+        ...state,
+        bankGold: state.bankGold + state.idleGoldAvailable,
+        idleGoldAvailable: 0,
+        lastOnlineAt: Date.now(),
+      };
+
+    case 'BUY_IDLE_UPGRADE': {
+      const currentLevel = state.idleUpgradeLevel;
+      const cost = getIdleUpgradeCost(currentLevel);
+      if (currentLevel >= 5 || state.bankGold < cost) return state;
+      return {
+        ...state,
+        bankGold: state.bankGold - cost,
+        idleUpgradeLevel: currentLevel + 1,
+      };
+    }
+
     case 'UNLOCK_TROOP':
       if (state.unlockedTroops.includes(action.troopType) || state.bankGold < action.cost) return state;
       return {
@@ -162,7 +201,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'BUY_TROOP_UPGRADE':
-      if (state.bankGold < action.cost) return state;
+      if (!state.unlockedTroops.includes(action.troopType) || state.bankGold < action.cost) return state;
       return {
         ...state,
         bankGold: state.bankGold - action.cost,
@@ -201,6 +240,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         bankGold: state.bankGold,
         unlockedTroops: state.unlockedTroops,
         troopUpgradeLevels: state.troopUpgradeLevels,
+        idleUpgradeLevel: state.idleUpgradeLevel,
+        idleGoldAvailable: state.idleGoldAvailable,
+        lastOnlineAt: state.lastOnlineAt,
+        bestiaryDefeated: state.bestiaryDefeated,
         bestWave: state.bestWave,
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
@@ -234,6 +277,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         unlockedTroops: state.unlockedTroops,
         troopUpgradeLevels: state.troopUpgradeLevels,
         beaconUpgradeLevels: state.beaconUpgradeLevels,
+        idleUpgradeLevel: state.idleUpgradeLevel,
+        idleGoldAvailable: state.idleGoldAvailable,
+        lastOnlineAt: state.lastOnlineAt,
+        bestiaryDefeated: state.bestiaryDefeated,
         bestWave: state.bestWave,
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
@@ -284,7 +331,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REMOVE_ENEMY': {
       const enemy = state.enemies.find((e) => e.id === action.enemyId);
       if (!enemy) return state;
-      const coinsGained = INITIAL_GAME_CONFIG.coinGainPerKill;
+      const previousCount = state.bestiaryDefeated[enemy.kind] ?? 0;
+      const nextCount = previousCount + 1;
+      const bestiaryReward = getBestiaryReward(enemy.kind, previousCount, nextCount);
+      const coinsGained = INITIAL_GAME_CONFIG.coinGainPerKill + bestiaryReward;
       return {
         ...state,
         enemies: state.enemies.filter((e) => e.id !== action.enemyId),
@@ -292,6 +342,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         coins: state.coins + coinsGained,
         totalEnemiesDefeated: state.totalEnemiesDefeated + 1,
         totalCoinsEarned: state.totalCoinsEarned + coinsGained,
+        bestiaryDefeated: {
+          ...state.bestiaryDefeated,
+          [enemy.kind]: nextCount,
+        },
       };
     }
 
@@ -428,6 +482,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       unlockedTroops: state.unlockedTroops,
       troopUpgradeLevels: state.troopUpgradeLevels,
       beaconUpgradeLevels: state.beaconUpgradeLevels,
+      idleUpgradeLevel: state.idleUpgradeLevel,
+      lastOnlineAt: state.lastOnlineAt,
+      bestiaryDefeated: state.bestiaryDefeated,
       bestWave: state.bestWave,
       totalGames: state.totalGames,
     });
@@ -437,6 +494,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     state.unlockedTroops,
     state.troopUpgradeLevels,
     state.beaconUpgradeLevels,
+    state.idleUpgradeLevel,
+    state.lastOnlineAt,
+    state.bestiaryDefeated,
     state.bestWave,
     state.totalGames,
   ]);

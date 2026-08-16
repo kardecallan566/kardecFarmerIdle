@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { GuardType, PersistentProgress } from './types';
-import { DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
+import type { BestiaryProgress, GuardType, PersistentProgress } from './types';
+import { DEFAULT_BESTIARY_PROGRESS, DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
 
 const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
@@ -15,6 +15,9 @@ export const DEFAULT_PERSISTENT_PROGRESS: PersistentProgress = {
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
   beaconUpgradeLevels: { ...DEFAULT_BEACON_UPGRADE_LEVELS },
+  idleUpgradeLevel: 0,
+  lastOnlineAt: Date.now(),
+  bestiaryDefeated: { ...DEFAULT_BESTIARY_PROGRESS },
   bestWave: 0,
   totalGames: 0,
 };
@@ -98,9 +101,19 @@ export async function getTotalCoinsEarned(): Promise<number> {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_COINS_EARNED);
     return value ? parseInt(value, 10) : 0;
   } catch (error) {
-    console.error('Error getting total coins earned:', error);
+    console.error('Error getting coins earned:', error);
     return 0;
   }
+}
+
+function normalizeBestiary(raw: Partial<BestiaryProgress> | null | undefined): BestiaryProgress {
+  return {
+    normal: Math.max(0, Number(raw?.normal) || 0),
+    runner: Math.max(0, Number(raw?.runner) || 0),
+    brute: Math.max(0, Number(raw?.brute) || 0),
+    healer: Math.max(0, Number(raw?.healer) || 0),
+    boss: Math.max(0, Number(raw?.boss) || 0),
+  };
 }
 
 function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentProgress {
@@ -123,6 +136,9 @@ function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentP
       multiSpawn: Math.min(2, Math.max(0, Number(raw?.beaconUpgradeLevels?.multiSpawn) || 0)),
       extraSlots: Math.min(4, Math.max(0, Number(raw?.beaconUpgradeLevels?.extraSlots) || 0)),
     },
+    idleUpgradeLevel: Math.min(5, Math.max(0, Number(raw?.idleUpgradeLevel) || 0)),
+    lastOnlineAt: Number(raw?.lastOnlineAt) > 0 ? Number(raw?.lastOnlineAt) : Date.now(),
+    bestiaryDefeated: normalizeBestiary(raw?.bestiaryDefeated),
     bestWave: Math.max(0, Number(raw?.bestWave) || 0),
     totalGames: Math.max(0, Number(raw?.totalGames) || 0),
   };

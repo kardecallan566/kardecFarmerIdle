@@ -54,8 +54,8 @@ const BEACON_UPGRADES: {
   },
   {
     type: 'extraSlots',
-    name: 'Pátios da vila',
-    description: 'Libera novos locais ao redor do farol para posicionar tropas.',
+    name: 'Quartéis da vila',
+    description: 'Libera novos quartéis ao redor do farol para posicionar tropas.',
     maxLevel: 4,
     getCost: (level) => 220 + level * 160,
   },
@@ -99,14 +99,28 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             <View className="items-center rounded-2xl bg-[#E9F3D6] px-3 py-2">
               <GameIcon name="coin" size={24} color="#F7C948" secondaryColor="#7D4E1F" />
               <Text className="mt-1 text-sm font-black text-[#6C5424]">{Math.floor(state.bankGold)}</Text>
-              <Text className="text-[9px] font-bold text-[#7D6947]">GOLD</Text>
+              <Text className="text-[9px] font-bold text-[#7D6947]">OURO DO ACAMPAMENTO</Text>
+            </View>
+          </View>
+
+          <View className="rounded-3xl border border-[#D2C49A] bg-[#FFFDF3]/95 p-4">
+            <Text className="text-[10px] font-black tracking-[1.5px] text-[#8A7040]">DUAS ECONOMIAS</Text>
+            <View className="mt-2 flex-row gap-2">
+              <View className="flex-1 rounded-2xl bg-[#F3D98C] p-3">
+                <Text className="text-[10px] font-black text-[#704D1B]">OURO DO ACAMPAMENTO</Text>
+                <Text className="mt-1 text-[10px] leading-4 text-[#8A7040]">Fica entre partidas e compra upgrades, tropas e quartéis.</Text>
+              </View>
+              <View className="flex-1 rounded-2xl bg-[#DDECC8] p-3">
+                <Text className="text-[10px] font-black text-[#315F40]">SUPRIMENTOS DE COMBATE</Text>
+                <Text className="mt-1 text-[10px] leading-4 text-[#4C7742]">Nascem durante a wave e pagam as tropas desta defesa.</Text>
+              </View>
             </View>
           </View>
 
           {state.gameLost && !state.runRewardClaimed && (
             <View className="rounded-3xl border border-[#E7B86A] bg-[#FFF7DE]/95 p-4">
               <Text className="text-sm font-black text-[#8B4F2C]">Recompensa da última defesa</Text>
-              <Text className="mt-1 text-xs leading-4 text-[#9A7740]">Converta o desempenho da partida em gold permanente para comprar melhorias.</Text>
+              <Text className="mt-1 text-xs leading-4 text-[#9A7740]">Converta o desempenho da partida em ouro permanente para comprar melhorias.</Text>
               <Pressable
                 onPress={claimReward}
                 accessibilityRole="button"
@@ -128,7 +142,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
           {state.gameLost && state.runRewardClaimed && (
             <View className="rounded-3xl border border-[#B8D491] bg-[#F4FAE9]/95 p-4">
               <Text className="text-sm font-black text-[#376333]">Recompensa depositada</Text>
-              <Text className="mt-1 text-xs text-[#5D7D4E]">+{state.lastRunReward} gold permanente. Use-o para desbloquear a próxima tropa.</Text>
+              <Text className="mt-1 text-xs text-[#5D7D4E]">+{state.lastRunReward} ouro do Acampamento. Use-o para desbloquear a próxima tropa.</Text>
             </View>
           )}
 
@@ -137,11 +151,11 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
               <View className="flex-1">
                 <Text className="text-[10px] font-black tracking-[1.5px] text-[#8A7040]">COLHEITA OCIOSA</Text>
                 <Text className="mt-1 text-lg font-black text-[#5B4827]">O bosque trabalha por você</Text>
-                <Text className="mt-1 text-xs leading-4 text-[#8A7040]">Enquanto você estiver fora, a vila acumula gold por até 8 horas.</Text>
+                <Text className="mt-1 text-xs leading-4 text-[#8A7040]">Enquanto você estiver fora, a vila acumula ouro do Acampamento por até 8 horas.</Text>
               </View>
               <View className="ml-3 items-center rounded-2xl bg-[#F3D98C] px-3 py-2">
                 <Text className="text-xl font-black text-[#704D1B]">+{state.idleGoldAvailable}</Text>
-                <Text className="text-[9px] font-black text-[#8A7040]">GOLD OCIOSO</Text>
+                <Text className="text-[9px] font-black text-[#8A7040]">OURO OCIOSO</Text>
               </View>
             </View>
             <View className="mt-3 flex-row gap-2">
@@ -149,12 +163,12 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 onPress={() => dispatch({ type: 'CLAIM_IDLE_GOLD' })}
                 disabled={state.idleGoldAvailable <= 0}
                 accessibilityRole="button"
-                accessibilityLabel="Resgatar gold ocioso"
+                accessibilityLabel="Resgatar ouro ocioso"
                 style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.85 : state.idleGoldAvailable > 0 ? 1 : 0.55 })}
               >
                 <View className="items-center rounded-xl bg-[#B97925] px-3 py-2.5">
-                  <Text className="text-[10px] font-black text-white">RESGATAR GOLD</Text>
-                  <Text className="mt-0.5 text-[9px] font-bold text-[#FFF1C8]">{getIdleGoldRate(state.idleUpgradeLevel)} gold/min</Text>
+                  <Text className="text-[10px] font-black text-white">RESGATAR OURO</Text>
+                  <Text className="mt-0.5 text-[9px] font-bold text-[#FFF1C8]">{getIdleGoldRate(state.idleUpgradeLevel)} ouro/min</Text>
                 </View>
               </Pressable>
               <Pressable
@@ -215,7 +229,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
               <View className="flex-1">
                 <Text className="text-[10px] font-black tracking-[1.5px] text-[#71835E]">EVOLUÇÃO DO FAROL</Text>
                 <Text className="mt-1 text-lg font-black text-[#294F2E]">Mais luz, mais defesa</Text>
-                <Text className="mt-1 text-xs leading-4 text-[#71835E]">Aprimore a estrutura central para acelerar a geração e abrir novos pátios.</Text>
+                <Text className="mt-1 text-xs leading-4 text-[#71835E]">Aprimore a estrutura central para acelerar a geração e abrir novos quartéis.</Text>
               </View>
               <View className="ml-3 items-center rounded-2xl bg-[#DDECC8] px-3 py-2">
                 <Text className="text-xl font-black text-[#315F40]">{beaconStats.spawnBatch}x</Text>
@@ -232,7 +246,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 ? `Velocidade do feixe: +${level * 20}%`
                 : upgrade.type === 'multiSpawn'
                   ? `Geração por pulso: ${beaconStats.spawnBatch} tropa(s)`
-                  : `Pátios ativos: ${beaconStats.unlockedPlotCount}/8`;
+                  : `Quartéis ativos: ${beaconStats.unlockedPlotCount}/8`;
 
               return (
                 <View key={upgrade.type} className="mt-3 rounded-2xl border border-[#C9D9BC] bg-[#F9FCEB] p-3">
@@ -258,7 +272,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     })}
                   >
                     <View className={`items-center rounded-xl px-3 py-2.5 ${isMaxed ? 'bg-[#8AA47A]' : canBuy ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
-                      <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${cost} GOLD`}</Text>
+                        <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${cost} OURO`}</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -308,7 +322,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                       })}
                     >
                       <View className={`items-center rounded-2xl px-3 py-2.5 ${canBuyUnlock ? 'bg-[#4E8B46]' : 'bg-[#A6B39A]'}`}>
-                        <Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} GOLD</Text>
+                        <Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} OURO</Text>
                         <Text className="mt-0.5 text-[9px] font-bold text-[#E7F4D6]">{nextUnlock === troopType ? 'Próxima meta' : 'Complete a ordem de desbloqueio'}</Text>
                       </View>
                     </Pressable>
@@ -326,7 +340,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     >
                       <View className={`flex-row items-center justify-center gap-2 rounded-2xl px-3 py-2.5 ${canBuyUpgrade ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
                         <GameIcon name="damage" size={15} color="#F7D774" secondaryColor="#E7A93B" />
-                        <Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} GOLD</Text>
+                        <Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} OURO</Text>
                       </View>
                     </Pressable>
                   )}

@@ -41,7 +41,7 @@ const GUARD_ACCENTS = {
 
 export function CardBar() {
   const { state, dispatch } = useGame();
-  const { selectCard, isCardAvailable, isTroopUnlocked, getCardCooldown, getCardMaxCooldown } = useCardSystem();
+  const { selectCard, commitCardPlacement, isCardAvailable, isTroopUnlocked, getCardCooldown, getCardMaxCooldown } = useCardSystem();
   const { width } = useWindowDimensions();
   const [cooldowns, setCooldowns] = useState<number[]>([0, 0, 0]);
   const cardWidth = Math.max(142, Math.min(188, (width - 34) / 3));
@@ -61,10 +61,10 @@ export function CardBar() {
   const handleCardPress = (cardIndex: number) => {
     const cropType = GUARD_TYPES[cardIndex];
     const config = GUARD_CONFIGS[cropType];
-    if (state.coins < config.cost) return;
+    if (state.combatCoins < config.cost) return;
 
     if (state.selectedPlotIndex !== null) {
-      dispatch({ type: 'SUBTRACT_COINS', amount: config.cost });
+      if (!commitCardPlacement(cardIndex)) return;
       dispatch({ type: 'PLANT_CROP', plotIndex: state.selectedPlotIndex, cropType });
     } else {
       selectCard(cardIndex);
@@ -87,7 +87,7 @@ export function CardBar() {
           const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
           const visual = getGuardVisualProfile(guardType, state.troopUpgradeLevels[guardType]);
           const isSelected = state.selectedCardIndex === index;
-          const canAfford = state.coins >= config.cost;
+          const canAfford = state.combatCoins >= config.cost;
           const unlocked = isTroopUnlocked(index);
           const available = isCardAvailable(index);
           const cooldown = cooldowns[index];
@@ -165,7 +165,7 @@ export function CardBar() {
                   <Text className="text-xs font-semibold text-[#F7C948]">{config.cost}</Text>
                 </View>
 
-                {!canAfford && <Text className="text-[10px] text-[#FF9B7A] mt-1 font-semibold">Sem moedas</Text>}
+                {!canAfford && <Text className="text-[10px] text-[#FF9B7A] mt-1 font-semibold">Sem suprimentos</Text>}
                 {unlocked && !available && <Text className="text-[10px] text-[#F7C948] mt-1 font-semibold">{cooldown.toFixed(1)}s</Text>}
               </View>
             </Pressable>

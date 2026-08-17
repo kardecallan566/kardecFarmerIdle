@@ -80,7 +80,7 @@ export interface SprinklerState {
 
 export interface GameState {
   wave: number;
-  coins: number;
+  combatCoins: number;
   plantationHealth: number;
   maxPlantationHealth: number;
   gameActive: boolean;
@@ -408,7 +408,7 @@ export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfi
 export const INITIAL_GAME_CONFIG: GameConfig = {
   mapRadius: 150,
   plantationRadius: 30,
-  pathCount: 1,
+  pathCount: 8,
   spawnDistance: 220,
   coinGainPerSecond: 2,
   coinGainPerKill: 15,

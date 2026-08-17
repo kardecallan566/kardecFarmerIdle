@@ -21,7 +21,7 @@ export function VisualEffects() {
   useEffect(() => {
     // This would be triggered by enemy damage events
     // For now, we'll add a simple effect when coins are gained
-  }, [state.coins]);
+  }, [state.combatCoins]);
 
   const addFloatingText = (x: number, y: number, text: string, color: string) => {
     const id = `float_${Date.now()}_${Math.random()}`;

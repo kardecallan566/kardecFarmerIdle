@@ -200,3 +200,23 @@ Após trocar apenas a simulação para `setInterval` de 16 ms e manter requestAn
 ## Validação de fluidez e progressão — 2026-08-17
 
 A run corrigida avançou da Wave 1 para a Wave 2 sem travar, completando `7/7 gerados` e mantendo a plantação em `100/100`. O frame clock visual foi medido no navegador durante um segundo: `61 frames` em `1008 ms`, aproximadamente `61 FPS`. A simulação permanece em passo de 16 ms para garantir atualização de gameplay a 60 Hz, enquanto o requestAnimationFrame mantém o bob, o farol e os efeitos visuais sincronizados ao display.
+
+## Arena circular e economia dual — 2026-08-17
+
+O export atualizado abriu uma run vertical com a HUD exibindo `SUPRIMENTOS` para a moeda temporária e `Acampamento: 5003 gold` para o saldo persistente. Os oito quartéis foram distribuídos em um anel ao redor do farol, com o Guerreiro inicial no setor norte, e os círculos de alcance/auras de tropas e monstros deixaram de ser desenhados no fluxo principal.
+
+## Colocação e cobrança única — 2026-08-17
+
+Na prévia, selecionar o Arqueiro exibiu `Selecione um terreno` sem descontar o saldo. Ao tocar no quartel vazio, o Arqueiro foi criado no anel e a HUD passou a mostrar `249 SUPRIMENTOS`, enquanto `Acampamento: 5003 gold` permaneceu intacto. O fluxo agora cobra a carta somente na confirmação do quartel e não duplica o desconto.
+
+## Spawn externo e rota radial — 2026-08-17
+
+A Wave 3 da prévia chegou a `8/8 gerados` e mostrou inimigos entrando por bordas diferentes do mapa, convergindo radialmente para o farol. A plantação permaneceu em `90/100`, o Arqueiro e o Guerreiro ficaram no anel de quartéis e não foram exibidos anéis circulares de alcance em torno das unidades.
+
+## Acampamento com duas economias — 2026-08-17
+
+O Acampamento abriu no viewport vertical com o saldo `5003 OURO DO ACAMPAMENTO`, o painel `DUAS ECONOMIAS` e botões de upgrades usando `OURO`. A seção explica que o ouro persiste entre partidas e compra upgrades, tropas e quartéis, enquanto os suprimentos nascem durante a wave e pagam apenas a defesa atual.
+
+## Export final — 2026-08-17
+
+O bundle final recarregou a Home com `ouro do Acampamento`, `OURO OCIOSO` e `suprimentos de combate`; a entrada `INICIAR DEFESA` abriu a arena sem erro. A HUD da arena mostrou `SUPRIMENTOS`, `Acampamento: 5003 gold`, `8/8 quartéis` e a primeira wave começou com spawn normal.

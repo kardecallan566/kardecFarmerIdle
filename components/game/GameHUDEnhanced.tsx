@@ -143,7 +143,7 @@ export function GameHUDEnhanced() {
         {/* Coins Counter */}
         <View style={styles.coinCounter}>
           <Text style={styles.coinText}>💰</Text>
-          <Text style={styles.coinText}>{state.coins}</Text>
+          <Text style={styles.coinText}>{state.combatCoins}</Text>
         </View>
       </View>
     </View>

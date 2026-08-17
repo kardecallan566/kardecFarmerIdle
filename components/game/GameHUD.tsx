@@ -55,16 +55,17 @@ export function GameHUD() {
         <View className="items-end">
           <View className="flex-row items-center gap-1.5">
             <GameIcon name="coin" size={18} color="#F7C948" secondaryColor="#7D4E1F" />
-            <Text className="text-sm font-black text-[#FFF3C4]">{Math.floor(state.coins)}</Text>
+            <Text className="text-sm font-black text-[#FFF3C4]">{Math.floor(state.combatCoins)}</Text>
           </View>
-          <Text className="text-[9px] text-[#B6D3B0]">MOEDAS</Text>
+          <Text className="text-[9px] text-[#B6D3B0]">SUPRIMENTOS</Text>
+          <Text className="text-[8px] text-[#8FB08D]">Acampamento: {Math.floor(state.bankGold)} gold</Text>
         </View>
       </View>
 
       <View className="mt-2 flex-row items-center justify-between rounded-xl border border-[#3E6849] bg-[#0B2419] px-2.5 py-1.5">
         <Text className="text-[10px] font-bold text-[#B6D3B0]">FAROL CENTRAL</Text>
-        <Text className="text-[10px] font-black text-[#F7D774]">
-          Pulso {beaconStats.spawnBatch}x • {activePlotCount}/8 pátios
+          <Text className="text-[10px] font-black text-[#F7D774]">
+          Pulso {beaconStats.spawnBatch}x • {activePlotCount}/8 quartéis
         </Text>
       </View>
 

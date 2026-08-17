@@ -28,8 +28,8 @@ export type GameAction =
   | { type: 'SPAWN_ENEMY'; enemy: GameState['enemies'][number] }
   | { type: 'REMOVE_ENEMY'; enemyId: string }
   | { type: 'DAMAGE_PLANTATION'; amount: number }
-  | { type: 'ADD_COINS'; amount: number }
-  | { type: 'SUBTRACT_COINS'; amount: number }
+  | { type: 'ADD_COMBAT_COINS'; amount: number }
+  | { type: 'SUBTRACT_COMBAT_COINS'; amount: number }
   | { type: 'NEXT_WAVE' }
   | { type: 'GAME_OVER' }
   | { type: 'SELECT_CARD'; cardIndex: number }
@@ -75,14 +75,14 @@ function createPlot(
 }
 
 const initialPlots: CropPlot[] = [
-  createPlot(0, 'Pátio Leste', -Math.PI / 8, Math.PI / 8, true, 'warrior'),
-  createPlot(1, 'Pátio Sudeste', Math.PI / 8, 3 * Math.PI / 8, true),
-  createPlot(2, 'Pátio Sul', 3 * Math.PI / 8, 5 * Math.PI / 8, true),
-  createPlot(3, 'Pátio Sudoeste', 5 * Math.PI / 8, 7 * Math.PI / 8, true),
-  createPlot(4, 'Pátio Oeste', 7 * Math.PI / 8, 9 * Math.PI / 8, false),
-  createPlot(5, 'Pátio Noroeste', 9 * Math.PI / 8, 11 * Math.PI / 8, false),
-  createPlot(6, 'Pátio Norte', 11 * Math.PI / 8, 13 * Math.PI / 8, false),
-  createPlot(7, 'Pátio Nordeste', 13 * Math.PI / 8, 15 * Math.PI / 8, false),
+  createPlot(0, 'Quartel Norte', -5 * Math.PI / 8, -3 * Math.PI / 8, true, 'warrior'),
+  createPlot(1, 'Quartel Nordeste', -3 * Math.PI / 8, -Math.PI / 8, true),
+  createPlot(2, 'Quartel Leste', -Math.PI / 8, Math.PI / 8, true),
+  createPlot(3, 'Quartel Sudeste', Math.PI / 8, 3 * Math.PI / 8, true),
+  createPlot(4, 'Quartel Sul', 3 * Math.PI / 8, 5 * Math.PI / 8, false),
+  createPlot(5, 'Quartel Sudoeste', 5 * Math.PI / 8, 7 * Math.PI / 8, false),
+  createPlot(6, 'Quartel Oeste', 7 * Math.PI / 8, 9 * Math.PI / 8, false),
+  createPlot(7, 'Quartel Noroeste', 9 * Math.PI / 8, 11 * Math.PI / 8, false),
 ];
 
 function createRunPlots(beaconUpgradeLevels = DEFAULT_BEACON_UPGRADE_LEVELS): CropPlot[] {
@@ -98,7 +98,7 @@ function createRunPlots(beaconUpgradeLevels = DEFAULT_BEACON_UPGRADE_LEVELS): Cr
 
 const initialState: GameState = {
   wave: 1,
-  coins: 250,
+  combatCoins: 250,
   plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
   maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
   gameActive: false,
@@ -260,7 +260,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...initialState,
         plots: createRunPlots(state.beaconUpgradeLevels),
         wave: 1,
-        coins: 250,
+        combatCoins: 250,
         plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
         maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
         gameActive: true,
@@ -342,7 +342,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         enemies: state.enemies.filter((e) => e.id !== action.enemyId),
         waveEnemiesRemaining: Math.max(0, state.waveEnemiesRemaining - 1),
-        coins: state.coins + coinsGained,
+        combatCoins: state.combatCoins + coinsGained,
         totalEnemiesDefeated: state.totalEnemiesDefeated + 1,
         totalCoinsEarned: state.totalCoinsEarned + coinsGained,
         bestiaryDefeated: {
@@ -372,11 +372,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case 'ADD_COINS':
-      return { ...state, coins: state.coins + action.amount };
+    case 'ADD_COMBAT_COINS':
+      return { ...state, combatCoins: state.combatCoins + action.amount };
 
-    case 'SUBTRACT_COINS':
-      return { ...state, coins: Math.max(0, state.coins - action.amount) };
+    case 'SUBTRACT_COMBAT_COINS':
+      return { ...state, combatCoins: Math.max(0, state.combatCoins - action.amount) };
 
     case 'NEXT_WAVE': {
       const nextWave = state.wave + 1;
@@ -521,8 +521,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!state.gameActive) return;
 
     const loopInterval = setInterval(() => {
-      const coinsPerFrame = INITIAL_GAME_CONFIG.coinGainPerSecond / 10;
-      dispatch({ type: 'ADD_COINS', amount: coinsPerFrame });
+      const combatCoinsPerTick = INITIAL_GAME_CONFIG.coinGainPerSecond / 10;
+      dispatch({ type: 'ADD_COMBAT_COINS', amount: combatCoinsPerTick });
     }, 100);
 
     return () => clearInterval(loopInterval);

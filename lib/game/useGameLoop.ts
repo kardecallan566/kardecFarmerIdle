@@ -13,7 +13,7 @@ import {
   getWaveConfig,
   INITIAL_GAME_CONFIG,
 } from './types';
-import { distance, generateId } from './utils';
+import { distance, generateId, getPositionOnPath } from './utils';
 import { getMapLayout, getPlotPosition } from './layout';
 
 const GAME_TICK_MS = 16;
@@ -113,6 +113,15 @@ export function useGameLoop() {
         enemySpawnTimerRef.current >= spawnInterval
       ) {
         enemySpawnTimerRef.current -= spawnInterval;
+        const spawnLane = enemySpawnCountRef.current % INITIAL_GAME_CONFIG.pathCount;
+        const spawnPoint = getPositionOnPath(
+          layout.centerX,
+          layout.centerY,
+          spawnLane,
+          INITIAL_GAME_CONFIG.pathCount,
+          0,
+          layout.spawnDistance,
+        );
         const enemyKind = getEnemyKindForSpawn(currentState.wave, enemySpawnCountRef.current);
         const enemyProfile = getEnemyProfile(enemyKind, currentState.wave);
         const newEnemy: Enemy = {
@@ -120,9 +129,9 @@ export function useGameLoop() {
           kind: enemyKind,
           skinTier: enemyProfile.skinTier,
           bossEra: enemyProfile.bossEra,
-          x: layout.centerX,
-          y: layout.centerY - layout.spawnDistance,
-          pathIndex: 0,
+          x: spawnPoint.x,
+          y: spawnPoint.y,
+          pathIndex: spawnLane,
           pathProgress: 0,
           health: enemyProfile.health,
           maxHealth: enemyProfile.health,
@@ -218,14 +227,61 @@ export function useGameLoop() {
       const enemiesForTick = [...currentState.enemies];
       const updatedEnemies = enemiesForTick
         .map((enemy) => {
-          const newProgress = Math.min(
+          const currentPosition = { x: enemy.x, y: enemy.y };
+          const currentRadius = distance(
+            { x: layout.centerX, y: layout.centerY },
+            currentPosition,
+          );
+          let nextProgress = Math.min(
             1,
             enemy.pathProgress + (enemy.speed * GAME_DT) / Math.max(layout.spawnDistance, 1),
           );
-          const position = {
-            x: layout.centerX,
-            y: layout.centerY - layout.spawnDistance * (1 - newProgress),
-          };
+          let position = getPositionOnPath(
+            layout.centerX,
+            layout.centerY,
+            enemy.pathIndex,
+            INITIAL_GAME_CONFIG.pathCount,
+            nextProgress,
+            layout.spawnDistance,
+          );
+
+          let guardTarget: Guard | undefined;
+          let nearestGuardDistance = Number.POSITIVE_INFINITY;
+          allGuards.forEach((guard) => {
+            if (guard.health <= 0) return;
+            const guardOffsetX = guard.x - layout.centerX;
+            const guardOffsetY = guard.y - layout.centerY;
+            const guardRadius = Math.hypot(guardOffsetX, guardOffsetY);
+            if (guardRadius < INITIAL_GAME_CONFIG.plantationRadius + 24 || guardRadius > currentRadius + 28) return;
+            const laneLength = Math.max(currentRadius, 1);
+            const laneX = (currentPosition.x - layout.centerX) / laneLength;
+            const laneY = (currentPosition.y - layout.centerY) / laneLength;
+            const lateralDistance = Math.abs(guardOffsetX * laneY - guardOffsetY * laneX);
+            if (lateralDistance > 46) return;
+            const guardDistance = distance(currentPosition, { x: guard.x, y: guard.y });
+            if (guardDistance < nearestGuardDistance) {
+              nearestGuardDistance = guardDistance;
+              guardTarget = guard;
+            }
+          });
+
+          if (guardTarget && nearestGuardDistance > enemy.radius + 18) {
+            const moveDistance = Math.min(nearestGuardDistance - (enemy.radius + 18), enemy.speed * GAME_DT);
+            const ratio = moveDistance / Math.max(nearestGuardDistance, 1);
+            position = {
+              x: currentPosition.x + (guardTarget.x - currentPosition.x) * ratio,
+              y: currentPosition.y + (guardTarget.y - currentPosition.y) * ratio,
+            };
+            const distanceAfterMove = distance(
+              { x: layout.centerX, y: layout.centerY },
+              position,
+            );
+            nextProgress = Math.max(
+              enemy.pathProgress,
+              Math.min(1, 1 - distanceAfterMove / Math.max(layout.spawnDistance, 1)),
+            );
+          }
+
           const distToCenter = distance(
             { x: layout.centerX, y: layout.centerY },
             position,
@@ -241,7 +297,7 @@ export function useGameLoop() {
             ...enemy,
             x: position.x,
             y: position.y,
-            pathProgress: newProgress,
+            pathProgress: nextProgress,
           };
         })
         .filter((enemy): enemy is Enemy => enemy !== null);

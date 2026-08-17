@@ -123,7 +123,7 @@ export function CardBarEnhanced() {
 
   const handleCardPress = (index: number) => {
     const cost = CARD_CONFIGS[index].cost;
-    if (state.coins < cost) {
+    if (state.combatCoins < cost) {
       return; // Can't afford
     }
     const cooldown = (cardCooldowns[index] as any)?.cooldown ?? 0;
@@ -147,7 +147,7 @@ export function CardBarEnhanced() {
       >
         {CARD_CONFIGS.map((card, index) => {
           const cost = card.cost;
-          const canAfford = state.coins >= cost;
+          const canAfford = state.combatCoins >= cost;
           const cooldown = (cardCooldowns[index] as any)?.cooldown ?? 0;
           const isSelected = state.selectedCardIndex === index;
           const isOnCooldown = cooldown > 0;

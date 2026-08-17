@@ -40,17 +40,22 @@ export function useCardSystem() {
     const guardConfig = GUARD_CONFIGS[guardType];
     if (!state.unlockedTroops.includes(guardType)) return;
 
-    // Check if player has enough coins
-    if (state.coins < guardConfig.cost) return;
-
-    // Deduct coins
-    dispatch({ type: 'SUBTRACT_COINS', amount: guardConfig.cost });
-
-    // Start card cooldown
-    cardCooldownsRef.current[cardIndex].cooldown = card.maxCooldown;
-
-    // Select card for placement
+    // A carta só é selecionada nesta etapa; o custo é cobrado na confirmação do quartel.
+    if (state.combatCoins < guardConfig.cost) return;
     dispatch({ type: 'SELECT_CARD', cardIndex });
+  };
+
+  const commitCardPlacement = (cardIndex: number): boolean => {
+    const card = cardCooldownsRef.current[cardIndex];
+    const guardTypes = ['warrior', 'archer', 'tank'] as const;
+    const guardType = guardTypes[cardIndex];
+    const guardConfig = GUARD_CONFIGS[guardType];
+    if (!card || card.cooldown > 0 || !state.unlockedTroops.includes(guardType)) return false;
+    if (state.combatCoins < guardConfig.cost) return false;
+
+    dispatch({ type: 'SUBTRACT_COMBAT_COINS', amount: guardConfig.cost });
+    card.cooldown = card.maxCooldown;
+    return true;
   };
 
   const deselectCard = () => {
@@ -76,6 +81,7 @@ export function useCardSystem() {
 
   return {
     selectCard,
+    commitCardPlacement,
     deselectCard,
     getCardCooldown,
     getCardMaxCooldown,

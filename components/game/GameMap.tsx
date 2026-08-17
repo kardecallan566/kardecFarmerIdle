@@ -8,6 +8,7 @@ import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
 import { useDeathAnimations } from '@/lib/game/useDeathAnimations';
 import { useCoinAnimations } from '@/lib/game/useCoinAnimations';
+import { useCardSystem } from '@/lib/game/useCardSystem';
 import { AttackAnimationsLayer } from './AttackAnimationsLayer';
 import { DeathAnimationsLayer } from './DeathAnimationsLayer';
 import { CoinAnimationsLayer } from './CoinAnimationsLayer';
@@ -61,6 +62,7 @@ export function GameMap() {
   const { animations: attackAnimations, addAttackAnimation } = useAttackAnimations();
   const { deathAnimations, addDeathAnimation } = useDeathAnimations();
   const { coinAnimations, addCoinAnimation } = useCoinAnimations();
+  const { commitCardPlacement } = useCardSystem();
 
   const mapCenterX = mapLayout.centerX;
   const mapCenterY = mapLayout.centerY;
@@ -150,8 +152,7 @@ export function GameMap() {
       const cropType = cropTypes[state.selectedCardIndex];
       const config = GUARD_CONFIGS[cropType];
 
-      if (state.coins >= config.cost) {
-        dispatch({ type: 'SUBTRACT_COINS', amount: config.cost });
+      if (state.combatCoins >= config.cost && commitCardPlacement(state.selectedCardIndex)) {
         dispatch({ type: 'PLANT_CROP', plotIndex, cropType });
       }
     } else {
@@ -257,18 +258,7 @@ export function GameMap() {
                   <Path d={`M ${pos.x - 5} ${pos.y - 5} L ${pos.x - 5} ${pos.y - 1} L ${pos.x + 5} ${pos.y - 1} L ${pos.x + 5} ${pos.y - 5}`} fill="none" stroke="#243D35" strokeWidth="2" />
                   <SvgText x={pos.x} y={pos.y + 18} fontSize={8} fill="#DDEFC8" fontWeight="bold" textAnchor="middle">BLOQUEADO</SvgText>
                 </G>
-              ) : isIlluminated && (
-                <Circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={38}
-                  fill="none"
-                                      stroke="#F7D774"
-
-                  strokeWidth="2"
-                  opacity={0.8}
-                />
-              )}
+              ) : null}
 
               {plot?.cropType ? (
                 <G onPress={() => handlePlotPress(pos.index)}>
@@ -433,18 +423,6 @@ export function GameMap() {
           const walkBob = guard.targetId ? Math.sin(walkPhase) * 0.9 : Math.sin(walkPhase * 0.6) * 0.25;
           return (
             <G key={guard.id} transform={`translate(${guard.x} ${guard.y + walkBob})`}>
-              {visual.tier !== 'base' && (
-                <Circle
-                  cx={0}
-                  cy={0}
-                  r={17 + (visual.tier === 'legendary' ? 3 : 0)}
-                  fill="none"
-                  stroke={visual.auraColor}
-                  strokeWidth={visual.tier === 'legendary' ? 2.5 : 1.5}
-                  opacity={0.5 + Math.sin(animationTick * 0.08) * 0.12}
-                />
-              )}
-              <Circle cx={1} cy={2} r={12} fill="#000" opacity={0.25} />
               <SvgImage
                 href={GUARD_IMAGES[guard.type][visual.tier]}
                 x={-16}
@@ -537,21 +515,14 @@ export function GameMap() {
 
           return (
             <G key={enemy.id} transform={transform}>
-              <Circle
-                cx={1}
-                cy={2}
-                r={imgSize / 2}
+              <Rect
+                x={-imgSize / 2 - 2}
+                y={imgSize / 2 - 1}
+                width={imgSize + 4}
+                height={3}
+                rx={1.5}
                 fill="#000"
-                opacity={0.25}
-              />
-              <Circle
-                cx={0}
-                cy={0}
-                r={imgSize / 2 + 4 + Math.sin(phase * 1.4) * (enemy.kind === 'healer' ? 2 : 0)}
-                fill="none"
-                stroke={enemyAccent}
-                strokeWidth={enemy.kind === 'brute' ? 3 : 2}
-                opacity={enemy.kind === 'healer' ? 0.78 : 0.55}
+                opacity={0.22}
               />
               <SvgImage
                 href={enemyImage}

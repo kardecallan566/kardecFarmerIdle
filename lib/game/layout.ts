@@ -25,7 +25,7 @@ export function getMapLayout(width: number, windowHeight: number, isBossWave = f
     centerX: width / 2,
     centerY,
     mapRadius,
-    spawnDistance: Math.max(mapRadius + 54, Math.min(mapRadius * 1.45, height * 0.62)),
+    spawnDistance: Math.max(mapRadius + 54, width * 0.62, height * 0.58),
     plotDistance,
     guardHoldDistance: clamp(mapRadius * 0.34, 42, 58),
   };
@@ -37,14 +37,11 @@ export function getPlotPosition(
   centerY: number,
   plotDistance: number,
 ) {
-  const column = plotIndex < 4 ? -1 : 1;
-  const row = plotIndex % 4;
-  const columnOffset = Math.max(90, Math.min(138, plotDistance * 1.12));
-  const rowSpacing = Math.max(70, Math.min(98, plotDistance * 0.86));
-  const rowOffset = (row - 1.5) * rowSpacing;
+  const ringRadius = Math.max(94, Math.min(132, plotDistance * 0.94));
+  const angle = -Math.PI / 2 + (plotIndex / 8) * Math.PI * 2;
 
   return {
-    x: centerX + column * columnOffset,
-    y: centerY + rowOffset,
+    x: centerX + Math.cos(angle) * ringRadius,
+    y: centerY + Math.sin(angle) * ringRadius,
   };
 }

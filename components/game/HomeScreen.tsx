@@ -100,6 +100,22 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
             </View>
           </View>
 
+          <View className="rounded-3xl border border-[#B8CDE0] bg-[#F1F8FC]/95 p-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-[10px] font-black tracking-widest text-[#5F7990]">DECISÕES DE DEFESA</Text>
+                <Text className="mt-1 text-lg font-black text-[#2D5367]">Cada wave muda o plano</Text>
+              </View>
+              <Text className="rounded-full bg-[#D9EEF7] px-2 py-1 text-[9px] font-black text-[#3E7594]">RELÍQUIAS</Text>
+            </View>
+            <Text className="mt-2 text-xs leading-4 text-[#68859A]">Depois de limpar uma wave, escolha uma melhoria temporária. Dano vence brutos, alcance controla corredores e moedas aceleram sua próxima defesa.</Text>
+            <View className="mt-3 flex-row gap-2">
+              <View className="flex-1 rounded-xl bg-[#F7E5E0] p-2"><Text className="text-[9px] font-black text-[#A74D3D]">FRENTE</Text><Text className="mt-1 text-[9px] leading-3 text-[#9B6559]">Guerreiro segura o centro.</Text></View>
+              <View className="flex-1 rounded-xl bg-[#E1F0D9] p-2"><Text className="text-[9px] font-black text-[#4E8145]">ALCANCE</Text><Text className="mt-1 text-[9px] leading-3 text-[#63815D]">Arqueiro cobre a estrada.</Text></View>
+              <View className="flex-1 rounded-xl bg-[#FFF1C8] p-2"><Text className="text-[9px] font-black text-[#9A7740]">RESERVA</Text><Text className="mt-1 text-[9px] leading-3 text-[#9A7740]">Guarde gold para evoluir.</Text></View>
+            </View>
+          </View>
+
           <View className="rounded-3xl border border-[#C9D9BC] bg-[#F5FAEE]/95 p-4">
             <Text className="mb-3 text-sm font-black text-[#294F2E]">Como jogar</Text>
             <View className="gap-3">

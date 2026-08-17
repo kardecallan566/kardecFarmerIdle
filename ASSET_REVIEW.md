@@ -150,3 +150,15 @@ Após simular uma hora offline e recarregar o build, a Home exibiu `+3 gold ocio
 ## Resgate do gold idle
 
 No Acampamento, o perfil exibiu `+3 GOLD OCIOSO`. Ao pressionar `RESGATAR GOLD`, o saldo do acampamento passou de 5000 para 5003 e o indicador idle foi zerado para `+0`, confirmando resgate único e persistência do ganho.
+
+## Arena reorganizada e alcance oculto
+
+No build polido, os oito campos foram reorganizados em duas colunas verticais, quatro de cada lado da estrada. O Guerreiro inicial ficou isolado no campo superior esquerdo, a estrada central permaneceu livre e o farol ganhou mais espaço visual. Os círculos de alcance e o texto de linha de defesa não aparecem mais na arena; o alcance continua existindo apenas na lógica de combate.
+
+## Recompensas estratégicas entre waves
+
+A primeira wave foi concluída e o jogo exibiu o overlay `INTERVALO TÁTICO` com três escolhas. A arena permaneceu pausada até a seleção. Ao escolher `+20% Dano`, o overlay fechou, a Wave 2 retomou com contadores ativos e a melhoria foi aplicada como upgrade da run.
+
+## Verificação final do build polido
+
+A exportação final carregou a Home com o painel de decisões de defesa e a arena com duas colunas de campos, estrada central livre, farol luminoso e sem círculos de ataque renderizados. O build usa o novo fluxo de relíquias entre waves e os cards de tropa continuam exibindo tiers visuais e stats persistentes.

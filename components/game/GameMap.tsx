@@ -331,28 +331,6 @@ export function GameMap() {
         <Circle
           cx={mapCenterX}
           cy={mapCenterY}
-          r={mapLayout.guardHoldDistance}
-          fill="none"
-          stroke="#B8D491"
-          strokeWidth="2"
-          strokeDasharray="6 8"
-          opacity={0.56}
-        />
-        <SvgText
-          x={mapCenterX}
-          y={mapCenterY - mapLayout.guardHoldDistance - 8}
-          fontSize={8}
-          fill="#DDEFC8"
-          textAnchor="middle"
-          fontWeight="bold"
-          opacity={0.8}
-        >
-          LINHA DE DEFESA
-        </SvgText>
-
-        <Circle
-          cx={mapCenterX}
-          cy={mapCenterY}
           r={INITIAL_GAME_CONFIG.plantationRadius + 6}
           fill="#3182ce"
           stroke="#ebf8ff"
@@ -368,11 +346,49 @@ export function GameMap() {
         <Circle
           cx={mapCenterX}
           cy={mapCenterY}
+          r={28 + beaconPulse * 8}
+          fill="#F8D66D"
+          opacity={0.08 + beaconOpacity * 0.16}
+        />
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
           r={38 * beaconPulse}
           fill="none"
           stroke="#FFF0A8"
           strokeWidth="2"
           opacity={beaconOpacity}
+        />
+        <Circle
+          cx={mapCenterX}
+          cy={mapCenterY}
+          r={50 + Math.sin(animationTick * 0.08) * 4}
+          fill="none"
+          stroke="#F7D774"
+          strokeWidth="1"
+          strokeDasharray="2 9"
+          opacity={0.35 + beaconOpacity * 0.4}
+        />
+        <Circle
+          cx={mapCenterX + Math.cos(beaconAngle) * mapLayout.mapRadius * 0.42}
+          cy={mapCenterY + Math.sin(beaconAngle) * mapLayout.mapRadius * 0.42}
+          r={3 + beaconPulse * 1.5}
+          fill="#FFF8D0"
+          opacity={0.72}
+        />
+        <Circle
+          cx={mapCenterX + Math.cos(beaconAngle + 0.28) * mapLayout.mapRadius * 0.68}
+          cy={mapCenterY + Math.sin(beaconAngle + 0.28) * mapLayout.mapRadius * 0.68}
+          r={2.5}
+          fill="#F7D774"
+          opacity={0.55}
+        />
+        <Circle
+          cx={mapCenterX + Math.cos(beaconAngle - 0.24) * mapLayout.mapRadius * 0.84}
+          cy={mapCenterY + Math.sin(beaconAngle - 0.24) * mapLayout.mapRadius * 0.84}
+          r={2}
+          fill="#FFF8D0"
+          opacity={0.5}
         />
         <Circle
           cx={mapCenterX}
@@ -448,15 +464,6 @@ export function GameMap() {
                 opacity={0.5 + Math.sin(animationTick * 0.08) * 0.12}
               />
             )}
-            <Circle
-              cx={Math.round(guard.x)}
-              cy={Math.round(guard.y)}
-              r={guard.range}
-              fill="none"
-              stroke={visual.auraColor}
-              strokeWidth="1"
-              opacity={0.12}
-            />
             <Circle
               cx={Math.round(guard.x) + 1}
               cy={Math.round(guard.y) + 2}

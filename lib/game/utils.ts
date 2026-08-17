@@ -1,5 +1,7 @@
 import { Vector2, INITIAL_GAME_CONFIG } from './types';
 
+import type { Upgrade } from './types';
+
 export function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
@@ -128,19 +130,19 @@ export function isValidGuardPosition(
 }
 
 // Generate random upgrade options
-export function generateUpgradeOptions(count: number = 3) {
-  const upgradeTypes = [
+export function generateUpgradeOptions(count: number = 3): Upgrade[] {
+  const upgradeTypes: Array<Pick<Upgrade, 'name' | 'type' | 'value' | 'targetGuard' | 'stat'>> = [
     { name: '+20% Dano', type: 'damage', value: 0.2 },
     { name: '+1 Alcance', type: 'range', value: 1 },
     { name: '-20% Custo', type: 'cost', value: -0.2 },
     { name: '+50% Moedas', type: 'coins', value: 0.5 },
     { name: '+10 Vida', type: 'health', value: 10 },
-    { name: 'Guerreiro +30% Dano', type: 'guardSpecific', value: 0.3, targetGuard: 'warrior' },
-    { name: 'Arqueiro +40% Alcance', type: 'guardSpecific', value: 0.4, targetGuard: 'archer' },
-    { name: 'Tanque +50% Vida', type: 'guardSpecific', value: 0.5, targetGuard: 'tank' },
+    { name: 'Guerreiro +30% Dano', type: 'guardSpecific', value: 0.3, targetGuard: 'warrior', stat: 'damage' },
+    { name: 'Arqueiro +40% Alcance', type: 'guardSpecific', value: 0.4, targetGuard: 'archer', stat: 'range' },
+    { name: 'Tanque +50% Vida', type: 'guardSpecific', value: 0.5, targetGuard: 'tank', stat: 'health' },
   ];
 
-  const selected = [];
+  const selected: Upgrade[] = [];
   const indices = new Set<number>();
 
   while (selected.length < Math.min(count, upgradeTypes.length)) {

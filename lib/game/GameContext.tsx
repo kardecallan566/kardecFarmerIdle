@@ -15,6 +15,7 @@ import {
   PersistentProgress,
 } from './types';
 import { getPersistentProgress, savePersistentProgress } from './storage';
+import { generateUpgradeOptions } from './utils';
 
 export type GameAction =
   | { type: 'INIT_GAME' }
@@ -113,6 +114,7 @@ const initialState: GameState = {
   totalEnemiesDefeated: 0,
   totalCoinsEarned: 0,
   upgrades: [],
+  pendingWaveRewards: [],
   selectedCardIndex: null,
   placingMode: false,
   bankGold: 0,
@@ -266,6 +268,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         enemies: [],
         guards: [],
         upgrades: [],
+        pendingWaveRewards: [],
         waveEnemiesRemaining: 0,
         waveEnemiesTotal: getWaveConfig(1).enemyCount,
         waveEnemiesSpawned: 0,
@@ -375,14 +378,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SUBTRACT_COINS':
       return { ...state, coins: Math.max(0, state.coins - action.amount) };
 
-    case 'NEXT_WAVE':
+    case 'NEXT_WAVE': {
+      const nextWave = state.wave + 1;
       return {
         ...state,
-        wave: state.wave + 1,
+        wave: nextWave,
+        gameActive: false,
         waveEnemiesRemaining: 0,
-        waveEnemiesTotal: getWaveConfig(state.wave + 1).enemyCount,
+        waveEnemiesTotal: getWaveConfig(nextWave).enemyCount,
         waveEnemiesSpawned: 0,
+        pendingWaveRewards: generateUpgradeOptions(3),
       };
+    }
 
     case 'GAME_OVER':
       return { ...state, gameLost: true, gameActive: false };
@@ -449,8 +456,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         plots: state.plots.map((plot) => ({ ...plot, isWateredThisCycle: false })),
       };
 
-    case 'APPLY_UPGRADE':
-      return { ...state, upgrades: [...state.upgrades] };
+    case 'APPLY_UPGRADE': {
+      const selectedUpgrade = state.pendingWaveRewards[action.upgradeIndex];
+      if (!selectedUpgrade) return state;
+      return {
+        ...state,
+        upgrades: [...state.upgrades, selectedUpgrade],
+        pendingWaveRewards: [],
+        gameActive: true,
+      };
+    }
 
     default:
       return state;

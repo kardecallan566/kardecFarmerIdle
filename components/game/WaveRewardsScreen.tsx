@@ -1,62 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
-import { generateUpgradeOptions } from '@/lib/game/utils';
+
+const UPGRADE_COLORS: Record<string, string> = {
+  damage: '#D85C43',
+  range: '#4A91C7',
+  cost: '#B8842C',
+  coins: '#D49B2C',
+  health: '#5C9C63',
+  guardSpecific: '#7A61B8',
+};
 
 export function WaveRewardsScreen() {
   const { state, dispatch } = useGame();
-  const [upgrades, setUpgrades] = useState<any[]>([]);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    // Show rewards screen after wave completion
-    if (state.waveEnemiesRemaining === 0 && state.enemies.length === 0 && state.wave > 1) {
-      const newUpgrades = generateUpgradeOptions(3);
-      setUpgrades(newUpgrades);
-      setVisible(true);
-    }
-  }, [state.waveEnemiesRemaining, state.enemies.length, state.wave]);
+  const visible = state.pendingWaveRewards.length > 0;
 
   const handleSelectUpgrade = (upgradeIndex: number) => {
     dispatch({ type: 'APPLY_UPGRADE', upgradeIndex });
-    setVisible(false);
-    // Continue to next wave
-    setTimeout(() => {
-      dispatch({ type: 'NEXT_WAVE' });
-    }, 500);
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View className="flex-1 bg-black/50 justify-center items-center p-4">
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-          <View className="bg-surface rounded-lg p-6 gap-4">
-            <Text className="text-2xl font-bold text-foreground text-center">
-              Escolha uma Melhoria
-            </Text>
+      <View className="flex-1 items-center justify-center bg-[#08130D]/75 p-4">
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', width: '100%' }}>
+          <View className="mx-auto w-full max-w-[390px] rounded-3xl border-2 border-[#E5C76B] bg-[#F8F3DE] p-5 shadow-2xl">
+            <View className="items-center">
+              <Text className="text-[10px] font-black tracking-[2px] text-[#8A7040]">INTERVALO TÁTICO</Text>
+              <Text className="mt-1 text-2xl font-black text-[#294F2E]">A defesa aprendeu</Text>
+              <Text className="mt-1 text-center text-xs leading-4 text-[#71835E]">Escolha uma relíquia para moldar a próxima wave. A arena está pausada.</Text>
+            </View>
 
-            <View className="gap-3">
-              {upgrades.map((upgrade, index) => (
-                <Pressable
-                  key={upgrade.id}
-                  onPress={() => handleSelectUpgrade(index)}
-                  style={({ pressed }) => [
-                    {
-                      opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.98 : 1 }],
-                    },
-                  ]}
-                >
-                  <View className="bg-background rounded-lg p-4 border-2 border-primary">
-                    <Text className="text-lg font-bold text-foreground mb-1">
-                      {upgrade.name}
-                    </Text>
-                    <Text className="text-sm text-muted">
-                      {upgrade.description}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
+            <View className="mt-4 gap-3">
+              {state.pendingWaveRewards.map((upgrade, index) => {
+                const accent = UPGRADE_COLORS[upgrade.type] ?? '#4E8B46';
+                return (
+                  <Pressable
+                    key={upgrade.id}
+                    onPress={() => handleSelectUpgrade(index)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Escolher melhoria ${upgrade.name}`}
+                    style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: pressed ? 0.88 : 1 })}
+                  >
+                    <View className="rounded-2xl border border-[#D6DCC4] bg-white/80 p-4" style={{ borderLeftWidth: 6, borderLeftColor: accent }}>
+                      <View className="flex-row items-center justify-between">
+                        <Text className="flex-1 text-base font-black text-[#294F2E]">{upgrade.name}</Text>
+                        <Text className="rounded-full px-2 py-1 text-[9px] font-black text-white" style={{ backgroundColor: accent }}>ESCOLHER</Text>
+                      </View>
+                      <Text className="mt-2 text-xs leading-4 text-[#71835E]">{upgrade.description}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         </ScrollView>

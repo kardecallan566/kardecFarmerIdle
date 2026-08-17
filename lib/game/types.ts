@@ -95,6 +95,7 @@ export interface GameState {
   totalEnemiesDefeated: number;
   totalCoinsEarned: number;
   upgrades: Upgrade[];
+  pendingWaveRewards: Upgrade[];
   selectedCardIndex: number | null;
   placingMode: boolean;
   bankGold: number;
@@ -172,6 +173,7 @@ export interface Upgrade {
   type: 'damage' | 'range' | 'cost' | 'coins' | 'health' | 'guardSpecific';
   value: number;
   targetGuard?: GuardType;
+  stat?: 'damage' | 'range' | 'health';
 }
 
 export interface WaveConfig {

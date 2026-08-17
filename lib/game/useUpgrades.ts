@@ -17,7 +17,7 @@ export function useUpgrades() {
     let costMultiplier = 1;
     let coinMultiplier = 1;
     let healthBonus = 0;
-    const guardSpecificUpgrades: { [key: string]: number } = {};
+    const guardSpecificUpgrades: Record<string, { damage: number; range: number; health: number }> = {};
 
     state.upgrades.forEach((upgrade) => {
       switch (upgrade.type) {
@@ -38,8 +38,12 @@ export function useUpgrades() {
           break;
         case 'guardSpecific':
           if (upgrade.targetGuard) {
-            guardSpecificUpgrades[upgrade.targetGuard] =
-              (guardSpecificUpgrades[upgrade.targetGuard] || 0) + upgrade.value;
+            const current = guardSpecificUpgrades[upgrade.targetGuard] ?? { damage: 0, range: 0, health: 0 };
+            const stat = upgrade.stat ?? 'damage';
+            guardSpecificUpgrades[upgrade.targetGuard] = {
+              ...current,
+              [stat]: current[stat] + upgrade.value,
+            };
           }
           break;
       }
@@ -48,13 +52,13 @@ export function useUpgrades() {
     // Update guards with cumulative upgrades
     const updatedGuards = state.guards.map((guard) => {
       const baseConfig = GUARD_CONFIGS[guard.type];
-      const guardSpecificBonus = guardSpecificUpgrades[guard.type] || 0;
+      const guardSpecificBonus = guardSpecificUpgrades[guard.type] ?? { damage: 0, range: 0, health: 0 };
 
       return {
         ...guard,
-        damage: baseConfig.damage * damageMultiplier * (1 + guardSpecificBonus),
-        range: baseConfig.range * rangeMultiplier,
-        maxHealth: baseConfig.health + healthBonus,
+        damage: baseConfig.damage * damageMultiplier * (1 + guardSpecificBonus.damage),
+        range: baseConfig.range * rangeMultiplier * (1 + guardSpecificBonus.range),
+        maxHealth: baseConfig.health + healthBonus + baseConfig.health * guardSpecificBonus.health,
       };
     });
 

@@ -17,7 +17,7 @@ export function getMapLayout(width: number, windowHeight: number): MapLayout {
   const height = clamp(windowHeight * 0.66, 360, 560);
   const mapRadius = clamp(Math.min(width * 0.38, height * 0.36), 112, 168);
   const centerY = clamp(height * 0.52, mapRadius + 78, height - 96);
-  const plotDistance = clamp(mapRadius * 0.58, 62, 92);
+  const plotDistance = clamp(mapRadius * 0.72, 80, 112);
 
   return {
     width,
@@ -37,11 +37,14 @@ export function getPlotPosition(
   centerY: number,
   plotDistance: number,
 ) {
-  const angle = (plotIndex * Math.PI) / 4;
-  const pathOffset = plotIndex === 2 ? plotDistance * 0.42 : plotIndex === 6 ? -plotDistance * 0.42 : 0;
+  const column = plotIndex < 4 ? -1 : 1;
+  const row = plotIndex % 4;
+  const columnOffset = Math.max(90, Math.min(138, plotDistance * 1.12));
+  const rowSpacing = Math.max(70, Math.min(98, plotDistance * 0.86));
+  const rowOffset = (row - 1.5) * rowSpacing;
 
   return {
-    x: centerX + Math.cos(angle) * plotDistance + pathOffset,
-    y: centerY + Math.sin(angle) * plotDistance,
+    x: centerX + column * columnOffset,
+    y: centerY + rowOffset,
   };
 }

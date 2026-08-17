@@ -104,11 +104,11 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
             <View className="flex-row items-center justify-between">
               <View className="flex-1">
                 <Text className="text-[10px] font-black tracking-widest text-[#5F7990]">DECISÕES DE DEFESA</Text>
-                <Text className="mt-1 text-lg font-black text-[#2D5367]">Cada wave muda o plano</Text>
+                <Text className="mt-1 text-lg font-black text-[#2D5367]">Prepare-se para o boss</Text>
               </View>
               <Text className="rounded-full bg-[#D9EEF7] px-2 py-1 text-[9px] font-black text-[#3E7594]">RELÍQUIAS</Text>
             </View>
-            <Text className="mt-2 text-xs leading-4 text-[#68859A]">Depois de limpar uma wave, escolha uma melhoria temporária. Dano vence brutos, alcance controla corredores e moedas aceleram sua próxima defesa.</Text>
+            <Text className="mt-2 text-xs leading-4 text-[#68859A]">A cada 5 waves, um boss encerra a era atual. Derrote-o para pausar a run e escolher uma relíquia: dano vence brutos, alcance controla corredores e vida segura a linha de frente.</Text>
             <View className="mt-3 flex-row gap-2">
               <View className="flex-1 rounded-xl bg-[#F7E5E0] p-2"><Text className="text-[9px] font-black text-[#A74D3D]">FRENTE</Text><Text className="mt-1 text-[9px] leading-3 text-[#9B6559]">Guerreiro segura o centro.</Text></View>
               <View className="flex-1 rounded-xl bg-[#E1F0D9] p-2"><Text className="text-[9px] font-black text-[#4E8145]">ALCANCE</Text><Text className="mt-1 text-[9px] leading-3 text-[#63815D]">Arqueiro cobre a estrada.</Text></View>

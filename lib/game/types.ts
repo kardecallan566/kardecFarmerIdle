@@ -1,6 +1,7 @@
 export type GuardType = 'warrior' | 'archer' | 'tank';
 export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
 export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
+export type EnemySkinTier = 'wild' | 'scarred' | 'ancient' | 'apocalypse';
 export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 
 export interface BeaconUpgradeLevels {
@@ -116,6 +117,8 @@ export interface GameState {
 export interface Enemy {
   id: string;
   kind: EnemyKind;
+  skinTier: EnemySkinTier;
+  bossEra: number;
   x: number;
   y: number;
   pathIndex: number;
@@ -188,6 +191,8 @@ export interface WaveConfig {
 
 export interface EnemyProfile {
   kind: EnemyKind;
+  skinTier: EnemySkinTier;
+  bossEra: number;
   health: number;
   speed: number;
   damage: number;
@@ -346,6 +351,18 @@ export function getBestiaryReward(kind: EnemyKind, previousCount: number, nextCo
   return reward;
 }
 
+export function getBossEra(waveNumber: number): number {
+  return Math.max(0, Math.floor(Math.max(1, waveNumber) / 5));
+}
+
+export function getEnemySkinTier(waveNumber: number): EnemySkinTier {
+  const era = getBossEra(waveNumber);
+  if (era >= 3) return 'apocalypse';
+  if (era === 2) return 'ancient';
+  if (era === 1) return 'scarred';
+  return 'wild';
+}
+
 export function getEnemyKindForSpawn(waveNumber: number, spawnIndex: number): EnemyKind {
   if (waveNumber % 5 === 0 && spawnIndex === 0) return 'boss';
   if (waveNumber >= 6 && spawnIndex % 7 === 0) return 'healer';
@@ -355,28 +372,36 @@ export function getEnemyKindForSpawn(waveNumber: number, spawnIndex: number): En
 }
 
 export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfile {
+  const bossEra = getBossEra(waveNumber);
+  const skinTier = getEnemySkinTier(waveNumber);
+  const eraHealthScale = 1 + bossEra * 0.28;
+  const eraDamageScale = 1 + bossEra * 0.18;
+  const eraTroopScale = 1 + bossEra * 0.22;
   const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
   const troopScale = 1 + Math.max(0, waveNumber - 1) * 0.14;
   const base = {
-    health: Math.round(28 * waveScale),
+    kind,
+    skinTier,
+    bossEra,
+    health: Math.round(28 * waveScale * eraHealthScale),
     speed: 34 + waveNumber * 3,
-    damage: Math.max(5, Math.round(5 * waveScale)),
-    troopDamage: Math.max(16, Math.round(16 * troopScale)),
+    damage: Math.max(5, Math.round(5 * waveScale * eraDamageScale)),
+    troopDamage: Math.max(16, Math.round(16 * troopScale * eraTroopScale)),
     radius: 12,
     color: '#DC143C',
   };
 
   switch (kind) {
     case 'runner':
-      return { kind, ...base, health: Math.round(base.health * 0.62), speed: base.speed * 1.75, damage: Math.max(4, Math.round(base.damage * 0.75)), troopDamage: Math.max(12, Math.round(base.troopDamage * 0.75)), radius: 10, color: '#E7A93B' };
+      return { ...base, health: Math.round(base.health * 0.62), speed: base.speed * 1.75, damage: Math.max(4, Math.round(base.damage * 0.75)), troopDamage: Math.max(12, Math.round(base.troopDamage * 0.75)), radius: 10, color: '#E7A93B' };
     case 'brute':
-      return { kind, ...base, health: Math.round(base.health * 2.35), speed: base.speed * 0.62, damage: Math.round(base.damage * 1.8), troopDamage: Math.round(base.troopDamage * 1.35), radius: 19, color: '#7A3F2B' };
+      return { ...base, health: Math.round(base.health * 2.35), speed: base.speed * 0.62, damage: Math.round(base.damage * 1.8), troopDamage: Math.round(base.troopDamage * 1.35), radius: 19, color: '#7A3F2B' };
     case 'healer':
-      return { kind, ...base, health: Math.round(base.health * 1.15), speed: base.speed * 0.82, damage: Math.max(3, Math.round(base.damage * 0.75)), troopDamage: Math.max(10, Math.round(base.troopDamage * 0.72)), radius: 14, color: '#5B8FD1', healingPower: Math.max(2, Math.round(base.health * 0.025)) };
+      return { ...base, health: Math.round(base.health * 1.15), speed: base.speed * 0.82, damage: Math.max(3, Math.round(base.damage * 0.75)), troopDamage: Math.max(10, Math.round(base.troopDamage * 0.72)), radius: 14, color: '#5B8FD1', healingPower: Math.max(2, Math.round(base.health * 0.025)) };
     case 'boss':
-      return { kind, ...base, health: Math.round(base.health * 4.5), speed: base.speed * 1.22, damage: Math.round(base.damage * 2.2), troopDamage: Math.round(base.troopDamage * 1.65), radius: 19, color: '#8B0000' };
+      return { ...base, health: Math.round(base.health * (4.5 + bossEra * 0.8)), speed: base.speed * 1.22, damage: Math.round(base.damage * (2.2 + bossEra * 0.3)), troopDamage: Math.round(base.troopDamage * (1.65 + bossEra * 0.25)), radius: 19 + bossEra * 2, color: bossEra >= 3 ? '#4B1D6B' : bossEra === 2 ? '#341A52' : '#8B0000' };
     default:
-      return { kind: 'normal', ...base };
+      return { ...base, kind: 'normal' };
   }
 }
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
-import Svg, { Circle, Line, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useGame } from '@/lib/game/GameContext';
-import { getGuardVisualProfile, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
+import { getBossEra, getGuardVisualProfile, getWaveConfig, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
 import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
@@ -15,27 +15,32 @@ import { CoinAnimationsLayer } from './CoinAnimationsLayer';
 const GUARD_IMAGES = {
   warrior: {
     base: require('@/assets/images/guard-warrior.png'),
-    veteran: require('@/assets/images/guard-warrior-veteran-clean.png'),
-    elite: require('@/assets/images/guard-warrior-elite-clean.png'),
-    legendary: require('@/assets/images/guard-warrior-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-warrior-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-warrior-elite-transparent.png'),
+    legendary: require('@/assets/images/guard-warrior-legendary-transparent.png'),
   },
   archer: {
     base: require('@/assets/images/guard-archer.png'),
-    veteran: require('@/assets/images/guard-archer-veteran-clean.png'),
-    elite: require('@/assets/images/guard-archer-veteran-clean.png'),
-    legendary: require('@/assets/images/guard-archer-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    legendary: require('@/assets/images/guard-archer-legendary-transparent.png'),
   },
   tank: {
     base: require('@/assets/images/guard-tank.png'),
-    veteran: require('@/assets/images/guard-tank-veteran-clean.png'),
-    elite: require('@/assets/images/guard-tank-elite-clean.png'),
-    legendary: require('@/assets/images/guard-tank-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-tank-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-tank-elite-transparent.png'),
+    legendary: require('@/assets/images/guard-tank-legendary-transparent.png'),
   },
 };
 
 const ENEMY_IMAGES = {
   normal: require('@/assets/images/enemy-normal.png'),
-  boss: require('@/assets/images/enemy-boss.png'),
+  runner: require('@/assets/images/enemy-runner-terror-transparent.png'),
+  brute: require('@/assets/images/enemy-brute-terror-transparent.png'),
+  healer: require('@/assets/images/enemy-healer-terror-transparent.png'),
+  bossAncient: require('@/assets/images/enemy-boss-ancient-transparent.png'),
+  bossApocalypse: require('@/assets/images/enemy-boss-apocalypse-transparent.png'),
+  bossWild: require('@/assets/images/enemy-boss.png'),
 };
 
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
@@ -43,7 +48,8 @@ const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-backgr
 export function GameMap() {
   const { state, dispatch } = useGame();
   const { width, height: windowHeight } = useWindowDimensions();
-  const mapLayout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
+  const isBossWave = getWaveConfig(state.wave).isBossWave;
+  const mapLayout = useMemo(() => getMapLayout(width, windowHeight, isBossWave), [width, windowHeight, isBossWave]);
   const [animationTick, setAnimationTick] = useState(0);
   const [plantationHit, setPlantationHit] = useState(false);
   const lastEnemyPositionsRef = React.useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -171,9 +177,10 @@ export function GameMap() {
             <Stop offset="55%" stopColor="#315941" />
             <Stop offset="100%" stopColor="#203C2B" />
           </LinearGradient>
-          <LinearGradient id="laneBg" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#7a5530" />
-            <Stop offset="100%" stopColor="#573b1f" />
+          <LinearGradient id="forestVeil" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#153524" />
+            <Stop offset="48%" stopColor="#294A31" />
+            <Stop offset="100%" stopColor="#142D20" />
           </LinearGradient>
         </Defs>
 
@@ -187,54 +194,23 @@ export function GameMap() {
           preserveAspectRatio="xMidYMid slice"
           opacity={0.62}
         />
-
         <Rect
-          x={mapCenterX - 40}
+          x={mapCenterX - 42}
           y={0}
-          width={80}
-          height={mapCenterY}
-          fill="url(#laneBg)"
-          rx={8}
-          opacity={0.94}
+          width={84}
+          height={mapLayout.height}
+          fill="url(#forestVeil)"
+          opacity={0.9}
         />
-        <Line
-          x1={mapCenterX - 39}
-          y1={0}
-          x2={mapCenterX - 39}
-          y2={mapCenterY}
-          stroke="#C9955C"
-          strokeWidth="2"
-          opacity={0.7}
-        />
-        <Line
-          x1={mapCenterX + 39}
-          y1={0}
-          x2={mapCenterX + 39}
-          y2={mapCenterY}
-          stroke="#C9955C"
-          strokeWidth="2"
-          opacity={0.7}
-        />
-        <Line
-          x1={mapCenterX}
-          y1={10}
-          x2={mapCenterX}
-          y2={Math.max(10, mapCenterY - 10)}
-          stroke="#E5B978"
-          strokeWidth="3"
-          strokeDasharray="12 14"
-          opacity={0.72}
-        />
-        {[0.15, 0.4, 0.65, 0.85].map((pct, idx) => (
-          <Path
-            key={`arrow_${idx}`}
-            d={`M ${mapCenterX - 12} ${mapCenterY * pct} L ${mapCenterX} ${mapCenterY * pct + 12} L ${mapCenterX + 12} ${mapCenterY * pct}`}
-            stroke="#d4a373"
-            strokeWidth="3"
-            fill="none"
-            opacity={0.6}
-          />
-        ))}
+
+        {isBossWave && (
+          <G>
+            <Rect x={mapCenterX - 86} y={10} width={172} height={22} rx={11} fill="#301739" opacity={0.92} />
+            <SvgText x={mapCenterX} y={25} fontSize={9} fill="#F7D774" fontWeight="bold" textAnchor="middle">
+              {`BOSS WAVE • ERA ${getBossEra(state.wave)}`}
+            </SvgText>
+          </G>
+        )}
 
         {plotPositions.map((pos) => {
           const plot = state.plots.find((p) => p.index === pos.index);
@@ -404,16 +380,6 @@ export function GameMap() {
           fill="#FFF4B0"
           opacity={0.12 + beaconOpacity}
         />
-        <Line
-          x1={mapCenterX}
-          y1={mapCenterY}
-          x2={mapCenterX + Math.cos(beaconAngle) * mapLayout.mapRadius}
-          y2={mapCenterY + Math.sin(beaconAngle) * mapLayout.mapRadius}
-          stroke="#FFF8D0"
-          strokeWidth="3"
-          strokeDasharray="8 10"
-          opacity={0.72}
-        />
         <Circle cx={mapCenterX} cy={mapCenterY + 17} r={23} fill="#213E37" opacity={0.32} />
         <Path
           d={`M ${mapCenterX - 14} ${mapCenterY + 15} L ${mapCenterX - 10} ${mapCenterY - 12} L ${mapCenterX + 10} ${mapCenterY - 12} L ${mapCenterX + 14} ${mapCenterY + 15} Z`}
@@ -515,23 +481,52 @@ export function GameMap() {
         })}
 
         {state.enemies.map((enemy, enemyIndex) => {
-          const enemyAccent = enemy.kind === 'runner'
+          const eraAccent = enemy.skinTier === 'apocalypse'
+            ? '#C36BFF'
+            : enemy.skinTier === 'ancient'
+              ? '#FF7B4D'
+              : enemy.skinTier === 'scarred'
+                ? '#E7A93B'
+                : '#DC143C';
+          const classAccent = enemy.kind === 'runner'
             ? '#E7A93B'
             : enemy.kind === 'brute'
-              ? '#7A3F2B'
+              ? '#A96745'
               : enemy.kind === 'healer'
                 ? '#63D9E8'
-                : enemy.isBoss
-                  ? '#8B0000'
-                  : '#DC143C';
-          const enemyLabel = enemy.kind === 'runner'
-            ? 'COR'
+                : eraAccent;
+          const enemyAccent = enemy.isBoss ? eraAccent : classAccent;
+          const enemyLabel = enemy.isBoss
+            ? `BOSS ${enemy.bossEra}`
+            : enemy.kind === 'runner'
+              ? 'COR'
+              : enemy.kind === 'brute'
+                ? 'BRU'
+                : enemy.kind === 'healer'
+                  ? 'CUR'
+                  : '';
+          const imgSize = enemy.isBoss
+            ? 48 + Math.min(enemy.bossEra, 3) * 8
             : enemy.kind === 'brute'
-              ? 'BRU'
+              ? 40
               : enemy.kind === 'healer'
-                ? 'CUR'
-                : '';
-          const imgSize = enemy.isBoss ? 44 : enemy.kind === 'brute' ? 38 : enemy.kind === 'healer' ? 32 : enemy.kind === 'runner' ? 26 : 30;
+                ? 34
+                : enemy.kind === 'runner'
+                  ? 30
+                  : 30;
+          const enemyImage = enemy.isBoss
+            ? enemy.skinTier === 'apocalypse'
+              ? ENEMY_IMAGES.bossApocalypse
+              : enemy.skinTier === 'ancient'
+                ? ENEMY_IMAGES.bossAncient
+                : ENEMY_IMAGES.bossWild
+            : enemy.kind === 'runner'
+              ? ENEMY_IMAGES.runner
+              : enemy.kind === 'brute'
+                ? ENEMY_IMAGES.brute
+                : enemy.kind === 'healer'
+                  ? ENEMY_IMAGES.healer
+                  : ENEMY_IMAGES.normal;
           const phase = animationTick * 0.16 + enemyIndex * 0.9;
           const bob = Math.sin(phase) * (enemy.isBoss ? 2 : 1.2);
           const scale = 1 + Math.sin(phase * 1.2) * (enemy.isBoss ? 0.035 : 0.02);
@@ -558,7 +553,7 @@ export function GameMap() {
                 opacity={enemy.kind === 'healer' ? 0.78 : 0.55}
               />
               <SvgImage
-                href={ENEMY_IMAGES[enemy.isBoss || enemy.kind === 'brute' ? 'boss' : 'normal']}
+                href={enemyImage}
                 x={-imgSize / 2}
                 y={-imgSize / 2}
                 width={imgSize}

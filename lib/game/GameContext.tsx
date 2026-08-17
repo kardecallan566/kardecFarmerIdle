@@ -380,14 +380,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'NEXT_WAVE': {
       const nextWave = state.wave + 1;
+      const clearedBossWave = getWaveConfig(state.wave).isBossWave;
       return {
         ...state,
         wave: nextWave,
-        gameActive: false,
+        gameActive: !clearedBossWave,
         waveEnemiesRemaining: 0,
         waveEnemiesTotal: getWaveConfig(nextWave).enemyCount,
         waveEnemiesSpawned: 0,
-        pendingWaveRewards: generateUpgradeOptions(3),
+        pendingWaveRewards: clearedBossWave ? generateUpgradeOptions(3) : [],
       };
     }
 

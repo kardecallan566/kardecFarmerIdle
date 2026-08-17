@@ -162,3 +162,17 @@ A primeira wave foi concluída e o jogo exibiu o overlay `INTERVALO TÁTICO` com
 ## Verificação final do build polido
 
 A exportação final carregou a Home com o painel de decisões de defesa e a arena com duas colunas de campos, estrada central livre, farol luminoso e sem círculos de ataque renderizados. O build usa o novo fluxo de relíquias entre waves e os cards de tropa continuam exibindo tiers visuais e stats persistentes.
+
+## Boss eras, skins e arena expandida — 2026-08-17
+
+A validação no build web confirmou a arena vertical com oito campos em duas colunas e o caminho visual coberto por uma faixa de bosque, enquanto o movimento interno dos inimigos continuou funcionando. Os cards carregaram os sprites transparentes de Guerreiro, Arqueiro e Tanque sem fundo branco.
+
+Uma run real alcançou a Wave 5 e iniciou a Wave 6 após a transição do chefe. O conteúdo renderizado confirmou `BOSS 1` e minions `COR`, demonstrando a nova era de boss e a classificação visual dos corredores. O `INTERVALO TÁTICO` apareceu somente após o boss; ao escolher `+10 Vida`, o overlay fechou e a Wave 6 retomou normalmente.
+
+A plantação terminou em 0/100 logo depois por falta de tropas suficientes no perfil de teste, e o Game Over abriu com os controles já funcionais. Os PNGs transparentes foram verificados após a limpeza conectada às bordas: pixels de canto ficaram com alpha 0 e os pixels internos da arte foram preservados.
+
+## Revalidação do export limpo — 2026-08-17
+
+Após remover cópias `_original`, versões `-clean`/`-alpha` e sprites brutos não referenciados, o export web foi reconstruído com sucesso. A Home carregou o cenário `forest-village-background.png`, o logo e o briefing de boss/relíquias sem erro visível.
+
+Uma nova run no export limpo abriu em viewport vertical com `WAVE 1`, farol central, `Pulso 3x • 8/8 pátios`, oito campos em duas colunas e os cards de Guerreiro, Arqueiro e Tanque usando PNGs transparentes. A faixa central visual permaneceu coberta pelo bosque, sem rota tracejada ou círculos de alcance; o feixe rotativo do farol continuou visível e a plantação iniciou em `100/100`.

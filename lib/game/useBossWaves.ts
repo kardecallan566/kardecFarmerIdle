@@ -63,6 +63,8 @@ export function useBossWaves() {
                 newMinions.push({
                   id: generateId('minion'),
                   kind: 'runner',
+                  skinTier: boss.skinTier,
+                  bossEra: boss.bossEra,
                   x: boss.x,
                   y: minionY,
                   pathIndex: boss.pathIndex,

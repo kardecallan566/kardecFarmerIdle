@@ -13,11 +13,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-export function getMapLayout(width: number, windowHeight: number): MapLayout {
-  const height = clamp(windowHeight * 0.66, 360, 560);
-  const mapRadius = clamp(Math.min(width * 0.38, height * 0.36), 112, 168);
-  const centerY = clamp(height * 0.52, mapRadius + 78, height - 96);
-  const plotDistance = clamp(mapRadius * 0.72, 80, 112);
+export function getMapLayout(width: number, windowHeight: number, isBossWave = false): MapLayout {
+  const height = clamp(windowHeight * (isBossWave ? 0.76 : 0.66), isBossWave ? 410 : 360, isBossWave ? 640 : 560);
+  const mapRadius = clamp(Math.min(width * (isBossWave ? 0.42 : 0.38), height * 0.36), isBossWave ? 126 : 112, isBossWave ? 196 : 168);
+  const centerY = clamp(height * (isBossWave ? 0.5 : 0.52), mapRadius + 78, height - 96);
+  const plotDistance = clamp(mapRadius * 0.72, isBossWave ? 88 : 80, isBossWave ? 126 : 112);
 
   return {
     width,

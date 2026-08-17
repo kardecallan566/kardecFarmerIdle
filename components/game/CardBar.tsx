@@ -15,21 +15,21 @@ const GUARD_NAMES = {
 const GUARD_IMAGES = {
   warrior: {
     base: require('@/assets/images/guard-warrior.png'),
-    veteran: require('@/assets/images/guard-warrior-veteran-clean.png'),
-    elite: require('@/assets/images/guard-warrior-elite-clean.png'),
-    legendary: require('@/assets/images/guard-warrior-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-warrior-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-warrior-elite-transparent.png'),
+    legendary: require('@/assets/images/guard-warrior-legendary-transparent.png'),
   },
   archer: {
     base: require('@/assets/images/guard-archer.png'),
-    veteran: require('@/assets/images/guard-archer-veteran-clean.png'),
-    elite: require('@/assets/images/guard-archer-veteran-clean.png'),
-    legendary: require('@/assets/images/guard-archer-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    legendary: require('@/assets/images/guard-archer-legendary-transparent.png'),
   },
   tank: {
     base: require('@/assets/images/guard-tank.png'),
-    veteran: require('@/assets/images/guard-tank-veteran-clean.png'),
-    elite: require('@/assets/images/guard-tank-elite-clean.png'),
-    legendary: require('@/assets/images/guard-tank-legendary-clean.png'),
+    veteran: require('@/assets/images/guard-tank-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-tank-elite-transparent.png'),
+    legendary: require('@/assets/images/guard-tank-legendary-transparent.png'),
   },
 };
 

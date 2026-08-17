@@ -74,7 +74,8 @@ function clampGuardToHoldRadius(
 export function useGameLoop() {
   const { state, dispatch } = useGame();
   const { width, height: windowHeight } = useWindowDimensions();
-  const layout = useMemo(() => getMapLayout(width, windowHeight), [width, windowHeight]);
+  const isBossWave = getWaveConfig(state.wave).isBossWave;
+  const layout = useMemo(() => getMapLayout(width, windowHeight, isBossWave), [width, windowHeight, isBossWave]);
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const enemySpawnTimerRef = useRef(0);
   const spawnedWaveRef = useRef(0);
@@ -117,6 +118,8 @@ export function useGameLoop() {
         const newEnemy: Enemy = {
           id: generateId('enemy'),
           kind: enemyKind,
+          skinTier: enemyProfile.skinTier,
+          bossEra: enemyProfile.bossEra,
           x: layout.centerX,
           y: layout.centerY - layout.spawnDistance,
           pathIndex: 0,

@@ -4,6 +4,8 @@ export interface CoinAnimation {
   id: string;
   x: number;
   y: number;
+  startX: number;
+  startY: number;
   targetX: number;
   targetY: number;
   progress: number;
@@ -13,7 +15,7 @@ export interface CoinAnimation {
 
 export function useCoinAnimations() {
   const [coinAnimations, setCoinAnimations] = useState<CoinAnimation[]>([]);
-  const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Add new coin animation
   const addCoinAnimation = useCallback((
@@ -27,6 +29,8 @@ export function useCoinAnimations() {
       id: `coin_${Date.now()}_${Math.random()}`,
       x: startX,
       y: startY,
+      startX,
+      startY,
       targetX,
       targetY,
       progress: 0,
@@ -34,7 +38,7 @@ export function useCoinAnimations() {
       value,
     };
 
-    setCoinAnimations((prev) => [...prev, newAnimation]);
+    setCoinAnimations((prev) => [...prev.slice(-23), newAnimation]);
   }, []);
 
   // Update animation progress
@@ -54,15 +58,15 @@ export function useCoinAnimations() {
             return {
               ...anim,
               progress: newProgress,
-              x: anim.x + (anim.targetX - anim.x) * easeProgress,
-              y: anim.y + (anim.targetY - anim.y) * easeProgress,
+              x: anim.startX + (anim.targetX - anim.startX) * easeProgress,
+              y: anim.startY + (anim.targetY - anim.startY) * easeProgress,
             };
           })
           .filter((anim) => anim.progress < anim.duration);
 
         if (updated.length === 0) {
           if (animationFrameRef.current) {
-            clearInterval(animationFrameRef.current);
+            cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
           }
         }
@@ -71,11 +75,16 @@ export function useCoinAnimations() {
       });
     };
 
-    animationFrameRef.current = setInterval(updateAnimations, 16);
+    const scheduleNextFrame = () => {
+      updateAnimations();
+      animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
+    };
+    animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
 
     return () => {
-      if (animationFrameRef.current) {
-        clearInterval(animationFrameRef.current);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [coinAnimations.length]);

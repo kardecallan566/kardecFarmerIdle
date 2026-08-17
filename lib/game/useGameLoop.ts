@@ -16,7 +16,7 @@ import {
 import { distance, generateId } from './utils';
 import { getMapLayout, getPlotPosition } from './layout';
 
-const GAME_TICK_MS = 33;
+const GAME_TICK_MS = 16;
 const GAME_DT = GAME_TICK_MS / 1000;
 const GUARD_COMBAT_BUFFER = 0.82;
 const MAX_GUARDS_PER_PLOT = 4;
@@ -252,24 +252,32 @@ export function useGameLoop() {
         let nextAbilityCooldown = Math.max(0, (enemy.abilityCooldown ?? 0) - GAME_DT);
 
         if (enemy.kind === 'healer' && nextAbilityCooldown <= 0) {
-          const healingTarget = updatedEnemies
-            .filter((ally) => ally.id !== enemy.id && ally.health > 0 && distance({ x: ally.x, y: ally.y }, { x: enemy.x, y: enemy.y }) <= 125)
-            .sort((first, second) => (second.maxHealth - second.health) - (first.maxHealth - first.health))[0];
-          if (healingTarget && healingTarget.health < healingTarget.maxHealth) {
+          let healingTarget: Enemy | undefined;
+          let highestMissingHealth = 0;
+          updatedEnemies.forEach((ally) => {
+            if (ally.id === enemy.id || ally.health <= 0) return;
+            if (distance({ x: ally.x, y: ally.y }, { x: enemy.x, y: enemy.y }) > 125) return;
+            const missingHealth = ally.maxHealth - ally.health;
+            if (missingHealth > highestMissingHealth) {
+              highestMissingHealth = missingHealth;
+              healingTarget = ally;
+            }
+          });
+          if (healingTarget) {
             healingTarget.health = Math.min(healingTarget.maxHealth, healingTarget.health + (enemy.healingPower ?? 0));
             nextAbilityCooldown = 2.4;
           }
         }
 
-        const guardTarget = allGuards
-          .filter((guard) =>
-            distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y }) <= enemy.radius + 18,
-          )
-          .sort(
-            (first, second) =>
-              distance({ x: first.x, y: first.y }, { x: enemy.x, y: enemy.y }) -
-              distance({ x: second.x, y: second.y }, { x: enemy.x, y: enemy.y }),
-          )[0];
+        let guardTarget: Guard | undefined;
+        let nearestGuardDistance = enemy.radius + 18;
+        allGuards.forEach((guard) => {
+          const currentDistance = distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y });
+          if (currentDistance <= nearestGuardDistance) {
+            nearestGuardDistance = currentDistance;
+            guardTarget = guard;
+          }
+        });
         let attackCooldown = nextEnemyCooldown;
 
         if (guardTarget && attackCooldown <= 0) {
@@ -292,18 +300,21 @@ export function useGameLoop() {
 
       const updatedGuards = guardsAfterDamage
         .map((guard) => {
-          const target = combatEnemies
-            .filter((enemy) => enemy.health > 0)
-            .sort(
-              (first, second) =>
-                distance({ x: guard.x, y: guard.y }, { x: first.x, y: first.y }) -
-                distance({ x: guard.x, y: guard.y }, { x: second.x, y: second.y }),
-            )[0];
-
           let nextX = guard.x;
           let nextY = guard.y;
           let nextCooldown = Math.max(0, guard.attackCooldown - GAME_DT);
           let targetId: string | undefined;
+
+          let target: Enemy | undefined;
+          let nearestEnemyDistance = Number.POSITIVE_INFINITY;
+          combatEnemies.forEach((enemy) => {
+            if (enemy.health <= 0) return;
+            const currentDistance = distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y });
+            if (currentDistance < nearestEnemyDistance) {
+              nearestEnemyDistance = currentDistance;
+              target = enemy;
+            }
+          });
 
           if (target) {
             targetId = target.id;
@@ -374,7 +385,7 @@ export function useGameLoop() {
     }, GAME_TICK_MS);
 
     return () => {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+      if (gameLoopRef.current !== null) clearInterval(gameLoopRef.current);
       if (waveTransitionTimeoutRef.current) clearTimeout(waveTransitionTimeoutRef.current);
       waveTransitionRef.current = false;
       enemySpawnTimerRef.current = 0;

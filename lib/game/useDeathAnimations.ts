@@ -24,7 +24,7 @@ export interface Particle {
 
 export function useDeathAnimations() {
   const [deathAnimations, setDeathAnimations] = useState<DeathAnimation[]>([]);
-  const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Add new death animation
   const addDeathAnimation = useCallback((x: number, y: number, color: string = '#FF4444') => {
@@ -57,7 +57,7 @@ export function useDeathAnimations() {
       particles,
     };
 
-    setDeathAnimations((prev) => [...prev, newAnimation]);
+    setDeathAnimations((prev) => [...prev.slice(-11), newAnimation]);
   }, []);
 
   // Update animation progress
@@ -89,7 +89,7 @@ export function useDeathAnimations() {
 
         if (updated.length === 0) {
           if (animationFrameRef.current) {
-            clearInterval(animationFrameRef.current);
+            cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
           }
         }
@@ -98,11 +98,16 @@ export function useDeathAnimations() {
       });
     };
 
-    animationFrameRef.current = setInterval(updateAnimations, 16);
+    const scheduleNextFrame = () => {
+      updateAnimations();
+      animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
+    };
+    animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
 
     return () => {
-      if (animationFrameRef.current) {
-        clearInterval(animationFrameRef.current);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [deathAnimations.length]);

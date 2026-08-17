@@ -176,3 +176,27 @@ A plantação terminou em 0/100 logo depois por falta de tropas suficientes no p
 Após remover cópias `_original`, versões `-clean`/`-alpha` e sprites brutos não referenciados, o export web foi reconstruído com sucesso. A Home carregou o cenário `forest-village-background.png`, o logo e o briefing de boss/relíquias sem erro visível.
 
 Uma nova run no export limpo abriu em viewport vertical com `WAVE 1`, farol central, `Pulso 3x • 8/8 pátios`, oito campos em duas colunas e os cards de Guerreiro, Arqueiro e Tanque usando PNGs transparentes. A faixa central visual permaneceu coberta pelo bosque, sem rota tracejada ou círculos de alcance; o feixe rotativo do farol continuou visível e a plantação iniciou em `100/100`.
+
+## Preparação dos quartéis e foreground — 2026-08-17
+
+Foram gerados dois assets para a nova composição da arena. A inspeção visual revelou que o sprite do quartel mantém a arte principal, mas foi exportado como RGB com padrão quadriculado de transparência; ele precisa receber alpha real antes de ser usado. O overlay `forest-lane-foreground-transparent.png` foi exportado em RGBA, porém contém faixas magenta horizontais opacas no corredor central; esse artefato será removido antes da integração.
+
+## Limpeza final dos novos assets — 2026-08-17
+
+O sprite final `village-barracks.png` passou a ser RGBA e a arte do quartel ficou preservada sem o quadriculado. A inspeção do foreground confirmou que as laterais de bosque e lanternas estão legíveis, mas ainda existem linhas horizontais residuais no corredor central; a composição final removerá toda a faixa central por máscara espacial para garantir transparência absoluta sobre a pista.
+
+## Quartéis e foreground na arena — 2026-08-17
+
+O export web atualizado abriu a arena em viewport vertical sem erro. Os sete espaços livres passaram a exibir o rótulo `QUARTEL` e o novo sprite de treinamento em vez de `Plantar`. A camada de foreground adicionou árvores, arbustos, cercas e lanternas nas bordas do mapa, acima da pista visual, sem cobrir o farol central; o corredor central continuou livre para a movimentação lógica.
+
+## Regressão encontrada no loop de 60 FPS — 2026-08-17
+
+Na primeira run após a migração para `requestAnimationFrame`, a arena e os quartéis carregaram corretamente, mas a HUD permaneceu em `0/5 gerados` por vários segundos. O console não exibiu erro visível. O fechamento do callback mostra o reagendamento do frame, então a próxima investigação deve verificar a disponibilidade global do requestAnimationFrame e o estado `gameActive` no navegador antes de manter essa implementação.
+
+## Correção do spawn após ajuste de clock — 2026-08-17
+
+Após trocar apenas a simulação para `setInterval` de 16 ms e manter requestAnimationFrame nos efeitos visuais, o export recarregado voltou a gerar inimigos normalmente: a primeira run mostrou `1/5 gerados`, plantação `100/100` e moedas ativas. O quartel vazio, o Guerreiro inicial, o farol e o foreground carregaram juntos sem erro de bundle.
+
+## Validação de fluidez e progressão — 2026-08-17
+
+A run corrigida avançou da Wave 1 para a Wave 2 sem travar, completando `7/7 gerados` e mantendo a plantação em `100/100`. O frame clock visual foi medido no navegador durante um segundo: `61 frames` em `1008 ms`, aproximadamente `61 FPS`. A simulação permanece em passo de 16 ms para garantir atualização de gameplay a 60 Hz, enquanto o requestAnimationFrame mantém o bob, o farol e os efeitos visuais sincronizados ao display.

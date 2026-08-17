@@ -14,7 +14,7 @@ export interface AttackAnimation {
 
 export function useAttackAnimations() {
   const [animations, setAnimations] = useState<AttackAnimation[]>([]);
-  const animationFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Add new attack animation
   const addAttackAnimation = useCallback((
@@ -37,7 +37,7 @@ export function useAttackAnimations() {
       color,
     };
 
-    setAnimations((prev) => [...prev, newAnimation]);
+    setAnimations((prev) => [...prev.slice(-23), newAnimation]);
   }, []);
 
   // Update animation progress
@@ -55,7 +55,7 @@ export function useAttackAnimations() {
 
         if (updated.length === 0) {
           if (animationFrameRef.current) {
-            clearInterval(animationFrameRef.current);
+            cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
           }
         }
@@ -64,11 +64,16 @@ export function useAttackAnimations() {
       });
     };
 
-    animationFrameRef.current = setInterval(updateAnimations, 16);
+    const scheduleNextFrame = () => {
+      updateAnimations();
+      animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
+    };
+    animationFrameRef.current = requestAnimationFrame(scheduleNextFrame);
 
     return () => {
-      if (animationFrameRef.current) {
-        clearInterval(animationFrameRef.current);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [animations.length]);

@@ -44,6 +44,8 @@ const ENEMY_IMAGES = {
 };
 
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
+const FOREST_LANE_FOREGROUND = require('@/assets/images/forest-lane-foreground-transparent.png');
+const VILLAGE_BARRACKS = require('@/assets/images/village-barracks.png');
 
 export function GameMap() {
   const { state, dispatch } = useGame();
@@ -65,10 +67,16 @@ export function GameMap() {
   const plotDist = mapLayout.plotDistance;
 
   useEffect(() => {
-    const animationInterval = setInterval(() => {
-      setAnimationTick((tick) => (tick + 1) % 360);
-    }, 50);
-    return () => clearInterval(animationInterval);
+    let animationFrame: number | null = null;
+    const animate = (timestamp: number) => {
+      setAnimationTick((timestamp / 16.6667) % 360);
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => {
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   useEffect(() => {
@@ -202,6 +210,16 @@ export function GameMap() {
           fill="url(#forestVeil)"
           opacity={0.9}
         />
+        <SvgImage
+          href={FOREST_LANE_FOREGROUND}
+          x={0}
+          y={0}
+          width={mapLayout.width}
+          height={mapLayout.height}
+          preserveAspectRatio="none"
+          opacity={0.96}
+          pointerEvents="none"
+        />
 
         {isBossWave && (
           <G>
@@ -274,29 +292,23 @@ export function GameMap() {
                 </G>
               ) : (
                 <G onPress={() => handlePlotPress(pos.index)}>
-                  <Circle
-                    cx={pos.x}
-                    cy={pos.y - 2}
-                    r={5}
-                    fill="#F7C948"
-                    stroke="#3A2417"
-                    strokeWidth={1.5}
-                  />
-                  <Path
-                    d={`M ${pos.x} ${pos.y + 2} C ${pos.x - 8} ${pos.y - 3}, ${pos.x - 7} ${pos.y - 10}, ${pos.x - 2} ${pos.y - 6} C ${pos.x + 3} ${pos.y - 11}, ${pos.x + 7} ${pos.y - 5}, ${pos.x} ${pos.y + 2}`}
-                    fill="#78B84A"
-                    stroke="#3A2417"
-                    strokeWidth={1.2}
+                  <SvgImage
+                    href={VILLAGE_BARRACKS}
+                    x={pos.x - 28}
+                    y={pos.y - 29}
+                    width={56}
+                    height={56}
+                    opacity={0.96}
                   />
                   <SvgText
                     x={pos.x}
-                    y={pos.y + 16}
-                    fontSize={9}
-                    fill="#ebd6b0"
+                    y={pos.y + 31}
+                    fontSize={8}
+                    fill="#F7D774"
                     fontWeight="bold"
                     textAnchor="middle"
                   >
-                    Plantar
+                    QUARTEL
                   </SvgText>
                 </G>
               )}
@@ -417,66 +429,55 @@ export function GameMap() {
 
         {state.guards.map((guard) => {
           const visual = getGuardVisualProfile(guard.type, state.troopUpgradeLevels[guard.type]);
+          const walkPhase = animationTick * 0.16 + guard.id.length * 0.35;
+          const walkBob = guard.targetId ? Math.sin(walkPhase) * 0.9 : Math.sin(walkPhase * 0.6) * 0.25;
           return (
-          <G key={guard.id}>
-            {visual.tier !== 'base' && (
-              <Circle
-                cx={Math.round(guard.x)}
-                cy={Math.round(guard.y)}
-                r={17 + (visual.tier === 'legendary' ? 3 : 0)}
-                fill="none"
-                stroke={visual.auraColor}
-                strokeWidth={visual.tier === 'legendary' ? 2.5 : 1.5}
-                opacity={0.5 + Math.sin(animationTick * 0.08) * 0.12}
+            <G key={guard.id} transform={`translate(${guard.x} ${guard.y + walkBob})`}>
+              {visual.tier !== 'base' && (
+                <Circle
+                  cx={0}
+                  cy={0}
+                  r={17 + (visual.tier === 'legendary' ? 3 : 0)}
+                  fill="none"
+                  stroke={visual.auraColor}
+                  strokeWidth={visual.tier === 'legendary' ? 2.5 : 1.5}
+                  opacity={0.5 + Math.sin(animationTick * 0.08) * 0.12}
+                />
+              )}
+              <Circle cx={1} cy={2} r={12} fill="#000" opacity={0.25} />
+              <SvgImage
+                href={GUARD_IMAGES[guard.type][visual.tier]}
+                x={-16}
+                y={-16}
+                width={32}
+                height={32}
               />
-            )}
-            <Circle
-              cx={Math.round(guard.x) + 1}
-              cy={Math.round(guard.y) + 2}
-              r={12}
-              fill="#000"
-              opacity={0.25}
-            />
-            <SvgImage
-              href={GUARD_IMAGES[guard.type][visual.tier]}
-              x={Math.round(guard.x) - 16}
-              y={Math.round(guard.y) - 16}
-              width={32}
-              height={32}
-            />
-            {visual.tier !== 'base' && (
-              <SvgText
-                x={Math.round(guard.x) + 14}
-                y={Math.round(guard.y) - 14}
-                fontSize={8}
-                fill={visual.accentColor}
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                {visual.badge}
-              </SvgText>
-            )}
-            {guard.health < guard.maxHealth && (
-              <G>
-                <Rect
-                  x={Math.round(guard.x) - 16}
-                  y={Math.round(guard.y) - 23}
-                  width={32}
-                  height={4}
-                  fill="#251C18"
-                  rx={2}
-                />
-                <Rect
-                  x={Math.round(guard.x) - 16}
-                  y={Math.round(guard.y) - 23}
-                  width={Math.max(0, (guard.health / guard.maxHealth) * 32)}
-                  height={4}
-                  fill={guard.health / guard.maxHealth <= 0.3 ? '#F07863' : '#8DCB63'}
-                  rx={2}
-                />
-              </G>
-            )}
-          </G>
+              {visual.tier !== 'base' && (
+                <SvgText
+                  x={14}
+                  y={-14}
+                  fontSize={8}
+                  fill={visual.accentColor}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  {visual.badge}
+                </SvgText>
+              )}
+              {guard.health < guard.maxHealth && (
+                <G>
+                  <Rect x={-16} y={-23} width={32} height={4} fill="#251C18" rx={2} />
+                  <Rect
+                    x={-16}
+                    y={-23}
+                    width={Math.max(0, (guard.health / guard.maxHealth) * 32)}
+                    height={4}
+                    fill={guard.health / guard.maxHealth <= 0.3 ? '#F07863' : '#8DCB63'}
+                    rx={2}
+                  />
+                </G>
+              )}
+            </G>
           );
         })}
 

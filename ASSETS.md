@@ -2,15 +2,17 @@
 
 ## Direção artística
 
-A identidade visual do jogo usa **pixel-art premium de tower defense agrícola**, com silhuetas legíveis em tamanhos reduzidos, contorno escuro, iluminação quente de fim de tarde e paleta de terra, verde de bosque, trigo dourado, água azul e ameaça vermelha/roxa. A arena é vertical e responsiva: um bosque com pequena vila, riachos e clareira protege o farol central, enquanto os oito pátios ficam organizados em duas colunas.
+A identidade visual do jogo usa **pixel-art premium de tower defense agrícola**, com silhuetas legíveis em tamanhos reduzidos, contorno escuro, iluminação quente de fim de tarde e paleta de terra, verde de bosque, trigo dourado, água azul e ameaça vermelha/roxa. A arena é vertical e responsiva: um bosque com pequena vila, riachos e clareira protege o farol central, enquanto os oito quartéis ficam organizados em duas colunas.
 
-Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose lateral ou em três quartos e leitura consistente sobre o mapa. A rota de inimigos continua existindo na lógica de movimentação, mas sua faixa visual é coberta pelo bosque para reduzir ruído e deixar o farol, os pátios e as tropas como foco da defesa.
+Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose lateral ou em três quartos e leitura consistente sobre o mapa. A rota de inimigos continua existindo na lógica de movimentação, mas sua faixa visual é coberta pelo bosque para reduzir ruído e deixar o farol, os quartéis e as tropas como foco da defesa.
 
 ## Manifesto de assets finais
 
 | Categoria | Arquivo(s) | Função | Requisitos atendidos |
 |---|---|---|---|
 | Cenário | `assets/images/forest-village-background.png` | Fundo da Home e da arena | Bosque, pequena vila, riachos e clareira central; composição segura para HUD e sprites |
+| Foreground | `assets/images/forest-lane-foreground-transparent.png` | Camada acima da pista | Vegetação, cercas e lanternas nas bordas; corredor central totalmente transparente |
+| Quartel | `assets/images/village-barracks.png` | Espaço livre de defesa | Quartel rural de madeira/pedra, alpha real, leitura clara em 56 px e sem texto embutido |
 | Guarda base | `guard-warrior.png`, `guard-archer.png`, `guard-tank.png` | Fallback e tier inicial das tropas | Silhuetas de função clara, paleta distinta e uso compatível com Expo/SVG |
 | Guarda veterano | `guard-warrior-veteran-transparent.png`, `guard-archer-veteran-transparent.png`, `guard-tank-veteran-transparent.png` | Tier persistente após evolução | Alpha limpo, cores de armadura reforçadas e leitura em cards/mapa |
 | Guarda elite | `guard-warrior-elite-transparent.png`, `guard-tank-elite-transparent.png` | Evolução avançada | Visual mais intenso e contraste maior; o Arqueiro Elite usa fallback Veterano até existir uma arte dedicada |
@@ -30,7 +32,7 @@ Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose 
 
 ## Integração atual
 
-`components/game/GameMap.tsx` seleciona sprites de tropa por tier e classe, sprites de monstros por arquétipo e sprites de boss por era. `components/game/CardBar.tsx` e `components/game/ProgressionMenu.tsx` usam os mesmos retratos transparentes para manter consistência entre arena e acampamento. `lib/game/types.ts` calcula `skinTier` e `bossEra`, e `lib/game/useGameLoop.ts` transfere esses valores para cada inimigo gerado; os minions de boss herdam a era e a skin do chefe.
+`components/game/GameMap.tsx` seleciona sprites de tropa por tier e classe, sprites de monstros por arquétipo e sprites de boss por era. Os espaços livres são renderizados com `village-barracks.png`, enquanto `forest-lane-foreground-transparent.png` entra depois da faixa lógica da pista e antes das unidades, deixando a vegetação em primeiro plano sem cobrir a rota central. `components/game/CardBar.tsx` e `components/game/ProgressionMenu.tsx` usam os mesmos retratos transparentes para manter consistência entre arena e acampamento. `lib/game/types.ts` calcula `skinTier` e `bossEra`, e `lib/game/useGameLoop.ts` transfere esses valores para cada inimigo gerado; os minions de boss herdam a era e a skin do chefe.
 
 As waves múltiplas de cinco recebem a classe visual de boss, escala maior de arena e banner discreto de era. O Intervalo Tático é exibido apenas depois dessas waves. O farol SVG central continua sendo a estrutura protegida e a origem das tropas, sem causar dano aos monstros.
 
@@ -38,4 +40,4 @@ Os arquivos de processo, cópias `_original`, previews e versões intermediária
 
 ## Critérios de aceitação
 
-A composição deve continuar reconhecível em tela vertical pequena, sem halos brancos, fundos embutidos ou sprites cortados. A evolução precisa ser visível nas cartas, no Acampamento e na arena. Os monstros devem manter classes e skins distintas conforme a wave, enquanto o caminho lógico permanece funcional mesmo oculto visualmente. O projeto deve passar no type-check, manter o lint sem erros e carregar os assets finais no export web.
+A composição deve continuar reconhecível em tela vertical pequena, sem halos brancos, fundos embutidos ou sprites cortados. Os quartéis devem substituir visualmente os pátios vazios e o foreground deve cobrir as bordas das pistas sem bloquear o corredor central. A evolução precisa ser visível nas cartas, no Acampamento e na arena. Os monstros devem manter classes e skins distintas conforme a wave, enquanto o caminho lógico permanece funcional mesmo oculto visualmente. A simulação usa passo de 16 ms e as animações visuais são sincronizadas ao requestAnimationFrame, permitindo renderização próxima de 60 FPS e acompanhando telas de maior frequência quando disponíveis. O projeto deve passar no type-check e carregar os assets finais no export web.

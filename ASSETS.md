@@ -41,3 +41,10 @@ Os arquivos de processo, cópias `_original`, previews e versões intermediária
 ## Critérios de aceitação
 
 A composição deve continuar reconhecível em tela vertical pequena, sem halos brancos, fundos embutidos ou sprites cortados. Os quartéis devem substituir visualmente os pátios vazios e formar um anel legível ao redor do farol. Nenhum círculo de alcance, aura ou indicador de alvo deve aparecer em torno de tropas ou monstros; apenas o farol pode usar pulsos circulares próprios. O foreground deve cobrir as bordas das pistas sem bloquear o corredor central. A evolução precisa ser visível nas cartas, no Acampamento e na arena. Os monstros devem nascer fora da tela, avançar pelas oito rotas radiais e priorizar tropas posicionadas no caminho antes de atingir o farol. `combatCoins` deve pagar apenas tropas da wave, enquanto `bankGold` deve pagar apenas upgrades e desbloqueios do Acampamento. A simulação usa passo de 16 ms e as animações visuais são sincronizadas ao requestAnimationFrame, permitindo renderização próxima de 60 FPS e acompanhando telas de maior frequência quando disponíveis. O projeto deve passar no type-check e carregar os assets finais no export web.
+
+## Ícones de economia
+
+- `assets/images/currency-camp-gold.png`: ícone dourado com farol e trigo para o **Ouro do Acampamento**, usado em upgrades, desbloqueios, colheita ociosa, Home e recompensas de Game Over.
+- `assets/images/currency-combat-supplies.png`: estojo teal com trigo e ferramentas para **Suprimentos de Combate**, usado na HUD da arena, nos custos das cartas e na explicação da economia temporária.
+
+Os dois arquivos são sprites PNG RGBA com fundo transparente e silhuetas intencionalmente diferentes para evitar confusão em telas pequenas.

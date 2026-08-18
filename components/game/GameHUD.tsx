@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { getBeaconStats, getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
+import { CurrencyIcon } from './CurrencyIcon';
 
 export function GameHUD() {
   const { state } = useGame();
@@ -52,13 +53,16 @@ export function GameHUD() {
           </Text>
         </View>
 
-        <View className="items-end">
+        <View className="items-end gap-0.5">
           <View className="flex-row items-center gap-1.5">
-            <GameIcon name="coin" size={18} color="#F7C948" secondaryColor="#7D4E1F" />
+            <CurrencyIcon type="combatSupplies" size={20} />
             <Text className="text-sm font-black text-[#FFF3C4]">{Math.floor(state.combatCoins)}</Text>
           </View>
-          <Text className="text-[9px] text-[#B6D3B0]">SUPRIMENTOS</Text>
-          <Text className="text-[8px] text-[#8FB08D]">Acampamento: {Math.floor(state.bankGold)} gold</Text>
+          <Text className="text-[9px] font-black text-[#B6D3B0]">SUPRIMENTOS</Text>
+          <View className="flex-row items-center gap-1">
+            <CurrencyIcon type="campGold" size={13} />
+            <Text className="text-[8px] font-bold text-[#F7D774]">{Math.floor(state.bankGold)} OURO</Text>
+          </View>
         </View>
       </View>
 

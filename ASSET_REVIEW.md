@@ -228,3 +228,15 @@ O export atualizado abriu a Home com `0 ouro do Acampamento` e iniciou a arena c
 ## Acampamento após a separação estrutural — 2026-08-18
 
 A tela do Acampamento mostrou `0 OURO DO ACAMPAMENTO`, botões de colheita e upgrades com `OURO`, e o painel `DUAS ECONOMIAS` descrevendo suprimentos como recurso exclusivo da defesa atual. A run anterior não transferiu o saldo de `SUPRIMENTOS` para o Acampamento.
+
+## Ícones de moeda — inspeção inicial — 2026-08-18
+
+Foram gerados dois assets distintos: `currency-camp-gold.png`, com moeda dourada gravada com farol e trigo, e `currency-combat-supplies.png`, com estojo teal de suprimentos e ferramentas. Ambos têm silhuetas claramente diferentes e leitura adequada para HUD, mas a inspeção visual mostrou linhas/fringe magenta nas bordas e no lado direito, que precisam ser removidos antes da integração final.
+
+## Ícones de moeda integrados — validação visual — 2026-08-18
+
+A Home exibiu o ícone dourado em `PROGRESSO CONTÍNUO` e `OURO OCIOSO`. Na arena, a HUD exibiu o ícone teal dos `SUPRIMENTOS` e o dourado do `OURO`, e cada carta mostrou o ícone teal ao lado do custo de invocação. O bundle carregou os dois PNGs transparentes sem erro.
+
+## Acampamento com identidade visual de moedas — 2026-08-18
+
+A tela do Acampamento exibiu o ícone dourado no saldo principal, em `OURO OCIOSO`, nos upgrades do farol, treinamento e desbloqueios. O painel `DUAS ECONOMIAS` exibiu lado a lado o Ouro do Acampamento e o estojo teal dos Suprimentos de Combate.

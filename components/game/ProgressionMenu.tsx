@@ -2,6 +2,7 @@ import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimension
 import { useGame } from '@/lib/game/GameContext';
 import { BeaconUpgradeType, getBeaconStats, getGuardStats, getGuardVisualProfile, getIdleGoldRate, getIdleUpgradeCost, GUARD_CONFIGS, GuardType } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
+import { CurrencyIcon } from './CurrencyIcon';
 
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 const GUARD_IMAGES = {
@@ -97,7 +98,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
               <Text className="mt-1 text-xs text-[#71835E]">Desbloqueie novas funções e torne cada run mais forte.</Text>
             </View>
             <View className="items-center rounded-2xl bg-[#E9F3D6] px-3 py-2">
-              <GameIcon name="coin" size={24} color="#F7C948" secondaryColor="#7D4E1F" />
+              <CurrencyIcon type="campGold" size={32} />
               <Text className="mt-1 text-sm font-black text-[#6C5424]">{Math.floor(state.bankGold)}</Text>
               <Text className="text-[9px] font-bold text-[#7D6947]">OURO DO ACAMPAMENTO</Text>
             </View>
@@ -107,11 +108,17 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             <Text className="text-[10px] font-black tracking-[1.5px] text-[#8A7040]">DUAS ECONOMIAS</Text>
             <View className="mt-2 flex-row gap-2">
               <View className="flex-1 rounded-2xl bg-[#F3D98C] p-3">
-                <Text className="text-[10px] font-black text-[#704D1B]">OURO DO ACAMPAMENTO</Text>
+                <View className="flex-row items-center gap-2">
+                  <CurrencyIcon type="campGold" size={24} />
+                  <Text className="flex-1 text-[10px] font-black text-[#704D1B]">OURO DO ACAMPAMENTO</Text>
+                </View>
                 <Text className="mt-1 text-[10px] leading-4 text-[#8A7040]">Fica entre partidas e compra upgrades, tropas e quartéis.</Text>
               </View>
               <View className="flex-1 rounded-2xl bg-[#DDECC8] p-3">
-                <Text className="text-[10px] font-black text-[#315F40]">SUPRIMENTOS DE COMBATE</Text>
+                <View className="flex-row items-center gap-2">
+                  <CurrencyIcon type="combatSupplies" size={24} />
+                  <Text className="flex-1 text-[10px] font-black text-[#315F40]">SUPRIMENTOS DE COMBATE</Text>
+                </View>
                 <Text className="mt-1 text-[10px] leading-4 text-[#4C7742]">Nascem durante a wave e pagam as tropas desta defesa.</Text>
               </View>
             </View>
@@ -167,7 +174,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.85 : state.idleGoldAvailable > 0 ? 1 : 0.55 })}
               >
                 <View className="items-center rounded-xl bg-[#B97925] px-3 py-2.5">
-                  <Text className="text-[10px] font-black text-white">RESGATAR OURO</Text>
+                  <View className="flex-row items-center gap-1.5"><CurrencyIcon type="campGold" size={16} /><Text className="text-[10px] font-black text-white">RESGATAR OURO</Text></View>
                   <Text className="mt-0.5 text-[9px] font-bold text-[#FFF1C8]">{getIdleGoldRate(state.idleUpgradeLevel)} ouro/min</Text>
                 </View>
               </Pressable>
@@ -272,7 +279,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     })}
                   >
                     <View className={`items-center rounded-xl px-3 py-2.5 ${isMaxed ? 'bg-[#8AA47A]' : canBuy ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
-                        <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${goldCost} OURO`}</Text>
+                        <View className="flex-row items-center gap-1.5"><CurrencyIcon type="campGold" size={16} /><Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${goldCost} OURO`}</Text></View>
                     </View>
                   </Pressable>
                 </View>
@@ -322,7 +329,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                       })}
                     >
                       <View className={`items-center rounded-2xl px-3 py-2.5 ${canBuyUnlock ? 'bg-[#4E8B46]' : 'bg-[#A6B39A]'}`}>
-                        <Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} OURO</Text>
+                        <View className="flex-row items-center gap-1.5"><CurrencyIcon type="campGold" size={17} /><Text className="text-xs font-black text-white">DESBLOQUEAR POR {unlockCost} OURO</Text></View>
                         <Text className="mt-0.5 text-[9px] font-bold text-[#E7F4D6]">{nextUnlock === troopType ? 'Próxima meta' : 'Complete a ordem de desbloqueio'}</Text>
                       </View>
                     </Pressable>
@@ -340,7 +347,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     >
                       <View className={`flex-row items-center justify-center gap-2 rounded-2xl px-3 py-2.5 ${canBuyUpgrade ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
                         <GameIcon name="damage" size={15} color="#F7D774" secondaryColor="#E7A93B" />
-                        <Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} OURO</Text>
+                        <View className="flex-row items-center gap-1.5"><CurrencyIcon type="campGold" size={17} /><Text className="text-xs font-black text-white">TREINAR +12% • {upgradeCost} OURO</Text></View>
                       </View>
                     </Pressable>
                   )}

@@ -7,6 +7,7 @@ import { CardBar } from '@/components/game/CardBar';
 import { WaveRewardsScreen } from '@/components/game/WaveRewardsScreen';
 import { ProgressionMenu } from '@/components/game/ProgressionMenu';
 import { HomeScreen } from '@/components/game/HomeScreen';
+import { CurrencyIcon } from '@/components/game/CurrencyIcon';
 import { useGame } from '@/lib/game/GameContext';
 import { useGameLoop } from '@/lib/game/useGameLoop';
 import { useUpgrades } from '@/lib/game/useUpgrades';
@@ -76,7 +77,7 @@ export default function GameScreen() {
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">WAVE</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.wave}</Text></View>
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">ABATES</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.totalEnemiesDefeated}</Text></View>
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">TROPAS</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.guards.length}</Text></View>
-                  <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">RECOMPENSA</Text><Text className="mt-1 text-xl font-black text-[#F7D774]">+{state.lastRunReward || '—'}</Text></View>
+                  <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">RECOMPENSA</Text><View className="mt-1 flex-row items-center gap-2"><CurrencyIcon type="campGold" size={24} /><Text className="text-xl font-black text-[#F7D774]">+{state.lastRunReward || '—'}</Text></View></View>
                 </View>
               </View>
 

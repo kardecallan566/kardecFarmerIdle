@@ -2,6 +2,7 @@ import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimension
 import { getIdleGoldRate, getNextBossWave, getWaveConfig } from '@/lib/game/types';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
+import { CurrencyIcon } from './CurrencyIcon';
 
 const GAME_LOGO = require('@/assets/images/logo-kardec-farmer.png');
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
@@ -79,16 +80,19 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
 
           <View className="rounded-3xl border border-[#D3B98B] bg-[#FFF9EA]/95 p-4">
             <View className="flex-row items-center justify-between">
-              <View>
+              <View className="flex-1">
                 <Text className="text-[10px] font-black tracking-widest text-[#7D6947]">PROGRESSO CONTÍNUO</Text>
-                <Text className="mt-1 text-base font-black text-[#294F2E]">{Math.floor(state.bankGold)} ouro do Acampamento</Text>
+                <View className="mt-1 flex-row items-center gap-2">
+                  <CurrencyIcon type="campGold" size={24} />
+                  <Text className="flex-1 text-base font-black text-[#294F2E]">{Math.floor(state.bankGold)} ouro do Acampamento</Text>
+                </View>
               </View>
               <Text className="text-sm font-black text-[#8B4F2C]">Wave {state.bestWave}</Text>
             </View>
             <Text className="mt-2 text-[10px] leading-4 text-[#71835E]">{state.unlockedTroops.length}/3 tropas desbloqueadas. Derrote monstros, resgate a run, compre suprimentos durante a wave e treine sua defesa.</Text>
             <View className="mt-3 flex-row gap-2">
               <View className="flex-1 rounded-xl border border-[#F1DBAB] bg-[#FFF7DE] px-3 py-2">
-                <Text className="text-[9px] font-black text-[#9A7740]">OURO OCIOSO</Text>
+                <View className="flex-row items-center gap-1"><CurrencyIcon type="campGold" size={15} /><Text className="text-[9px] font-black text-[#9A7740]">OURO OCIOSO</Text></View>
                 <Text className="mt-0.5 text-sm font-black text-[#8B4F2C]">+{Math.floor(state.idleGoldAvailable)}</Text>
                 <Text className="text-[9px] text-[#9A7740]">{getIdleGoldRate(state.idleUpgradeLevel)} por minuto</Text>
               </View>
@@ -129,7 +133,7 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
                 <Text className="flex-1 text-xs leading-4 text-[#52664C]">As tropas avançam pela estrada e atacam apenas quando o inimigo entra no alcance.</Text>
               </View>
               <View className="flex-row items-center gap-3">
-                <View className="rounded-xl bg-[#DDECC8] p-2"><GameIcon name="coin" size={18} color="#F7C948" secondaryColor="#7D4E1F" /></View>
+                <View className="rounded-xl bg-[#DDECC8] p-2"><CurrencyIcon type="combatSupplies" size={20} /></View>
                 <Text className="flex-1 text-xs leading-4 text-[#52664C]">Derrote inimigos para ganhar suprimentos de combate e prepare-se para a próxima wave.</Text>
               </View>
             </View>

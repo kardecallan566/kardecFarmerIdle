@@ -4,6 +4,7 @@ import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
 import { getGuardStats, getGuardVisualProfile, GUARD_CONFIGS } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
+import { CurrencyIcon } from './CurrencyIcon';
 
 const GUARD_TYPES = ['warrior', 'archer', 'tank'] as const;
 const GUARD_NAMES = {
@@ -161,7 +162,7 @@ export function CardBar() {
                 </View>
 
                 <View className="bg-[#F7C948]/20 border border-[#C89A2C]/50 rounded-lg px-2 py-1 flex-row items-center gap-1">
-                  <GameIcon name="coin" size={14} color="#F7C948" secondaryColor="#7D4E1F" />
+                  <CurrencyIcon type="combatSupplies" size={18} />
                   <Text className="text-xs font-semibold text-[#F7C948]">{config.combatCost}</Text>
                 </View>
 

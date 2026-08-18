@@ -1,0 +1,428 @@
+RESUMO COMPLETO DO ESTADO ATUAL — KARDEC FARMER IDLE
+======================================================================
+
+Data do resumo: 18/08/2026
+Repositório: https://github.com/kardecallan566/kardecFarmerIdle
+Branch: main
+Commit atual: 187ef9a — feat: add distinct camp gold and combat supply icons
+Estado do repositório no momento do resumo: working tree limpo
+
+
+1. VISÃO GERAL
+======================================================================
+
+O Kardec Farmer Idle é um jogo mobile de Tower Defense agrícola com elementos de roguelike e idle, desenvolvido em React Native com Expo, TypeScript, Expo Router, NativeWind e AsyncStorage. O jogador protege um farol central localizado em um bosque com uma pequena vila, posiciona tropas em quartéis ao redor do farol, enfrenta waves progressivas de monstros, escolhe relíquias após Boss Waves e melhora permanentemente sua conta entre as partidas [1] [2].
+
+O jogo já possui um ciclo completo jogável: Home, Acampamento do Farol, Arena, combate em waves, Boss Waves, Intervalo Tático, Game Over, recompensa da run, upgrades persistentes, desbloqueio de tropas, geração idle e retorno para uma nova partida. A base atual é funcional e apresenta uma identidade visual própria, com sprites transparentes, cenário de bosque, quartéis circulares, farol central e duas moedas visualmente independentes [2] [3].
+
+
+2. CICLO PRINCIPAL DE JOGO
+======================================================================
+
+O fluxo atual do jogador funciona da seguinte forma:
+
+1. A Home apresenta o briefing da arena, a primeira wave, a próxima Boss Wave, o progresso da conta, o ouro idle, o bestiário, as decisões estratégicas e os botões para iniciar a defesa ou abrir o Acampamento.
+
+2. Ao iniciar a defesa, o jogo entra na Arena com Wave 1, vida cheia da plantação, suprimentos temporários e os quartéis liberados de acordo com os upgrades persistentes do farol.
+
+3. O Guerreiro inicial fica disponível no primeiro quartel. As demais tropas precisam ser desbloqueadas no Acampamento usando Ouro do Acampamento.
+
+4. Durante cada wave, os monstros nascem fora da área visível, entram por oito direções radiais e caminham em direção ao farol. Se uma tropa estiver na frente e próxima da rota do inimigo, o monstro pode persegui-la antes de retomar o caminho até o núcleo [5].
+
+5. O jogador usa cartas para invocar tropas. A seleção da carta não desconta recursos. O custo é cobrado uma única vez quando a tropa é confirmada em um quartel vazio.
+
+6. Os monstros atacam a plantação quando alcançam o núcleo e atacam as tropas quando chegam à distância de combate. As tropas possuem vida, recebem dano e podem morrer.
+
+7. Ao limpar uma wave comum, a próxima wave começa automaticamente após o intervalo configurado. Depois de uma Boss Wave, a partida entra no Intervalo Tático e pausa até o jogador escolher uma relíquia.
+
+8. Quando a plantação chega a zero, aparece a tela de Game Over com estatísticas da defesa, recompensa estimada e botões funcionais para jogar novamente, abrir o Acampamento ou voltar à Home.
+
+9. A recompensa resgatada no Game Over é transformada em Ouro do Acampamento. Esse ouro pode ser usado em upgrades persistentes antes da próxima defesa.
+
+
+3. ARENA E COMPOSIÇÃO VISUAL
+======================================================================
+
+A arena foi preparada para orientação vertical de celular e possui layout responsivo com mapa central, HUD superior e barra de cartas na parte inferior. O farol é a estrutura central protegida e o ponto de origem da geração das tropas.
+
+Os espaços que antes pareciam áreas de plantação foram substituídos por quartéis rurais de madeira e pedra. Atualmente existem oito posições radiais ao redor do farol, organizadas em um anel circular. Cada posição possui nome setorial, como Quartel Norte, Nordeste, Leste, Sudeste, Sul, Sudoeste, Oeste e Noroeste. O número de quartéis ativos começa em quatro e pode chegar a oito por meio dos upgrades persistentes do farol [2].
+
+O caminho lógico dos inimigos continua existindo para a simulação, mas não é exibido como uma estrada destacada. A composição usa uma camada de foreground de bosque acima das áreas laterais das pistas, com árvores, arbustos, cercas e lanternas. O corredor central permanece transparente para que tropas, monstros e farol continuem visíveis [2].
+
+Os círculos de alcance, auras de tier, halos de monstros e indicadores visuais de área de ataque foram removidos do fluxo principal. Os únicos pulsos circulares intencionais são os efeitos próprios do farol central.
+
+Nas Boss Waves, a arena fica maior, mostrando uma área adicional da vila e permitindo uma leitura visual mais ampla do cenário. Um banner discreto informa a Boss Wave e a era correspondente.
+
+
+4. FAROL CENTRAL E GERAÇÃO DE TROPAS
+======================================================================
+
+O regador original foi substituído por um farol central SVG. O farol possui feixe rotativo, pulsos luminosos e feedback visual quando a plantação sofre dano. O farol não causa dano nos monstros; ele funciona somente como estrutura protegida e gerador de tropas.
+
+A rotação do feixe percorre os setores dos quartéis. Quando o feixe passa por um quartel ocupado e o setor ainda não foi usado no ciclo, uma ou mais tropas podem ser geradas. O sistema respeita o limite de tropas por quartel e impede que um mesmo setor seja gerado repetidamente no mesmo ciclo de iluminação.
+
+Os upgrades persistentes do farol são:
+
+- Feixe mais veloz: aumenta a velocidade de rotação do farol em até cinco níveis.
+- Pulso duplo: aumenta a quantidade de tropas geradas por iluminação em até dois níveis.
+- Quartéis da vila: libera quatro slots adicionais, chegando a oito quartéis ativos.
+
+A geração visual é posicionada no próprio quartel e as tropas depois caminham para a área de combate, mantendo uma distância mínima do farol para evitar que fiquem coladas ao núcleo.
+
+
+5. TROPAS DISPONÍVEIS
+======================================================================
+
+O jogo possui três tipos de tropas jogáveis:
+
+Guerreiro
+- Custo atual: 100 Suprimentos de Combate.
+- Vida base: 50.
+- Dano base: 15.
+- Alcance: 32, caracterizando combate corpo a corpo.
+- Velocidade de movimento: 40.
+- Função: linha de frente e contenção de inimigos próximos.
+- Disponibilidade: começa desbloqueado.
+
+Arqueiro
+- Custo atual: 120 Suprimentos de Combate.
+- Vida base: 30.
+- Dano base: 12.
+- Alcance: 160.
+- Velocidade de movimento: 46.
+- Função: ataque de longo alcance e cobertura das rotas.
+- Disponibilidade: desbloqueado no Acampamento por Ouro do Acampamento.
+
+Tanque
+- Custo atual: 150 Suprimentos de Combate.
+- Vida base: 100.
+- Dano base: 8.
+- Alcance: 70.
+- Velocidade de movimento: 28.
+- Função: absorção de dano e sustentação da linha de frente.
+- Disponibilidade: desbloqueado no Acampamento por Ouro do Acampamento.
+
+Todas as tropas possuem vida, dano, velocidade, alcance, velocidade de ataque, cooldown de ataque e alvo atual. As tropas caminham em direção ao inimigo mais próximo, param em uma distância de combate proporcional ao seu alcance e atacam quando o cooldown permite [5].
+
+As melhorias permanentes das tropas aumentam vida e dano em 12% por nível. A progressão visual também muda as cores, insígnias e sprites das tropas:
+
+- Níveis 0–1: Recruta/base.
+- Níveis 2–3: Veterano.
+- Níveis 4–5: Elite.
+- Níveis 6 ou mais: Lendário.
+
+Existe uma limitação visual conhecida: o Arqueiro Elite ainda usa o sprite do Arqueiro Veterano como fallback, pois não existe uma arte dedicada para esse tier [2].
+
+
+6. INIMIGOS E IA DE COMBATE
+======================================================================
+
+Os inimigos nascem fora dos limites da viewport, distribuídos por oito lanes radiais invisíveis. A seleção de espécies é determinística por wave e índice de spawn, o que torna o comportamento previsível e testável.
+
+Inimigo normal
+É a unidade padrão das waves. Sua vida, dano, velocidade e dano contra tropas aumentam conforme as waves avançam.
+
+Corredor
+Aparece a partir da Wave 3. Possui menos vida, maior velocidade e menor resistência individual. Serve para pressionar rotas e atravessar a defesa rapidamente.
+
+Bruto
+Aparece a partir da Wave 4. Possui muita vida, menor velocidade, dano superior e maior dano contra tropas. Serve para quebrar a linha de frente.
+
+Curandeiro
+Aparece a partir da Wave 6. Possui habilidade de cura em área curta, recuperando vida de um aliado próximo sem ultrapassar a vida máxima dele. Possui menor dano direto, mas aumenta a resistência do grupo.
+
+Boss
+O Boss aparece no início de cada wave múltipla de cinco. Ele possui vida, dano, dano contra tropas e raio superiores, além de habilidades temporizadas. A habilidade de velocidade aumenta temporariamente a velocidade do Boss. A habilidade de geração cria três minions Corredores que herdam a era, a skin, a lane e a progressão do Boss [4] [5].
+
+A IA dos inimigos verifica tropas posicionadas à frente e próximas da lane. Quando encontra um alvo elegível, o inimigo faz uma aproximação lateral controlada, ataca a tropa e só volta a priorizar o farol depois que o alvo deixa de existir. Quando chega ao raio do núcleo, causa dano à plantação e é removido do campo.
+
+
+7. WAVES, ESCALONAMENTO E ERAS DE BOSS
+======================================================================
+
+A quantidade base de inimigos cresce com a wave. A configuração atual usa uma contagem aproximada de 4 + floor(wave x 1,5) nas waves comuns. As Boss Waves são especiais e começam com um Boss principal, além de possíveis minions gerados pela habilidade do chefe.
+
+A cada wave, os inimigos recebem escala de vida, velocidade, dano à plantação e dano contra tropas. A cada era de Boss, a escala recebe aumentos adicionais aproximados de:
+
+- 28% por era na vida.
+- 18% por era no dano à plantação.
+- 22% por era no dano contra tropas.
+
+O Boss também recebe multiplicadores adicionais de vida, dano, dano contra tropas e raio conforme a era. As skins dos inimigos evoluem de acordo com a era:
+
+- Era inicial: Wild.
+- Primeira era: Scarred.
+- Segunda era: Ancient.
+- Terceira era em diante: Apocalypse.
+
+As skins especiais de Boss usam paletas vermelha, laranja/antiga e roxa/apocalíptica. Os minions herdam a identidade visual do Boss para que a era fique coerente durante a batalha.
+
+
+8. INTERVALO TÁTICO E RELÍQUIAS
+======================================================================
+
+O Intervalo Tático aparece somente depois de Boss Waves, não depois de cada wave comum. O overlay pausa a arena e oferece três opções aleatórias de relíquia.
+
+As categorias de relíquias existentes incluem:
+
+- Aumento de dano para as tropas.
+- Aumento de alcance.
+- Redução de custo.
+- Aumento de suprimentos de combate.
+- Aumento de vida.
+- Bônus específicos para Guerreiro, Arqueiro ou Tanque.
+
+As relíquias escolhidas ficam na run atual e são reiniciadas ao iniciar uma nova defesa. Os efeitos de dano, alcance, vida e bônus específicos são aplicados ao cálculo de stats das tropas durante a run. O bônus de suprimentos afeta somente os ganhos de `combatCoins`.
+
+Há uma oportunidade de aprimoramento importante: o multiplicador interno de redução de custo existe no hook de upgrades, mas ainda precisa ser conectado ao custo real das cartas para que a relíquia “-20% Custo” altere efetivamente o preço de invocação. Também existe uma pequena inconsistência visual: a paleta de cores do Intervalo Tático ainda possui uma chave antiga chamada `coins`, enquanto o modelo atual usa `combatCoins`.
+
+
+9. SISTEMA DE DUAS ECONOMIAS
+======================================================================
+
+O jogo possui duas moedas separadas de forma estrutural.
+
+Ouro do Acampamento — `bankGold`
+
+É a moeda permanente. Ela é salva no AsyncStorage e permanece disponível entre partidas. É usada para:
+
+- Desbloquear Arqueiro e Tanque.
+- Treinar Guerreiro, Arqueiro e Tanque.
+- Melhorar a velocidade do farol.
+- Aumentar a geração por pulso.
+- Liberar quartéis adicionais.
+- Melhorar a colheita ociosa.
+- Resgatar recompensas de Game Over.
+
+Suprimentos de Combate — `combatCoins`
+
+É a moeda temporária da defesa atual. Ela começa com o saldo inicial da run, recebe ganhos passivos e aumenta quando inimigos são derrotados. É usada exclusivamente para comprar tropas durante a wave. Não é salva no AsyncStorage, não é utilizada em upgrades do Acampamento e não é convertida diretamente em Ouro do Acampamento.
+
+A recompensa final de Game Over é calculada pelo desempenho da run — wave, inimigos derrotados e bônus de Boss — e não pela quantidade de suprimentos que sobrou. Essa regra evita que uma moeda de combate seja confundida com uma moeda permanente.
+
+Cada moeda possui agora uma imagem própria:
+
+- Ouro do Acampamento: moeda dourada com farol, trigo e folha.
+- Suprimentos de Combate: estojo teal de campanha com trigo e ferramentas.
+
+Os ícones são PNGs RGBA transparentes e aparecem na Home, HUD, cards de tropas, Acampamento, explicações de economia e recompensa de Game Over.
+
+
+10. PROGRESSÃO PERSISTENTE E IDLE
+======================================================================
+
+O Acampamento do Farol concentra a progressão entre partidas. O perfil persistente mantém saldo de Ouro do Acampamento, tropas desbloqueadas, níveis de upgrade das tropas, níveis de upgrade do farol, nível da colheita ociosa, última data de acesso, bestiário, melhor wave e total de partidas.
+
+A colheita ociosa calcula ouro offline pelo tempo desde o último acesso, com limite de oito horas. A taxa começa em 2 ouro por minuto e cresce em níveis de upgrade. O ouro idle fica primeiro em `idleGoldAvailable` e só é adicionado ao banco persistente quando o jogador pressiona “Resgatar Ouro”.
+
+O bestiário registra derrotas por espécie: Batedor, Corredor, Bruto, Curandeiro e Chefe. A primeira descoberta de uma espécie e os marcos de quantidade derrotada concedem recompensas pontuais de Ouro do Acampamento.
+
+A persistência possui normalização de dados para perfis antigos, valores negativos e níveis fora dos limites. `combatCoins` não faz parte do perfil salvo, o que impede que suprimentos de uma partida sejam carregados acidentalmente na próxima.
+
+
+11. HUD, TELAS E CONTROLES
+======================================================================
+
+Home
+
+A Home apresenta a identidade do jogo, o cenário de bosque, o logo, o briefing da arena, a primeira wave, a próxima Boss Wave, o progresso contínuo, o ouro idle, o bestiário, as decisões de defesa e o acesso à Arena e ao Acampamento.
+
+Acampamento do Farol
+
+A tela apresenta saldo de Ouro do Acampamento, explicação das duas economias, colheita ociosa, bestiário, progresso de conta, evolução do farol, desbloqueios e treinamento de tropas. Os botões usam componentes Pressable com estilo explícito, o que mantém a interação compatível com NativeWind desativado em Pressable.
+
+Arena
+
+A HUD mostra wave, distância até o próximo chefe, saldo de Suprimentos, saldo de Ouro do Acampamento, farol, quantidade de quartéis, inimigos ativos, inimigos gerados, vida da plantação e progresso da wave. A barra de cartas exibe retrato, tier visual, vida, dano, alcance, velocidade, custo em Suprimentos, bloqueio e cooldown.
+
+Game Over
+
+A tela apresenta causa da derrota, vida final, wave alcançada, abates, quantidade de tropas, recompensa em Ouro do Acampamento e ações para jogar novamente, abrir o Acampamento ou voltar à Home. Esses botões foram testados e estão conectados ao fluxo principal.
+
+Intervalo Tático
+
+A tela/modal pausa a arena após Boss Waves e oferece três relíquias. A seleção retoma a run seguinte.
+
+
+12. ASSETS E IDENTIDADE VISUAL
+======================================================================
+
+O jogo possui cenário de bosque com pequena vila, riachos, clareira central, foreground transparente de vegetação, quartel de madeira/pedra, logo, ícone, adaptive icons, favicon e splash.
+
+As tropas possuem sprites base, Veterano, Elite e Lendário. Os inimigos possuem sprite normal, Corredor, Bruto, Curandeiro e Bosses por era. Os fundos brancos foram removidos dos sprites transparentes principais. As skins de inimigos e Bosses mudam de acordo com a progressão da era.
+
+Os componentes usam retratos transparentes nos cards, Acampamento e mapa. Os ícones de moeda novos possuem acessibilidade por meio de labels “Ícone do Ouro do Acampamento” e “Ícone dos Suprimentos de Combate”.
+
+O arquivo `ASSETS.md` mantém o manifesto dos assets finais, suas funções e critérios de aceitação. O arquivo `ASSET_REVIEW.md` registra validações visuais e de gameplay feitas ao longo das iterações [2] [3].
+
+
+13. PERFORMANCE E ANIMAÇÃO
+======================================================================
+
+A simulação de gameplay usa passo fixo de 16 ms, aproximadamente 60 atualizações por segundo. Isso evita que a lógica de combate dependa diretamente da taxa de atualização do dispositivo.
+
+As animações visuais usam `requestAnimationFrame` para acompanhar o display: pulso do farol, bob de caminhada, projéteis, partículas de morte e moedas. Em validação web, foram medidos 61 frames em aproximadamente 1008 ms, cerca de 61 FPS [3]. Em telas de 90 ou 120 Hz, a camada visual pode acompanhar o frame clock disponível, mas a simulação de gameplay permanece deliberadamente em 60 Hz.
+
+A primeira tentativa de colocar o gameplay inteiro em `requestAnimationFrame` fez a wave parar em 0/5 em uma prévia. A implementação foi corrigida mantendo a simulação em `setInterval` fixo de 16 ms e deixando o requestAnimationFrame para efeitos visuais. Essa escolha foi mais robusta no Expo e no navegador [3].
+
+Ainda existem oportunidades de performance. O loop percorre linearmente inimigos e tropas para selecionar alvos e processar cura, dano e perseguição. Isso é adequado para o volume atual, mas poderá causar custo maior quando houver mais inimigos, mais quartéis, minions e novas tropas. Um sistema de spatial hashing, cache de alvos, atualização em lotes ou separação entre simulação e renderização reduziria o custo em partidas longas.
+
+Os assets visuais são relativamente grandes, especialmente alguns sprites de monstros, cenário e ícones. Compressão, versões reduzidas para HUD e carregamento sob demanda poderiam melhorar tempo de bundle, memória e desempenho em celulares antigos.
+
+
+14. EXPO, ANDROID E EXECUÇÃO
+======================================================================
+
+O projeto utiliza Expo SDK 54 e possui scripts para iniciar o Expo Go nativo:
+
+- `pnpm android`: inicia Expo Go em modo LAN.
+- `pnpm android:tunnel`: inicia um túnel para redes com firewall ou isolamento.
+- `pnpm android:clear`: inicia em LAN com cache limpo.
+- `pnpm dev:web`: inicia somente o modo web.
+
+Foi corrigido um problema anterior em que o script padrão iniciava Metro com `--web` enquanto o usuário tentava abrir o projeto no Expo Go Android. Também foram alinhadas as versões de patch de `expo` e `expo-constants` ao SDK 54 e criado o arquivo `ANDROID_EXPO_GO.md` com instruções para o erro “java.io.IOException: failed to download remote update” [9].
+
+Em alguns ambientes, o Metro pode anunciar um endereço LAN `169.254.x.x`, que é link-local e costuma não ser acessível pelo telefone. Nesse caso, o jogador deve colocar computador e telefone na mesma rede Wi-Fi ou usar `pnpm android:tunnel`. O túnel pode falhar se o serviço ngrok não conseguir estabelecer conexão, o que é um problema de rede e não necessariamente um problema do bundle do jogo.
+
+
+15. VALIDAÇÕES REALIZADAS
+======================================================================
+
+As seguintes validações foram realizadas durante as últimas iterações:
+
+- `pnpm check`: passou sem erros de TypeScript.
+- `pnpm lint`: passou sem erros. Permanecem 15 avisos em componentes legados não utilizados, principalmente variáveis não usadas e dependências antigas.
+- `git diff --check`: passou sem problemas de whitespace nas alterações recentes.
+- `pnpm dlx expo-doctor`: passou em 18/18 verificações durante a correção do Expo Go Android.
+- Export web: concluído com sucesso com Home, arena, Acampamento, HUD, cartas e novos ícones.
+- Export Android: concluído com sucesso, incluindo bundle Hermes Android.
+- Preview web: Home carregada, Arena iniciada, quartéis circulares exibidos, HUD carregada, spawn radial confirmado e assets transparentes carregados.
+- Wave 2: run avançou com 7/7 inimigos gerados/derrotados em validação de fluidez.
+- Wave 3: 8/8 inimigos foram gerados entrando por direções diferentes.
+- Wave 5: Boss 1 confirmado, com minions Corredores e Intervalo Tático aparecendo após o chefe.
+- Seleção de carta: não desconta Suprimentos.
+- Confirmação de carta em quartel: desconta Suprimentos uma única vez.
+- Acampamento: upgrades exibidos com Ouro do Acampamento e sem uso de Suprimentos.
+- Ícones de moeda: Ouro dourado e Suprimentos teal validados na Home, HUD, cards, Acampamento e Game Over.
+- Game Over: botões de reinício, Acampamento e Home testados no fluxo principal.
+
+
+16. AVISOS E LIMITAÇÕES ATUAIS
+======================================================================
+
+1. O Arqueiro Elite usa temporariamente o sprite do Arqueiro Veterano.
+
+2. A relíquia “-20% Custo” ainda precisa ser conectada ao cálculo efetivo do `combatCost` das cartas. O multiplicador é calculado, mas não altera o valor cobrado.
+
+3. A paleta do Intervalo Tático possui uma chave visual legada chamada `coins`; ela deve ser renomeada para `combatCoins` para que a relíquia de suprimentos receba uma cor específica em vez de cair no fallback.
+
+4. O loop atual usa buscas lineares por inimigos e tropas a cada tick. O desempenho está adequado para o escopo atual, mas o sistema precisa de otimização espacial se o número de unidades crescer muito.
+
+5. A simulação opera em 60 Hz. As animações visuais acompanham requestAnimationFrame e podem ser exibidas em 90/120 Hz, mas o jogo ainda não possui simulação completa em 120 Hz.
+
+6. O jogo ainda não possui sons, música, feedback háptico ou efeitos de áudio por ataque, dano, Boss, compra e Game Over.
+
+7. O sistema ainda possui apenas três classes jogáveis. Novas tropas, talentos, combinações, formações e habilidades poderiam ampliar a estratégia.
+
+8. A quantidade de arquétipos de inimigos e Bosses ainda pode crescer. Seria possível adicionar inimigos voadores, invasores de quartel, unidades que bloqueiam lanes, Bosses com fases e mecânicas específicas de mapa.
+
+9. Os componentes legados `GameMapEnhanced`, `GameHUDEnhanced`, `CardBarEnhanced`, `AdvancedParticles` e `VisualEffects` ainda geram avisos de lint e deveriam ser removidos, arquivados ou atualizados.
+
+10. Ainda não existe uma suíte automatizada abrangente de testes unitários, testes de reducer, testes do loop de combate ou testes end-to-end de navegação mobile.
+
+11. O balanceamento precisa ser acompanhado em waves altas. O escalonamento atual aumenta vida, dano e dano contra tropas por wave e por era, mas ainda requer testes de diversão, dificuldade e viabilidade de diferentes composições.
+
+12. Os ícones e alguns sprites são grandes. A redução de peso precisa ser feita com cuidado para não introduzir fundos brancos, fringe ou perda de legibilidade.
+
+13. O README e alguns documentos históricos ainda contêm frases antigas em seções de validação, como referências genéricas a “moedas”. Essas entradas históricas não alteram o código, mas podem ser consolidadas em uma revisão documental futura.
+
+
+17. ROADMAP RECOMENDADO
+======================================================================
+
+Prioridade 1 — Correções de consistência e qualidade
+
+- Aplicar efetivamente a relíquia de redução de custo ao `combatCost` das cartas.
+- Corrigir a chave de cor `coins` para `combatCoins` no Intervalo Tático.
+- Remover ou corrigir componentes legados responsáveis pelos 15 avisos de lint.
+- Criar testes para economia, reducer, colocação de cartas, recompensa de Game Over e reinício de partida.
+- Criar uma migração/versionamento explícito para perfis persistentes antigos.
+
+Prioridade 2 — Performance e experiência mobile
+
+- Implementar seleção de alvos com spatial hashing ou particionamento por lane.
+- Reduzir alocações e scans completos no loop de 16 ms.
+- Limitar e agrupar partículas, projéteis e moedas em waves muito grandes.
+- Criar variantes leves dos assets para telas pequenas e carregamento sob demanda.
+- Testar em aparelhos Android de entrada, médios e telas de 90/120 Hz.
+- Adicionar telemetria local de FPS, tempo de tick e quantidade de entidades para identificar gargalos reais.
+
+Prioridade 3 — Conteúdo e profundidade estratégica
+
+- Criar sprite próprio do Arqueiro Elite.
+- Adicionar novas tropas com papéis diferentes, como suporte, controle, explosivo ou especialista em Boss.
+- Criar habilidades ativas ou passivas para cada classe.
+- Adicionar Bosses com fases, ataques de área, destruição temporária de quartéis e padrões únicos.
+- Criar mais relíquias com sinergias reais entre tropas e economia.
+- Adicionar eventos de mapa, objetivos secundários e condições especiais de wave.
+
+Prioridade 4 — Polimento audiovisual e retenção
+
+- Adicionar música, sons de ataque, sons de dano, alerta de Boss, confirmação de compra e Game Over.
+- Adicionar vibração/haptic feedback opcional.
+- Criar efeitos melhores para morte de tropas, impacto no farol e conclusão de wave.
+- Adicionar tela de estatísticas detalhadas da run e histórico de melhores partidas.
+- Adicionar achievements, desafios diários, leaderboard local ou online e modos de jogo alternativos.
+
+
+18. CONCLUSÃO
+======================================================================
+
+O Kardec Farmer Idle já é um protótipo avançado e jogável de Tower Defense agrícola com ciclo completo de partida. As principais necessidades originais foram atendidas: tropas caminham e atacam, inimigos nascem de fora da tela, há vida e dano para tropas, o farol não causa dano, a arena é vertical e responsiva, os quartéis ficam organizados ao redor do farol, o caminho visual foi ocultado, as waves e Bosses possuem progressão, o Acampamento mantém upgrades persistentes e as duas economias estão separadas.
+
+A versão atual também possui uma camada visual coerente: bosque com vila, foreground sobre as pistas, quartéis circulares, sprites transparentes, tiers evolutivos, classes de monstros, Bosses por era e ícones próprios para Ouro do Acampamento e Suprimentos de Combate.
+
+O próximo salto de qualidade não depende de uma correção estrutural única. Ele depende de consolidar a base com testes automatizados, finalizar as relíquias que ainda possuem integração parcial, otimizar o loop para crescer sem custo linear, reduzir o peso dos assets e adicionar áudio, haptics, novas classes e conteúdo de Boss. Com essas melhorias, o projeto poderá evoluir de um protótipo funcional avançado para uma experiência mobile mais próxima de uma versão de produção.
+
+
+19. FONTES DO RESUMO
+======================================================================
+
+[1] README.md — descrição pública, controles, economias, instalação e roadmap.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/README.md
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/README.md
+
+[2] ASSETS.md — manifesto visual, assets finais, critérios de aceitação e identidade das moedas.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/ASSETS.md
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/ASSETS.md
+
+[3] ASSET_REVIEW.md — validações visuais, de gameplay, desempenho, economias e ícones.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/ASSET_REVIEW.md
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/ASSET_REVIEW.md
+
+[4] PROGRESSION_EXPANSION.md — progressão idle, bestiário, tiers visuais e arquétipos.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/PROGRESSION_EXPANSION.md
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/PROGRESSION_EXPANSION.md
+
+[5] lib/game/useGameLoop.ts — simulação, spawn radial, IA de perseguição, combate e geração pelo farol.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/lib/game/useGameLoop.ts
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/lib/game/useGameLoop.ts
+
+[6] lib/game/types.ts — tipos, custos, stats, classes, eras, skins e configurações das waves.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/lib/game/types.ts
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/lib/game/types.ts
+
+[7] lib/game/GameContext.tsx — reducer, economia dual, persistência de estado e ciclo da run.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/lib/game/GameContext.tsx
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/lib/game/GameContext.tsx
+
+[8] app/(tabs)/index.tsx — fluxo Home, Acampamento, Arena, Game Over e ações de navegação.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/app/(tabs)/index.tsx
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/app/(tabs)/index.tsx
+
+[9] ANDROID_EXPO_GO.md — diagnóstico e procedimento para abrir no Expo Go Android.
+    Arquivo local: /home/ubuntu/kardecFarmerIdle/ANDROID_EXPO_GO.md
+    URL: https://github.com/kardecallan566/kardecFarmerIdle/blob/main/ANDROID_EXPO_GO.md
+
+
+FIM DO RESUMO

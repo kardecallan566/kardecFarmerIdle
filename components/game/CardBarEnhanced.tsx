@@ -100,19 +100,19 @@ const CARD_CONFIGS = [
   {
     name: 'Guerreiro',
     stats: '❤️ 50 | ⚔️ 15 | 🎯 80',
-    cost: 100,
+    combatCost: 100,
     color: '#4169E1',
   },
   {
     name: 'Arqueiro',
     stats: '❤️ 30 | ⚔️ 10 | 🎯 150',
-    cost: 120,
+    combatCost: 120,
     color: '#32CD32',
   },
   {
     name: 'Tanque',
     stats: '❤️ 100 | ⚔️ 5 | 🎯 60',
-    cost: 150,
+    combatCost: 150,
     color: '#A9A9A9',
   },
 ];
@@ -122,8 +122,8 @@ export function CardBarEnhanced() {
   const { cardCooldowns } = useCardSystem();
 
   const handleCardPress = (index: number) => {
-    const cost = CARD_CONFIGS[index].cost;
-    if (state.combatCoins < cost) {
+    const combatCost = CARD_CONFIGS[index].combatCost;
+    if (state.combatCoins < combatCost) {
       return; // Can't afford
     }
     const cooldown = (cardCooldowns[index] as any)?.cooldown ?? 0;
@@ -146,8 +146,8 @@ export function CardBarEnhanced() {
         contentContainerStyle={styles.scrollContent}
       >
         {CARD_CONFIGS.map((card, index) => {
-          const cost = card.cost;
-          const canAfford = state.combatCoins >= cost;
+          const combatCost = card.combatCost;
+          const canAfford = state.combatCoins >= combatCost;
           const cooldown = (cardCooldowns[index] as any)?.cooldown ?? 0;
           const isSelected = state.selectedCardIndex === index;
           const isOnCooldown = cooldown > 0;
@@ -167,7 +167,7 @@ export function CardBarEnhanced() {
             >
               <Text style={styles.cardName}>{card.name}</Text>
               <Text style={styles.cardStats}>{card.stats}</Text>
-              <Text style={styles.cardCost}>💰 {cost}</Text>
+              <Text style={styles.cardCost}>💰 {combatCost}</Text>
 
               {isOnCooldown && (
                 <View style={styles.cooldownOverlay}>

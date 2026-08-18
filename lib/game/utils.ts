@@ -135,7 +135,7 @@ export function generateUpgradeOptions(count: number = 3): Upgrade[] {
     { name: '+20% Dano', type: 'damage', value: 0.2 },
     { name: '+1 Alcance', type: 'range', value: 1 },
     { name: '-20% Custo', type: 'cost', value: -0.2 },
-    { name: '+50% Moedas', type: 'coins', value: 0.5 },
+    { name: '+50% Suprimentos', type: 'combatCoins', value: 0.5 },
     { name: '+10 Vida', type: 'health', value: 10 },
     { name: 'Guerreiro +30% Dano', type: 'guardSpecific', value: 0.3, targetGuard: 'warrior', stat: 'damage' },
     { name: 'Arqueiro +40% Alcance', type: 'guardSpecific', value: 0.4, targetGuard: 'archer', stat: 'range' },

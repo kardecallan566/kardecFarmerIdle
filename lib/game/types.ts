@@ -94,7 +94,7 @@ export interface GameState {
   waveEnemiesTotal: number;
   waveEnemiesSpawned: number;
   totalEnemiesDefeated: number;
-  totalCoinsEarned: number;
+  totalCombatCoinsEarned: number;
   upgrades: Upgrade[];
   pendingWaveRewards: Upgrade[];
   selectedCardIndex: number | null;
@@ -163,7 +163,7 @@ export interface Guard {
 export interface Card {
   id: string;
   type: GuardType;
-  cost: number;
+  combatCost: number;
   cooldown: number;
   maxCooldown: number;
   available: boolean;
@@ -173,7 +173,7 @@ export interface Upgrade {
   id: string;
   name: string;
   description: string;
-  type: 'damage' | 'range' | 'cost' | 'coins' | 'health' | 'guardSpecific';
+  type: 'damage' | 'range' | 'cost' | 'combatCoins' | 'health' | 'guardSpecific';
   value: number;
   targetGuard?: GuardType;
   stat?: 'damage' | 'range' | 'health';
@@ -207,15 +207,15 @@ export interface GameConfig {
   plantationRadius: number;
   pathCount: number;
   spawnDistance: number;
-  coinGainPerSecond: number;
-  coinGainPerKill: number;
+  combatCoinsPerSecond: number;
+  combatCoinsPerKill: number;
   initialPlantationHealth: number;
   waveInterval: number;
 }
 
 export const GUARD_CONFIGS = {
   warrior: {
-    cost: 100,
+    combatCost: 100,
     health: 50,
     damage: 15,
     range: 32,
@@ -226,7 +226,7 @@ export const GUARD_CONFIGS = {
     cropName: 'Trigo de Guerra',
   },
   archer: {
-    cost: 120,
+    combatCost: 120,
     health: 30,
     damage: 12,
     range: 160,
@@ -237,7 +237,7 @@ export const GUARD_CONFIGS = {
     cropName: 'Milho de Arco',
   },
   tank: {
-    cost: 150,
+    combatCost: 150,
     health: 100,
     damage: 8,
     range: 70,
@@ -248,7 +248,7 @@ export const GUARD_CONFIGS = {
     cropName: 'Abóbora Blindada',
   },
 } satisfies Record<GuardType, {
-  cost: number;
+  combatCost: number;
   health: number;
   damage: number;
   range: number;
@@ -410,8 +410,8 @@ export const INITIAL_GAME_CONFIG: GameConfig = {
   plantationRadius: 30,
   pathCount: 8,
   spawnDistance: 220,
-  coinGainPerSecond: 2,
-  coinGainPerKill: 15,
+  combatCoinsPerSecond: 2,
+  combatCoinsPerKill: 15,
   initialPlantationHealth: 100,
   waveInterval: 3,
 };

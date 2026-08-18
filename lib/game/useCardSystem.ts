@@ -41,7 +41,7 @@ export function useCardSystem() {
     if (!state.unlockedTroops.includes(guardType)) return;
 
     // A carta só é selecionada nesta etapa; o custo é cobrado na confirmação do quartel.
-    if (state.combatCoins < guardConfig.cost) return;
+    if (state.combatCoins < guardConfig.combatCost) return;
     dispatch({ type: 'SELECT_CARD', cardIndex });
   };
 
@@ -51,9 +51,9 @@ export function useCardSystem() {
     const guardType = guardTypes[cardIndex];
     const guardConfig = GUARD_CONFIGS[guardType];
     if (!card || card.cooldown > 0 || !state.unlockedTroops.includes(guardType)) return false;
-    if (state.combatCoins < guardConfig.cost) return false;
+    if (state.combatCoins < guardConfig.combatCost) return false;
 
-    dispatch({ type: 'SUBTRACT_COMBAT_COINS', amount: guardConfig.cost });
+    dispatch({ type: 'SUBTRACT_COMBAT_COINS', amount: guardConfig.combatCost });
     card.cooldown = card.maxCooldown;
     return true;
   };

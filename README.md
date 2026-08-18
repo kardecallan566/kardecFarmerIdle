@@ -6,7 +6,7 @@ Um jogo mobile **Tower Defense** com elementos **Roguelike** desenvolvido em **R
 
 ### 🗺️ Mecânica de Jogo
 
-- **Mapa Circular**: Plantação no centro com 4 caminhos radiais convergindo para o centro
+- **Mapa Circular**: Farol no centro, oito quartéis em anel e oito rotas radiais invisíveis convergindo para o centro
 - **Sistema de Waves**: Ondas progressivas de inimigos com dificuldade crescente
 - **Boss Waves**: A cada 5 ondas, um Boss especial aparece com habilidades únicas
 - **Movimento Radial**: Inimigos seguem os caminhos até atingir a plantação central
@@ -15,11 +15,11 @@ Um jogo mobile **Tower Defense** com elementos **Roguelike** desenvolvido em **R
 
 Três tipos de guardas com características únicas:
 
-| Guarda | Vida | Dano | Alcance | Custo | Descrição |
+| Guarda | Vida | Dano | Alcance | Suprimentos | Descrição |
 |--------|------|------|---------|-------|-----------|
-| **Guerreiro** | 50 | 15 | 80 | 100 moedas | Equilibrado, ataque rápido |
-| **Arqueiro** | 30 | 10 | 150 | 120 moedas | Longo alcance, preciso |
-| **Tanque** | 100 | 5 | 60 | 150 moedas | Resistente, absorve dano |
+| **Guerreiro** | 50 | 15 | 32 | 100 suprimentos | Linha de frente corpo a corpo |
+| **Arqueiro** | 30 | 10 | 160 | 120 suprimentos | Longo alcance, preciso |
+| **Tanque** | 100 | 8 | 70 | 150 suprimentos | Resistente, absorve dano |
 
 ### 👹 Inimigos
 
@@ -31,20 +31,23 @@ Três tipos de guardas com características únicas:
 
 ### 🎁 Sistema Roguelike
 
-Após cada onda, escolha **1 entre 3 melhorias aleatórias**:
+Após cada **Boss Wave**, escolha **1 entre 3 melhorias aleatórias** no Intervalo Tático:
 
 - **Dano +**: Aumenta dano de todos os guardas
 - **Alcance +**: Aumenta alcance de todos os guardas
 - **Custo -**: Reduz custo de colocar novos guardas
-- **Moedas +**: Aumenta ganho de moedas por inimigo derrotado
+- **Suprimentos +**: Aumenta o ganho de suprimentos temporários durante a defesa
 - **Vida +**: Aumenta vida máxima da plantação
 
-### 💰 Sistema de Moedas
+### 💰 Sistema de Duas Economias
 
-- Ganhe moedas derrotando inimigos
-- Ganho passivo entre ondas
-- Use moedas para colocar novos guardas
-- Animação visual de coleta de moedas
+O jogo mantém duas moedas independentes, com saldos e usos diferentes:
+
+- **Ouro do Acampamento (`bankGold`)**: persiste entre partidas e é usado exclusivamente para desbloquear tropas, treinar classes, melhorar o farol, abrir quartéis e evoluir a colheita ociosa.
+- **Suprimentos de combate (`combatCoins`)**: nascem durante a wave, aumentam por passagem de tempo e inimigos derrotados, e são usados exclusivamente para comprar tropas na arena atual. Esse saldo é reiniciado ao iniciar uma nova defesa e nunca é convertido diretamente em ouro do Acampamento.
+- A seleção de uma carta não cobra nada; o custo é descontado uma única vez quando a tropa é confirmada em um quartel.
+- Relíquias de `+50% Suprimentos` afetam apenas os ganhos temporários da defesa.
+- A recompensa de fim de run é calculada pelo desempenho, não pelo saldo de suprimentos restante.
 
 ### 🎨 Animações e Efeitos
 
@@ -67,12 +70,13 @@ Proteja sua plantação do máximo de ondas possível. Cada onda que passa aumen
    - Válido apenas fora da plantação e dentro do mapa
 
 2. **Gerenciar Recursos**:
-   - Moedas aparecem no canto superior direito
-   - Cada guarda custa moedas diferentes
-   - Ganhe moedas derrotando inimigos
+   - `SUPRIMENTOS` aparecem no canto superior direito da arena e pagam as tropas da wave
+   - `OURO DO ACAMPAMENTO` aparece no Acampamento e paga upgrades persistentes
+   - Cada guarda custa uma quantidade diferente de suprimentos
+   - Derrote inimigos para ganhar suprimentos temporários
 
 3. **Melhorias**:
-   - Após cada onda, escolha 1 entre 3 melhorias
+   - Após cada Boss Wave, escolha 1 entre 3 melhorias no Intervalo Tático
    - Melhorias são cumulativas e afetam guardas existentes
 
 4. **Game Over**:
@@ -85,7 +89,7 @@ Proteja sua plantação do máximo de ondas possível. Cada onda que passa aumen
 - **Wave**: Número da onda atual
 - **Inimigos**: Quantidade de inimigos restantes
 - **Plantação**: Vida atual / Vida máxima
-- **Moedas**: Quantidade de moedas disponíveis
+- **Suprimentos**: Saldo temporário usado para comprar tropas na wave
 - **Cartas**: Barra de guardas com indicador de cooldown
 
 ## 🛠️ Tecnologia
@@ -113,11 +117,14 @@ cd kardecFarmerIdle
 # Instale as dependências
 pnpm install
 
-# Inicie o servidor de desenvolvimento
+# Inicie o servidor de desenvolvimento nativo
 pnpm dev
 
-# No Expo Go (iOS/Android)
-# Escaneie o código QR ou use: exps://8081-...
+# Android com Expo Go
+pnpm android
+
+# Se a rede local não funcionar, use o túnel
+pnpm android:tunnel
 ```
 
 ## 🎯 Estratégia de Jogo
@@ -134,7 +141,7 @@ pnpm dev
 - **Defesa em Camadas**: Coloque guardas em múltiplas linhas
 - **Foco em Alcance**: Arqueiros com alcance máximo cobrem mais área
 - **Tanques Defensivos**: Use tanques para absorver dano de Bosses
-- **Farming de Moedas**: Maximize ganho de moedas para colocar mais guardas
+- **Gestão de Suprimentos**: Maximize o ganho temporário para colocar as tropas certas em cada wave
 
 ## 📱 Compatibilidade
 

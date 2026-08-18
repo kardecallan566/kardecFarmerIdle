@@ -152,7 +152,7 @@ export function GameMap() {
       const cropType = cropTypes[state.selectedCardIndex];
       const config = GUARD_CONFIGS[cropType];
 
-      if (state.combatCoins >= config.cost && commitCardPlacement(state.selectedCardIndex)) {
+      if (state.combatCoins >= config.combatCost && commitCardPlacement(state.selectedCardIndex)) {
         dispatch({ type: 'PLANT_CROP', plotIndex, cropType });
       }
     } else {

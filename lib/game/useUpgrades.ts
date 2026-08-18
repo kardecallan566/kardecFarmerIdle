@@ -15,7 +15,6 @@ export function useUpgrades() {
     let damageMultiplier = 1;
     let rangeMultiplier = 1;
     let costMultiplier = 1;
-    let coinMultiplier = 1;
     let healthBonus = 0;
     const guardSpecificUpgrades: Record<string, { damage: number; range: number; health: number }> = {};
 
@@ -29,9 +28,6 @@ export function useUpgrades() {
           break;
         case 'cost':
           costMultiplier *= 1 + upgrade.value;
-          break;
-        case 'coins':
-          coinMultiplier *= 1 + upgrade.value;
           break;
         case 'health':
           healthBonus += upgrade.value;

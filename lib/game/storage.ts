@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
   TOTAL_GAMES: 'kardec_farmer_total_games',
   TOTAL_ENEMIES_DEFEATED: 'kardec_farmer_total_enemies_defeated',
-  TOTAL_COINS_EARNED: 'kardec_farmer_total_coins_earned',
+  TOTAL_COMBAT_COINS_EARNED: 'kardec_farmer_total_combat_coins_earned',
+  LEGACY_TOTAL_COINS_EARNED: 'kardec_farmer_total_coins_earned',
   PERSISTENT_PROGRESS: 'kardec_farmer_persistent_progress',
 };
 
@@ -84,24 +85,25 @@ export async function getTotalEnemiesDefeated(): Promise<number> {
   }
 }
 
-export async function addTotalCoinsEarned(coins: number): Promise<void> {
+export async function addTotalCombatCoinsEarned(combatCoins: number): Promise<void> {
   try {
-    const current = await getTotalCoinsEarned();
+    const current = await getTotalCombatCoinsEarned();
     await AsyncStorage.setItem(
-      STORAGE_KEYS.TOTAL_COINS_EARNED,
-      (current + coins).toString(),
+      STORAGE_KEYS.TOTAL_COMBAT_COINS_EARNED,
+      (current + combatCoins).toString(),
     );
   } catch (error) {
-    console.error('Error adding coins earned:', error);
+    console.error('Error adding combat coins earned:', error);
   }
 }
 
-export async function getTotalCoinsEarned(): Promise<number> {
+export async function getTotalCombatCoinsEarned(): Promise<number> {
   try {
-    const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_COINS_EARNED);
+    const value = await AsyncStorage.getItem(STORAGE_KEYS.TOTAL_COMBAT_COINS_EARNED)
+      ?? await AsyncStorage.getItem(STORAGE_KEYS.LEGACY_TOTAL_COINS_EARNED);
     return value ? parseInt(value, 10) : 0;
   } catch (error) {
-    console.error('Error getting coins earned:', error);
+    console.error('Error getting combat coins earned:', error);
     return 0;
   }
 }

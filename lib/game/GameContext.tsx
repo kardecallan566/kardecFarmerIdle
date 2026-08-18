@@ -46,10 +46,10 @@ export type GameAction =
   | { type: 'LOAD_PROGRESS'; progress: PersistentProgress }
   | { type: 'CLAIM_RUN_REWARD' }
   | { type: 'CLAIM_IDLE_GOLD' }
-  | { type: 'BUY_IDLE_UPGRADE'; cost: number }
-  | { type: 'UNLOCK_TROOP'; troopType: GuardType; cost: number }
-  | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; cost: number }
-  | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; cost: number };
+  | { type: 'BUY_IDLE_UPGRADE'; goldCost: number }
+  | { type: 'UNLOCK_TROOP'; troopType: GuardType; goldCost: number }
+  | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; goldCost: number }
+  | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; goldCost: number };
 
 function createPlot(
   index: number,
@@ -112,7 +112,7 @@ const initialState: GameState = {
   waveEnemiesTotal: getWaveConfig(1).enemyCount,
   waveEnemiesSpawned: 0,
   totalEnemiesDefeated: 0,
-  totalCoinsEarned: 0,
+  totalCombatCoinsEarned: 0,
   upgrades: [],
   pendingWaveRewards: [],
   selectedCardIndex: null,
@@ -131,6 +131,13 @@ const initialState: GameState = {
   runRewardClaimed: false,
   lastRunReward: 0,
 };
+
+function getCombatCoinMultiplier(upgrades: GameState['upgrades']): number {
+  return upgrades.reduce(
+    (multiplier, upgrade) => upgrade.type === 'combatCoins' ? multiplier * (1 + upgrade.value) : multiplier,
+    1,
+  );
+}
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -158,10 +165,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CLAIM_RUN_REWARD': {
       if (!state.gameLost || state.runRewardClaimed) return state;
-      const reward = Math.max(
-        20,
-        Math.floor(state.totalCoinsEarned * 0.45) + state.wave * 20 + state.totalEnemiesDefeated * 2,
-      );
+      // Ouro do Acampamento nasce do desempenho da run, nunca do saldo de suprimentos.
+      const bossBonus = getWaveConfig(state.wave).isBossWave ? 120 : 0;
+      const reward = Math.max(20, state.wave * 30 + state.totalEnemiesDefeated * 3 + bossBonus);
       return {
         ...state,
         bankGold: state.bankGold + reward,
@@ -185,28 +191,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'BUY_IDLE_UPGRADE': {
       const currentLevel = state.idleUpgradeLevel;
-      const cost = getIdleUpgradeCost(currentLevel);
-      if (currentLevel >= 5 || state.bankGold < cost) return state;
+      const goldCost = getIdleUpgradeCost(currentLevel);
+      if (currentLevel >= 5 || state.bankGold < goldCost) return state;
       return {
         ...state,
-        bankGold: state.bankGold - cost,
+        bankGold: state.bankGold - goldCost,
         idleUpgradeLevel: currentLevel + 1,
       };
     }
 
     case 'UNLOCK_TROOP':
-      if (state.unlockedTroops.includes(action.troopType) || state.bankGold < action.cost) return state;
+      if (state.unlockedTroops.includes(action.troopType) || state.bankGold < action.goldCost) return state;
       return {
         ...state,
-        bankGold: state.bankGold - action.cost,
+        bankGold: state.bankGold - action.goldCost,
         unlockedTroops: [...state.unlockedTroops, action.troopType],
       };
 
     case 'BUY_TROOP_UPGRADE':
-      if (!state.unlockedTroops.includes(action.troopType) || state.bankGold < action.cost) return state;
+      if (!state.unlockedTroops.includes(action.troopType) || state.bankGold < action.goldCost) return state;
       return {
         ...state,
-        bankGold: state.bankGold - action.cost,
+        bankGold: state.bankGold - action.goldCost,
         troopUpgradeLevels: {
           ...state.troopUpgradeLevels,
           [action.troopType]: state.troopUpgradeLevels[action.troopType] + 1,
@@ -216,7 +222,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'BUY_BEACON_UPGRADE': {
       const currentLevel = state.beaconUpgradeLevels[action.upgradeType];
       const maxLevel = action.upgradeType === 'multiSpawn' ? 2 : action.upgradeType === 'extraSlots' ? 4 : 5;
-      if (currentLevel >= maxLevel || state.bankGold < action.cost) return state;
+      if (currentLevel >= maxLevel || state.bankGold < action.goldCost) return state;
 
       const beaconUpgradeLevels = {
         ...state.beaconUpgradeLevels,
@@ -224,7 +230,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
       return {
         ...state,
-        bankGold: state.bankGold - action.cost,
+        bankGold: state.bankGold - action.goldCost,
         beaconUpgradeLevels,
         plots: createRunPlots(beaconUpgradeLevels),
         sprinkler: {
@@ -337,14 +343,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const previousCount = state.bestiaryDefeated[enemy.kind] ?? 0;
       const nextCount = previousCount + 1;
       const bestiaryReward = getBestiaryReward(enemy.kind, previousCount, nextCount);
-      const coinsGained = INITIAL_GAME_CONFIG.coinGainPerKill + bestiaryReward;
+      const combatCoinsGained = Math.round(
+        (INITIAL_GAME_CONFIG.combatCoinsPerKill + bestiaryReward) * getCombatCoinMultiplier(state.upgrades),
+      );
       return {
         ...state,
         enemies: state.enemies.filter((e) => e.id !== action.enemyId),
         waveEnemiesRemaining: Math.max(0, state.waveEnemiesRemaining - 1),
-        combatCoins: state.combatCoins + coinsGained,
+        combatCoins: state.combatCoins + combatCoinsGained,
         totalEnemiesDefeated: state.totalEnemiesDefeated + 1,
-        totalCoinsEarned: state.totalCoinsEarned + coinsGained,
+        totalCombatCoinsEarned: state.totalCombatCoinsEarned + combatCoinsGained,
         bestiaryDefeated: {
           ...state.bestiaryDefeated,
           [enemy.kind]: nextCount,
@@ -521,7 +529,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!state.gameActive) return;
 
     const loopInterval = setInterval(() => {
-      const combatCoinsPerTick = INITIAL_GAME_CONFIG.coinGainPerSecond / 10;
+      const combatCoinsPerTick = (INITIAL_GAME_CONFIG.combatCoinsPerSecond / 10) * getCombatCoinMultiplier(state.upgrades);
       dispatch({ type: 'ADD_COMBAT_COINS', amount: combatCoinsPerTick });
     }, 100);
 

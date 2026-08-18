@@ -220,3 +220,11 @@ O Acampamento abriu no viewport vertical com o saldo `5003 OURO DO ACAMPAMENTO`,
 ## Export final — 2026-08-17
 
 O bundle final recarregou a Home com `ouro do Acampamento`, `OURO OCIOSO` e `suprimentos de combate`; a entrada `INICIAR DEFESA` abriu a arena sem erro. A HUD da arena mostrou `SUPRIMENTOS`, `Acampamento: 5003 gold`, `8/8 quartéis` e a primeira wave começou com spawn normal.
+
+## Economia separada — 2026-08-18
+
+O export atualizado abriu a Home com `0 ouro do Acampamento` e iniciou a arena com `251 SUPRIMENTOS` e `Acampamento: 0 gold`, comprovando que o saldo temporário nasce na run e não é herdado do ouro persistente. Os custos das cartas continuam sendo exibidos como valores de compra na arena, enquanto a HUD da run mantém o saldo de suprimentos isolado.
+
+## Acampamento após a separação estrutural — 2026-08-18
+
+A tela do Acampamento mostrou `0 OURO DO ACAMPAMENTO`, botões de colheita e upgrades com `OURO`, e o painel `DUAS ECONOMIAS` descrevendo suprimentos como recurso exclusivo da defesa atual. A run anterior não transferiu o saldo de `SUPRIMENTOS` para o Acampamento.

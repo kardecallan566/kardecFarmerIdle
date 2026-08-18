@@ -61,7 +61,7 @@ export function CardBar() {
   const handleCardPress = (cardIndex: number) => {
     const cropType = GUARD_TYPES[cardIndex];
     const config = GUARD_CONFIGS[cropType];
-    if (state.combatCoins < config.cost) return;
+    if (state.combatCoins < config.combatCost) return;
 
     if (state.selectedPlotIndex !== null) {
       if (!commitCardPlacement(cardIndex)) return;
@@ -87,7 +87,7 @@ export function CardBar() {
           const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
           const visual = getGuardVisualProfile(guardType, state.troopUpgradeLevels[guardType]);
           const isSelected = state.selectedCardIndex === index;
-          const canAfford = state.combatCoins >= config.cost;
+          const canAfford = state.combatCoins >= config.combatCost;
           const unlocked = isTroopUnlocked(index);
           const available = isCardAvailable(index);
           const cooldown = cooldowns[index];
@@ -162,7 +162,7 @@ export function CardBar() {
 
                 <View className="bg-[#F7C948]/20 border border-[#C89A2C]/50 rounded-lg px-2 py-1 flex-row items-center gap-1">
                   <GameIcon name="coin" size={14} color="#F7C948" secondaryColor="#7D4E1F" />
-                  <Text className="text-xs font-semibold text-[#F7C948]">{config.cost}</Text>
+                  <Text className="text-xs font-semibold text-[#F7C948]">{config.combatCost}</Text>
                 </View>
 
                 {!canAfford && <Text className="text-[10px] text-[#FF9B7A] mt-1 font-semibold">Sem suprimentos</Text>}

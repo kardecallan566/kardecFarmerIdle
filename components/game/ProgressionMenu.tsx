@@ -172,7 +172,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 </View>
               </Pressable>
               <Pressable
-                onPress={() => dispatch({ type: 'BUY_IDLE_UPGRADE', cost: getIdleUpgradeCost(state.idleUpgradeLevel) })}
+                onPress={() => dispatch({ type: 'BUY_IDLE_UPGRADE', goldCost: getIdleUpgradeCost(state.idleUpgradeLevel) })}
                 disabled={state.idleUpgradeLevel >= 5 || state.bankGold < getIdleUpgradeCost(state.idleUpgradeLevel)}
                 accessibilityRole="button"
                 accessibilityLabel="Melhorar colheita ociosa"
@@ -240,8 +240,8 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             {BEACON_UPGRADES.map((upgrade) => {
               const level = state.beaconUpgradeLevels[upgrade.type];
               const isMaxed = level >= upgrade.maxLevel;
-              const cost = upgrade.getCost(level);
-              const canBuy = !isMaxed && state.bankGold >= cost;
+              const goldCost = upgrade.getCost(level);
+              const canBuy = !isMaxed && state.bankGold >= goldCost;
               const valueLabel = upgrade.type === 'lightSpeed'
                 ? `Velocidade do feixe: +${level * 20}%`
                 : upgrade.type === 'multiSpawn'
@@ -261,7 +261,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     </View>
                   </View>
                   <Pressable
-                    onPress={() => dispatch({ type: 'BUY_BEACON_UPGRADE', upgradeType: upgrade.type, cost })}
+                    onPress={() => dispatch({ type: 'BUY_BEACON_UPGRADE', upgradeType: upgrade.type, goldCost })}
                     disabled={!canBuy}
                     accessibilityRole="button"
                     accessibilityLabel={`Melhorar ${upgrade.name}`}
@@ -272,7 +272,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     })}
                   >
                     <View className={`items-center rounded-xl px-3 py-2.5 ${isMaxed ? 'bg-[#8AA47A]' : canBuy ? 'bg-[#315F40]' : 'bg-[#A6B39A]'}`}>
-                        <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${cost} OURO`}</Text>
+                        <Text className="text-[10px] font-black text-white">{isMaxed ? 'MÁXIMO ALCANÇADO' : `MELHORAR • ${goldCost} OURO`}</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -311,7 +311,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
 
                   {!unlocked ? (
                     <Pressable
-                      onPress={() => dispatch({ type: 'UNLOCK_TROOP', troopType, cost: unlockCost })}
+                      onPress={() => dispatch({ type: 'UNLOCK_TROOP', troopType, goldCost: unlockCost })}
                       disabled={!canBuyUnlock}
                       accessibilityRole="button"
                       accessibilityLabel={`Desbloquear ${config.name}`}
@@ -328,7 +328,7 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                     </Pressable>
                   ) : (
                     <Pressable
-                      onPress={() => dispatch({ type: 'BUY_TROOP_UPGRADE', troopType, cost: upgradeCost })}
+                      onPress={() => dispatch({ type: 'BUY_TROOP_UPGRADE', troopType, goldCost: upgradeCost })}
                       disabled={!canBuyUpgrade}
                       accessibilityRole="button"
                       accessibilityLabel={`Treinar ${config.name}`}

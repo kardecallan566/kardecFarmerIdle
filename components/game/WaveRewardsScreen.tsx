@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
+import { getRelicBehaviorLabel, getRelicRarityConfig } from '@/lib/game/relics';
 
 const UPGRADE_COLORS: Record<string, string> = {
   damage: '#D85C43',
@@ -32,7 +33,8 @@ export function WaveRewardsScreen() {
 
             <View className="mt-4 gap-3">
               {state.pendingWaveRewards.map((upgrade, index) => {
-                const accent = UPGRADE_COLORS[upgrade.type] ?? '#4E8B46';
+                const rarityConfig = getRelicRarityConfig(upgrade.rarity ?? 'common');
+                const accent = upgrade.rarity ? rarityConfig.color : UPGRADE_COLORS[upgrade.type] ?? '#4E8B46';
                 return (
                   <Pressable
                     key={upgrade.id}
@@ -42,8 +44,16 @@ export function WaveRewardsScreen() {
                     style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: pressed ? 0.88 : 1 })}
                   >
                     <View className="rounded-2xl border border-[#D6DCC4] bg-white/80 p-4" style={{ borderLeftWidth: 6, borderLeftColor: accent }}>
-                      <View className="flex-row items-center justify-between">
-                        <Text className="flex-1 text-base font-black text-[#294F2E]">{upgrade.name}</Text>
+                      <View className="flex-row items-start justify-between gap-2">
+                        <View className="flex-1">
+                          <Text className="text-base font-black text-[#294F2E]">{upgrade.name}</Text>
+                          <View className="mt-1 flex-row items-center gap-1.5">
+                            <Text className="text-[9px] font-black" style={{ color: accent }}>{rarityConfig.label}</Text>
+                            {upgrade.behavior && (
+                              <Text className="text-[9px] font-black text-[#71835E]">{getRelicBehaviorLabel(upgrade.behavior)}</Text>
+                            )}
+                          </View>
+                        </View>
                         <Text className="rounded-full px-2 py-1 text-[9px] font-black text-white" style={{ backgroundColor: accent }}>ESCOLHER</Text>
                       </View>
                       <Text className="mt-2 text-xs leading-4 text-[#71835E]">{upgrade.description}</Text>

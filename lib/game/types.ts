@@ -6,6 +6,8 @@ export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
 export type EnemySkinTier = 'wild' | 'scarred' | 'ancient' | 'apocalypse';
 export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 export type FormationId = 'balanced' | 'frontline' | 'crossfire';
+export type RelicRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type RelicBehavior = 'assault' | 'bastion' | 'precision' | 'logistics';
 
 export const CURRENT_SAVE_VERSION = 2;
 
@@ -185,6 +187,8 @@ export interface Upgrade {
   value: number;
   targetGuard?: GuardType;
   stat?: 'damage' | 'range' | 'health';
+  rarity?: RelicRarity;
+  behavior?: RelicBehavior;
 }
 
 export interface WaveConfig {

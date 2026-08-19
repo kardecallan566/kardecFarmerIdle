@@ -1,6 +1,7 @@
 import { Vector2, INITIAL_GAME_CONFIG } from './types';
 
 import type { Upgrade } from './types';
+import { RELIC_CATALOG } from './relics';
 
 export function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
@@ -129,32 +130,36 @@ export function isValidGuardPosition(
   return minDistToPath <= minDistFromPath;
 }
 
-// Generate random upgrade options
+// Generate weighted relic options for the tactical break.
 export function generateUpgradeOptions(count: number = 3): Upgrade[] {
-  const upgradeTypes: Array<Pick<Upgrade, 'name' | 'type' | 'value' | 'targetGuard' | 'stat'>> = [
-    { name: '+20% Dano', type: 'damage', value: 0.2 },
-    { name: '+1 Alcance', type: 'range', value: 1 },
-    { name: '-20% Custo', type: 'cost', value: -0.2 },
-    { name: '+50% Suprimentos', type: 'combatCoins', value: 0.5 },
-    { name: '+10 Vida', type: 'health', value: 10 },
-    { name: 'Guerreiro +30% Dano', type: 'guardSpecific', value: 0.3, targetGuard: 'warrior', stat: 'damage' },
-    { name: 'Arqueiro +40% Alcance', type: 'guardSpecific', value: 0.4, targetGuard: 'archer', stat: 'range' },
-    { name: 'Tanque +50% Vida', type: 'guardSpecific', value: 0.5, targetGuard: 'tank', stat: 'health' },
-  ];
-
+  const pool = [...RELIC_CATALOG];
   const selected: Upgrade[] = [];
-  const indices = new Set<number>();
 
-  while (selected.length < Math.min(count, upgradeTypes.length)) {
-    const idx = Math.floor(Math.random() * upgradeTypes.length);
-    if (!indices.has(idx)) {
-      indices.add(idx);
-      selected.push({
-        id: `upgrade_${Date.now()}_${idx}`,
-        ...upgradeTypes[idx],
-        description: upgradeTypes[idx].name,
-      });
+  while (selected.length < Math.min(count, pool.length)) {
+    const totalWeight = pool.reduce((sum, relic) => sum + relic.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let selectedIndex = pool.length - 1;
+
+    for (let index = 0; index < pool.length; index += 1) {
+      roll -= pool[index].weight;
+      if (roll <= 0) {
+        selectedIndex = index;
+        break;
+      }
     }
+
+    const [relic] = pool.splice(selectedIndex, 1);
+    selected.push({
+      id: generateId('relic'),
+      name: relic.name,
+      description: relic.description,
+      type: relic.type,
+      value: relic.value,
+      targetGuard: relic.targetGuard,
+      stat: relic.stat,
+      rarity: relic.rarity,
+      behavior: relic.behavior,
+    });
   }
 
   return selected;

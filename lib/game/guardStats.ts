@@ -30,6 +30,13 @@ export function getRunGuardStats(
     }
   });
 
+  const assaultStacks = upgrades.filter((upgrade) => upgrade.behavior === 'assault').length;
+  const bastionStacks = upgrades.filter((upgrade) => upgrade.behavior === 'bastion').length;
+  const precisionStacks = upgrades.filter((upgrade) => upgrade.behavior === 'precision').length;
+  damageMultiplier *= 1 + Math.min(0.25, assaultStacks * 0.03);
+  rangeMultiplier *= 1 + Math.min(0.2, precisionStacks * 0.04);
+  healthBonus += Math.min(30, bastionStacks * 3);
+
   const barracks = getBarracksModifiers(plotIndex, type, plots, formation);
 
   return {
@@ -37,6 +44,6 @@ export function getRunGuardStats(
     damage: base.damage * damageMultiplier * (1 + specificDamage) * barracks.damageMultiplier,
     range: base.range * rangeMultiplier * (1 + specificRange) * barracks.rangeMultiplier,
     health: (base.health + healthBonus + base.health * specificHealth) * barracks.healthMultiplier,
-    attackSpeed: base.attackSpeed * barracks.attackSpeedMultiplier,
+    attackSpeed: base.attackSpeed * barracks.attackSpeedMultiplier * (1 + Math.min(0.12, precisionStacks * 0.03)),
   };
 }

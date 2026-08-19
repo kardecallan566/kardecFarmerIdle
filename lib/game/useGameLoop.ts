@@ -165,6 +165,8 @@ export function useGameLoop() {
           currentState.plots,
           plot.index,
           currentState.formation,
+          currentState.ascensionLevel,
+          currentState.technologyLevels,
         );
         const plotPosition = getPlotPosition(
           plot.index,

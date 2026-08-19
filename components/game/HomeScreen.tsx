@@ -98,10 +98,11 @@ export function HomeScreen({ onStartGame, onOpenCamp }: HomeScreenProps) {
               </View>
               <View className="flex-1 rounded-xl border border-[#C8DCE8] bg-[#F1F8FC] px-3 py-2">
                 <Text className="text-[9px] font-black text-[#5F7990]">BESTIÁRIO</Text>
-                <Text className="mt-0.5 text-sm font-black text-[#2D5367]">{Object.values(state.bestiaryDefeated).filter((count) => count > 0).length}/5</Text>
+                <Text className="mt-0.5 text-sm font-black text-[#2D5367]">{Object.values(state.bestiaryDefeated).filter((count) => count > 0).length}/9</Text>
                 <Text className="text-[9px] text-[#68859A]">espécies descobertas</Text>
               </View>
             </View>
+            <Text className="mt-2 text-[10px] leading-4 text-[#71835E]">Tecnologia: {Object.values(state.technologyLevels).reduce((sum, level) => sum + level, 0)}/15 • Ascensão {state.ascensionLevel} • Essência {state.forestEssence}</Text>
           </View>
 
           <View className="rounded-3xl border border-[#B8CDE0] bg-[#F1F8FC]/95 p-4">

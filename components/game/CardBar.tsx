@@ -63,7 +63,7 @@ export function CardBar() {
 
   const handleCardPress = (cardIndex: number) => {
     const cropType = GUARD_TYPES[cardIndex];
-    const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades);
+    const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades, state.technologyLevels.supplyLines);
     if (state.combatCoins < effectiveCost) return;
 
     if (state.selectedPlotIndex !== null) {
@@ -139,7 +139,7 @@ export function CardBar() {
           const config = GUARD_CONFIGS[guardType];
           const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
           const visual = getGuardVisualProfile(guardType, state.troopUpgradeLevels[guardType]);
-          const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
+          const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades, state.technologyLevels.supplyLines);
           const isSelected = state.selectedCardIndex === index;
           const canAfford = state.combatCoins >= effectiveCost;
           const unlocked = isTroopUnlocked(index);

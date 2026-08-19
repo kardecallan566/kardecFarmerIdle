@@ -40,7 +40,7 @@ export function useCardSystem() {
     if (!state.unlockedTroops.includes(guardType)) return;
 
     // A carta só é selecionada nesta etapa; o custo é cobrado na confirmação do quartel.
-    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
+    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades, state.technologyLevels.supplyLines);
     if (state.combatCoins < effectiveCost) return;
     dispatch({ type: 'SELECT_CARD', cardIndex });
   };
@@ -49,7 +49,7 @@ export function useCardSystem() {
     const card = cardCooldownsRef.current[cardIndex];
     const guardTypes = ['warrior', 'archer', 'tank'] as const;
     const guardType = guardTypes[cardIndex];
-    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
+    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades, state.technologyLevels.supplyLines);
     if (!card || card.cooldown > 0 || !state.unlockedTroops.includes(guardType)) return false;
     if (state.combatCoins < effectiveCost) return false;
 

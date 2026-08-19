@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { BestiaryProgress, GuardType, PersistentProgress } from './types';
+import type { BestiaryProgress, GuardType, PersistentProgress, TechnologyLevels } from './types';
 import { CURRENT_SAVE_VERSION, DEFAULT_BESTIARY_PROGRESS, DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
+import { DEFAULT_TECHNOLOGY_LEVELS } from './technology';
 
 const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
@@ -22,6 +23,9 @@ export const DEFAULT_PERSISTENT_PROGRESS: PersistentProgress = {
   bestiaryDefeated: { ...DEFAULT_BESTIARY_PROGRESS },
   bestWave: 0,
   totalGames: 0,
+  technologyLevels: { ...DEFAULT_TECHNOLOGY_LEVELS },
+  ascensionLevel: 0,
+  forestEssence: 0,
 };
 
 export async function saveBestWave(wave: number): Promise<void> {
@@ -129,13 +133,29 @@ function migrateProgress(raw: Partial<PersistentProgress> | null): Partial<Persi
   const sourceVersion = Number(raw.saveVersion) || 1;
   let migrated = { ...raw };
 
-  // Version 1 saves predate explicit save metadata. Version 2 keeps the same
-  // gameplay fields while making future migrations deterministic and visible.
   if (sourceVersion < 2) {
     migrated = { ...migrated, saveVersion: 2 };
   }
 
+  if (sourceVersion < CURRENT_SAVE_VERSION) {
+    migrated = {
+      ...migrated,
+      saveVersion: CURRENT_SAVE_VERSION,
+      technologyLevels: migrated.technologyLevels ?? { ...DEFAULT_TECHNOLOGY_LEVELS },
+      ascensionLevel: migrated.ascensionLevel ?? 0,
+      forestEssence: migrated.forestEssence ?? 0,
+    };
+  }
+
   return migrated;
+}
+
+function normalizeTechnology(raw: Partial<TechnologyLevels> | null | undefined): TechnologyLevels {
+  return {
+    combatDoctrine: Math.min(5, Math.max(0, Number(raw?.combatDoctrine) || 0)),
+    supplyLines: Math.min(5, Math.max(0, Number(raw?.supplyLines) || 0)),
+    forestWard: Math.min(5, Math.max(0, Number(raw?.forestWard) || 0)),
+  };
 }
 
 function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentProgress {
@@ -165,6 +185,9 @@ function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentP
     bestiaryDefeated: normalizeBestiary(migrated.bestiaryDefeated),
     bestWave: Math.max(0, Number(migrated.bestWave) || 0),
     totalGames: Math.max(0, Number(migrated.totalGames) || 0),
+    technologyLevels: normalizeTechnology(migrated.technologyLevels),
+    ascensionLevel: Math.min(20, Math.max(0, Number(migrated.ascensionLevel) || 0)),
+    forestEssence: Math.max(0, Number(migrated.forestEssence) || 0),
   };
 }
 

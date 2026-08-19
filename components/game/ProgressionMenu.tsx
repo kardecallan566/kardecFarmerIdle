@@ -1,6 +1,8 @@
 import { Image, ImageBackground, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { BeaconUpgradeType, getBeaconStats, getGuardStats, getGuardVisualProfile, getIdleGoldRate, getIdleUpgradeCost, GUARD_CONFIGS, GuardType } from '@/lib/game/types';
+import { getTechnologyCost, TECHNOLOGY_CATALOG } from '@/lib/game/technology';
+import { getAscensionCost, getAscensionRequirement } from '@/lib/game/ascension';
 import { GameIcon } from './GameIcon';
 import { CurrencyIcon } from './CurrencyIcon';
 
@@ -83,6 +85,9 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
   const isCompact = width < 390;
   const nextUnlock = TROOP_ORDER.find((type) => !state.unlockedTroops.includes(type));
   const beaconStats = getBeaconStats(state.beaconUpgradeLevels);
+  const ascensionCost = getAscensionCost(state.ascensionLevel);
+  const ascensionRequirement = getAscensionRequirement(state.ascensionLevel);
+  const canAscend = state.forestEssence >= ascensionCost && state.bestWave >= ascensionRequirement;
 
   const claimReward = () => dispatch({ type: 'CLAIM_RUN_REWARD' });
 
@@ -295,6 +300,70 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
                 </View>
               );
             })}
+          </View>
+
+          <View className="rounded-3xl border border-[#C7B2DD] bg-[#F8F1FC]/95 p-4">
+            <Text className="text-[10px] font-black tracking-[1.5px] text-[#76558E]">ÁRVORE TECNOLÓGICA</Text>
+            <Text className="mt-1 text-lg font-black text-[#4A315B]">Escolha sua especialização</Text>
+            <Text className="mt-1 text-xs leading-4 text-[#806A91]">Cada ramo chega a cinco níveis e usa apenas Ouro do Acampamento.</Text>
+            <View className="mt-3 gap-2">
+              {TECHNOLOGY_CATALOG.map((node) => {
+                const level = state.technologyLevels[node.id];
+                const isMaxed = level >= node.maxLevel;
+                const technologyCost = getTechnologyCost(node.id, level);
+                const canBuyTechnology = !isMaxed && state.bankGold >= technologyCost;
+                return (
+                  <View key={node.id} className="rounded-2xl border border-[#D8C9E3] bg-white/80 p-3">
+                    <View className="flex-row items-center justify-between gap-2">
+                      <View className="flex-1">
+                        <View className="flex-row items-center gap-2">
+                          <Text className="text-sm font-black text-[#4A315B]">{node.name}</Text>
+                          <Text className="rounded-full bg-[#E9DDF2] px-2 py-0.5 text-[9px] font-black text-[#76558E]">LV {level}/{node.maxLevel}</Text>
+                        </View>
+                        <Text className="mt-1 text-[10px] leading-4 text-[#806A91]">{node.description}</Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      onPress={() => dispatch({ type: 'BUY_TECHNOLOGY', technologyId: node.id })}
+                      disabled={!canBuyTechnology}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Pesquisar ${node.name}`}
+                      style={({ pressed }) => ({ marginTop: 10, opacity: pressed && canBuyTechnology ? 0.88 : 1 })}
+                    >
+                      <View className={`items-center rounded-xl px-3 py-2.5 ${isMaxed ? 'bg-[#8C7A9B]' : canBuyTechnology ? 'bg-[#76558E]' : 'bg-[#BFB2C7]'}`}>
+                        <Text className="text-[10px] font-black text-white">{isMaxed ? 'TECNOLOGIA MÁXIMA' : `PESQUISAR • ${technologyCost} OURO`}</Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <View className="rounded-3xl border border-[#E2B778] bg-[#FFF5DB]/95 p-4">
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-[10px] font-black tracking-[1.5px] text-[#9A632A]">ASCENSÃO</Text>
+                <Text className="mt-1 text-lg font-black text-[#6E4322]">Essência da Floresta</Text>
+                <Text className="mt-1 text-xs leading-4 text-[#9A6B3A]">Passe dos marcos de wave, reúna Essência nos Bosses e eleve todos os futuros recrutas.</Text>
+              </View>
+              <View className="items-center rounded-2xl bg-[#F3D98C] px-3 py-2">
+                <Text className="text-xl font-black text-[#704D1B]">{state.forestEssence}</Text>
+                <Text className="text-[9px] font-black text-[#8A7040]">ESSÊNCIA</Text>
+              </View>
+            </View>
+            <Text className="mt-3 text-[10px] font-bold text-[#8A7040]">Ascensão {state.ascensionLevel} • Próximo requisito: wave {ascensionRequirement} e {ascensionCost} Essência</Text>
+            <Pressable
+              onPress={() => dispatch({ type: 'ASCEND' })}
+              disabled={!canAscend}
+              accessibilityRole="button"
+              accessibilityLabel="Realizar Ascensão"
+              style={({ pressed }) => ({ marginTop: 10, opacity: pressed && canAscend ? 0.88 : 1 })}
+            >
+              <View className={`items-center rounded-xl px-3 py-2.5 ${canAscend ? 'bg-[#B97925]' : 'bg-[#BBAA8B]'}`}>
+                <Text className="text-[10px] font-black text-white">{canAscend ? 'REALIZAR ASCENSÃO' : 'CONTINUE A DEFESA'}</Text>
+              </View>
+            </Pressable>
           </View>
 
           <View className="gap-2">

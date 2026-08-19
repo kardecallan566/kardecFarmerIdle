@@ -10,13 +10,34 @@ export type RelicRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type RelicBehavior = 'assault' | 'bastion' | 'precision' | 'logistics';
 export type BossAbilityType = 'speedBoost' | 'spawnMinions' | 'shockwave';
 export type EnemyTraversal = 'ground' | 'flying' | 'wraith';
+export type TechnologyId = 'combatDoctrine' | 'supplyLines' | 'forestWard';
+export type RunEventId = 'scavenger' | 'groveBlessing' | 'lastStand';
 
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 3;
 
 export interface BeaconUpgradeLevels {
   lightSpeed: number;
   multiSpawn: number;
   extraSlots: number;
+}
+
+export interface TechnologyLevels {
+  combatDoctrine: number;
+  supplyLines: number;
+  forestWard: number;
+}
+
+export interface RunEventChoice {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface RunEvent {
+  id: RunEventId;
+  title: string;
+  description: string;
+  choices: RunEventChoice[];
 }
 
 export interface BestiaryProgress {
@@ -70,6 +91,9 @@ export interface PersistentProgress {
   bestiaryDefeated: BestiaryProgress;
   bestWave: number;
   totalGames: number;
+  technologyLevels: TechnologyLevels;
+  ascensionLevel: number;
+  forestEssence: number;
 }
 
 export interface Vector2 {
@@ -131,6 +155,10 @@ export interface GameState {
   progressLoaded: boolean;
   runRewardClaimed: boolean;
   lastRunReward: number;
+  technologyLevels: TechnologyLevels;
+  ascensionLevel: number;
+  forestEssence: number;
+  activeRunEvent: RunEvent | null;
 }
 
 export interface Enemy {
@@ -296,15 +324,16 @@ export const GUARD_CONFIGS = {
   cropName: string;
 }>;
 
-export function getCombatCostMultiplier(upgrades: Upgrade[] = []): number {
-  return upgrades
+export function getCombatCostMultiplier(upgrades: Upgrade[] = [], supplyLinesLevel = 0): number {
+  const relicMultiplier = upgrades
     .filter((upgrade) => upgrade.type === 'cost')
     .reduce((multiplier, upgrade) => multiplier * Math.max(0, 1 + upgrade.value), 1);
+  return relicMultiplier * (1 - Math.min(0.2, Math.max(0, supplyLinesLevel) * 0.04));
 }
 
-export function getEffectiveCombatCost(type: GuardType, upgrades: Upgrade[] = []): number {
+export function getEffectiveCombatCost(type: GuardType, upgrades: Upgrade[] = [], supplyLinesLevel = 0): number {
   const baseCost = GUARD_CONFIGS[type].combatCost;
-  return Math.max(0, Math.round(baseCost * getCombatCostMultiplier(upgrades)));
+  return Math.max(0, Math.round(baseCost * getCombatCostMultiplier(upgrades, supplyLinesLevel)));
 }
 
 export function getGuardStats(type: GuardType, upgradeLevel = 0) {

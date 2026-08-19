@@ -155,7 +155,7 @@ export function GameMap() {
     if (state.selectedCardIndex !== null) {
       const cropTypes = ['warrior', 'archer', 'tank'] as const;
       const cropType = cropTypes[state.selectedCardIndex];
-      const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades);
+      const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades, state.technologyLevels.supplyLines);
 
       if (state.combatCoins >= effectiveCost && commitCardPlacement(state.selectedCardIndex)) {
         dispatch({ type: 'PLANT_CROP', plotIndex, cropType });

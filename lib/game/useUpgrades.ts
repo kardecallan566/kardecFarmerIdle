@@ -16,6 +16,8 @@ export function useUpgrades() {
         state.plots,
         guard.plotIndex,
         state.formation,
+        state.ascensionLevel,
+        state.technologyLevels,
       );
       const healthRatio = guard.maxHealth > 0 ? guard.health / guard.maxHealth : 1;
 
@@ -43,7 +45,7 @@ export function useUpgrades() {
     if (hasStatChange) {
       dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
     }
-  }, [state.formation, state.guards, state.plots, state.troopUpgradeLevels, state.upgrades, dispatch]);
+  }, [state.ascensionLevel, state.formation, state.guards, state.plots, state.technologyLevels, state.troopUpgradeLevels, state.upgrades, dispatch]);
 
   return {
     upgrades: state.upgrades,

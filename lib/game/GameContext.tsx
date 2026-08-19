@@ -17,9 +17,13 @@ import {
   INITIAL_GAME_CONFIG,
   PersistentProgress,
   FormationId,
+  TechnologyId,
 } from './types';
 import { getPersistentProgress, savePersistentProgress } from './storage';
 import { generateUpgradeOptions } from './utils';
+import { DEFAULT_TECHNOLOGY_LEVELS, getTechnologyCost, getTechnologyEffects } from './technology';
+import { getAscensionEffects, getAscensionEssenceReward, getAscensionCost, getAscensionRequirement } from './ascension';
+import { getRunEventForWave, resolveRunEvent } from './runEvents';
 
 export type GameAction =
   | { type: 'INIT_GAME' }
@@ -56,7 +60,10 @@ export type GameAction =
   | { type: 'UNLOCK_TROOP'; troopType: GuardType; goldCost: number }
   | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; goldCost: number }
   | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; goldCost: number }
-  | { type: 'SET_FORMATION'; formation: FormationId };
+  | { type: 'SET_FORMATION'; formation: FormationId }
+  | { type: 'BUY_TECHNOLOGY'; technologyId: TechnologyId }
+  | { type: 'ASCEND' }
+  | { type: 'CHOOSE_RUN_EVENT'; choiceId: string };
 
 function createPlot(
   index: number,
@@ -138,12 +145,22 @@ const initialState: GameState = {
   progressLoaded: false,
   runRewardClaimed: false,
   lastRunReward: 0,
+  technologyLevels: { ...DEFAULT_TECHNOLOGY_LEVELS },
+  ascensionLevel: 0,
+  forestEssence: 0,
+  activeRunEvent: null,
 };
 
-function getCombatCoinMultiplier(upgrades: GameState['upgrades']): number {
+function getCombatCoinMultiplier(
+  upgrades: GameState['upgrades'],
+  technologyLevels: GameState['technologyLevels'],
+  ascensionLevel: number,
+): number {
+  const technologyEffects = getTechnologyEffects(technologyLevels);
+  const ascensionEffects = getAscensionEffects(ascensionLevel);
   return upgrades.reduce(
     (multiplier, upgrade) => upgrade.type === 'combatCoins' ? multiplier * (1 + upgrade.value) : multiplier,
-    1,
+    technologyEffects.combatCoinMultiplier * ascensionEffects.combatCoinMultiplier,
   );
 }
 
@@ -157,6 +174,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...action.progress,
         beaconUpgradeLevels,
         bestiaryDefeated,
+        technologyLevels: action.progress.technologyLevels ?? { ...DEFAULT_TECHNOLOGY_LEVELS },
+        ascensionLevel: action.progress.ascensionLevel ?? 0,
+        forestEssence: action.progress.forestEssence ?? 0,
         idleGoldAvailable: getOfflineGold(
           action.progress.lastOnlineAt,
           Date.now(),
@@ -227,6 +247,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       };
 
+    case 'BUY_TECHNOLOGY': {
+      const currentLevel = state.technologyLevels[action.technologyId];
+      const technologyCost = getTechnologyCost(action.technologyId, currentLevel);
+      if (currentLevel >= 5 || state.bankGold < technologyCost) return state;
+      return {
+        ...state,
+        bankGold: state.bankGold - technologyCost,
+        technologyLevels: {
+          ...state.technologyLevels,
+          [action.technologyId]: currentLevel + 1,
+        },
+      };
+    }
+
+    case 'ASCEND': {
+      const cost = getAscensionCost(state.ascensionLevel);
+      const requirement = getAscensionRequirement(state.ascensionLevel);
+      if (state.forestEssence < cost || state.bestWave < requirement) return state;
+      return {
+        ...state,
+        forestEssence: state.forestEssence - cost,
+        ascensionLevel: state.ascensionLevel + 1,
+      };
+    }
+
     case 'BUY_BEACON_UPGRADE': {
       const currentLevel = state.beaconUpgradeLevels[action.upgradeType];
       const maxLevel = action.upgradeType === 'multiSpawn' ? 2 : action.upgradeType === 'extraSlots' ? 4 : 5;
@@ -264,6 +309,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
         formation: state.formation,
+        technologyLevels: state.technologyLevels,
+        ascensionLevel: state.ascensionLevel,
+        forestEssence: state.forestEssence,
+        activeRunEvent: null,
         sprinkler: {
           angle: 0,
           rotationSpeed: getBeaconStats(state.beaconUpgradeLevels).rotationSpeed,
@@ -276,8 +325,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         plots: createRunPlots(state.beaconUpgradeLevels),
         wave: 1,
         combatCoins: 250,
-        plantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
-        maxPlantationHealth: INITIAL_GAME_CONFIG.initialPlantationHealth,
+        plantationHealth: Math.round(INITIAL_GAME_CONFIG.initialPlantationHealth * getAscensionEffects(state.ascensionLevel).plantationHealthMultiplier),
+        maxPlantationHealth: Math.round(INITIAL_GAME_CONFIG.initialPlantationHealth * getAscensionEffects(state.ascensionLevel).plantationHealthMultiplier),
         gameActive: true,
         gameLost: false,
         enemies: [],
@@ -305,6 +354,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         formation: state.formation,
         runRewardClaimed: false,
         lastRunReward: 0,
+        technologyLevels: state.technologyLevels,
+        ascensionLevel: state.ascensionLevel,
+        forestEssence: state.forestEssence,
+        activeRunEvent: null,
       };
 
     case 'UPDATE_ENEMIES': {
@@ -377,7 +430,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const nextCount = previousCount + 1;
       const bestiaryReward = getBestiaryReward(enemy.kind, previousCount, nextCount);
       const combatCoinsGained = Math.round(
-        (INITIAL_GAME_CONFIG.combatCoinsPerKill + bestiaryReward) * getCombatCoinMultiplier(state.upgrades),
+        (INITIAL_GAME_CONFIG.combatCoinsPerKill + bestiaryReward) * getCombatCoinMultiplier(state.upgrades, state.technologyLevels, state.ascensionLevel),
       );
       return {
         ...state,
@@ -422,14 +475,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'NEXT_WAVE': {
       const nextWave = state.wave + 1;
       const clearedBossWave = getWaveConfig(state.wave).isBossWave;
+      const activeRunEvent = clearedBossWave ? getRunEventForWave(nextWave) : null;
+      const essenceReward = clearedBossWave ? getAscensionEssenceReward(state.wave) : 0;
       return {
         ...state,
         wave: nextWave,
         gameActive: !clearedBossWave,
+        activeRunEvent,
         waveEnemiesRemaining: 0,
         waveEnemiesTotal: getWaveConfig(nextWave).enemyCount,
         waveEnemiesSpawned: 0,
         pendingWaveRewards: clearedBossWave ? generateUpgradeOptions(3) : [],
+        forestEssence: state.forestEssence + essenceReward,
       };
     }
 
@@ -508,6 +565,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         upgrades: [...state.upgrades, selectedUpgrade],
         pendingWaveRewards: [],
+        gameActive: state.activeRunEvent === null,
+      };
+    }
+
+    case 'CHOOSE_RUN_EVENT': {
+      if (!state.activeRunEvent) return state;
+      const outcome = resolveRunEvent(state.activeRunEvent.id, action.choiceId);
+      return {
+        ...state,
+        combatCoins: Math.max(0, state.combatCoins + outcome.combatCoinsDelta),
+        plantationHealth: Math.min(
+          state.maxPlantationHealth,
+          Math.max(1, state.plantationHealth + outcome.plantationHealthDelta),
+        ),
+        upgrades: outcome.upgrade ? [...state.upgrades, outcome.upgrade] : state.upgrades,
+        activeRunEvent: null,
         gameActive: true,
       };
     }
@@ -558,6 +631,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       bestiaryDefeated: state.bestiaryDefeated,
       bestWave: state.bestWave,
       totalGames: state.totalGames,
+      technologyLevels: state.technologyLevels,
+      ascensionLevel: state.ascensionLevel,
+      forestEssence: state.forestEssence,
     });
   }, [
     state.progressLoaded,
@@ -570,13 +646,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     state.bestiaryDefeated,
     state.bestWave,
     state.totalGames,
+    state.technologyLevels,
+    state.ascensionLevel,
+    state.forestEssence,
   ]);
 
   useEffect(() => {
     if (!state.gameActive) return;
 
     const loopInterval = setInterval(() => {
-      const combatCoinsPerTick = (INITIAL_GAME_CONFIG.combatCoinsPerSecond / 10) * getCombatCoinMultiplier(state.upgrades);
+      const combatCoinsPerTick = (INITIAL_GAME_CONFIG.combatCoinsPerSecond / 10) * getCombatCoinMultiplier(state.upgrades, state.technologyLevels, state.ascensionLevel);
       dispatch({ type: 'ADD_COMBAT_COINS', amount: combatCoinsPerTick });
     }, 100);
 

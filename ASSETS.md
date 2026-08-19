@@ -15,7 +15,7 @@ Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose 
 | Quartel | `assets/images/village-barracks.png` | Espaço livre de defesa | Quartel rural de madeira/pedra, alpha real, leitura clara em 56 px e sem texto embutido |
 | Guarda base | `guard-warrior.png`, `guard-archer.png`, `guard-tank.png` | Fallback e tier inicial das tropas | Silhuetas de função clara, paleta distinta e uso compatível com Expo/SVG |
 | Guarda veterano | `guard-warrior-veteran-transparent.png`, `guard-archer-veteran-transparent.png`, `guard-tank-veteran-transparent.png` | Tier persistente após evolução | Alpha limpo, cores de armadura reforçadas e leitura em cards/mapa |
-| Guarda elite | `guard-warrior-elite-transparent.png`, `guard-tank-elite-transparent.png` | Evolução avançada | Visual mais intenso e contraste maior; o Arqueiro Elite usa fallback Veterano até existir uma arte dedicada |
+| Guarda elite | `guard-warrior-elite-transparent.png`, `guard-archer-elite-transparent.png`, `guard-tank-elite-transparent.png` | Evolução avançada | Visual mais intenso, armadura escura com detalhes dourados e transparência real nas três classes |
 | Guarda lendário | `guard-warrior-legendary-transparent.png`, `guard-archer-legendary-transparent.png`, `guard-tank-legendary-transparent.png` | Tier máximo atual | Silhueta premium, cores evolutivas e transparência real |
 | Monstro comum | `enemy-normal.png` | Inimigo padrão das waves | Leitura rápida em tamanho pequeno e compatibilidade com a skin Wild |
 | Corredor | `enemy-runner-terror-transparent.png` | Classe veloz | Sprite transparente e identidade visual própria |

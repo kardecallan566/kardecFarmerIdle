@@ -9,12 +9,9 @@ export function useUpgrades() {
   useEffect(() => {
     if (state.upgrades.length === 0) return;
 
-    const lastUpgrade = state.upgrades[state.upgrades.length - 1];
-
     // Calculate cumulative upgrade effects
     let damageMultiplier = 1;
     let rangeMultiplier = 1;
-    let costMultiplier = 1;
     let healthBonus = 0;
     const guardSpecificUpgrades: Record<string, { damage: number; range: number; health: number }> = {};
 
@@ -25,9 +22,6 @@ export function useUpgrades() {
           break;
         case 'range':
           rangeMultiplier *= 1 + upgrade.value * 0.1; // Range is additive per upgrade
-          break;
-        case 'cost':
-          costMultiplier *= 1 + upgrade.value;
           break;
         case 'health':
           healthBonus += upgrade.value;

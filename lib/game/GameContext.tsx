@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useReducer } from 'react';
 import {
   BeaconUpgradeType,
   CropPlot,
+  CURRENT_SAVE_VERSION,
   DEFAULT_BESTIARY_PROGRESS,
   DEFAULT_BEACON_UPGRADE_LEVELS,
   GameState,
@@ -502,6 +503,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!state.progressLoaded) return;
     void savePersistentProgress({
+      saveVersion: CURRENT_SAVE_VERSION,
       bankGold: state.bankGold,
       unlockedTroops: state.unlockedTroops,
       troopUpgradeLevels: state.troopUpgradeLevels,

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BestiaryProgress, GuardType, PersistentProgress } from './types';
-import { DEFAULT_BESTIARY_PROGRESS, DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
+import { CURRENT_SAVE_VERSION, DEFAULT_BESTIARY_PROGRESS, DEFAULT_BEACON_UPGRADE_LEVELS } from './types';
 
 const STORAGE_KEYS = {
   BEST_WAVE: 'kardec_farmer_best_wave',
@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
 };
 
 export const DEFAULT_PERSISTENT_PROGRESS: PersistentProgress = {
+  saveVersion: CURRENT_SAVE_VERSION,
   bankGold: 0,
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
@@ -118,31 +119,48 @@ function normalizeBestiary(raw: Partial<BestiaryProgress> | null | undefined): B
   };
 }
 
+function migrateProgress(raw: Partial<PersistentProgress> | null): Partial<PersistentProgress> {
+  if (!raw) return {};
+
+  const sourceVersion = Number(raw.saveVersion) || 1;
+  let migrated = { ...raw };
+
+  // Version 1 saves predate explicit save metadata. Version 2 keeps the same
+  // gameplay fields while making future migrations deterministic and visible.
+  if (sourceVersion < 2) {
+    migrated = { ...migrated, saveVersion: 2 };
+  }
+
+  return migrated;
+}
+
 function normalizeProgress(raw: Partial<PersistentProgress> | null): PersistentProgress {
-  const unlockedTroops = Array.isArray(raw?.unlockedTroops)
-    ? raw.unlockedTroops.filter((type): type is GuardType =>
+  const migrated = migrateProgress(raw);
+  const unlockedTroops = Array.isArray(migrated.unlockedTroops)
+    ? migrated.unlockedTroops.filter((type): type is GuardType =>
         type === 'warrior' || type === 'archer' || type === 'tank',
       )
     : [];
 
   return {
-    bankGold: Math.max(0, Number(raw?.bankGold) || 0),
+    saveVersion: CURRENT_SAVE_VERSION,
+    bankGold: Math.max(0, Number(migrated.bankGold) || 0),
     unlockedTroops: Array.from(new Set(['warrior', ...unlockedTroops])),
     troopUpgradeLevels: {
-      warrior: Math.max(0, Number(raw?.troopUpgradeLevels?.warrior) || 0),
-      archer: Math.max(0, Number(raw?.troopUpgradeLevels?.archer) || 0),
-      tank: Math.max(0, Number(raw?.troopUpgradeLevels?.tank) || 0),
+      warrior: Math.max(0, Number(migrated.troopUpgradeLevels?.warrior) || 0),
+      archer: Math.max(0, Number(migrated.troopUpgradeLevels?.archer) || 0),
+      tank: Math.max(0, Number(migrated.troopUpgradeLevels?.tank) || 0),
     },
     beaconUpgradeLevels: {
-      lightSpeed: Math.min(5, Math.max(0, Number(raw?.beaconUpgradeLevels?.lightSpeed) || 0)),
-      multiSpawn: Math.min(2, Math.max(0, Number(raw?.beaconUpgradeLevels?.multiSpawn) || 0)),
-      extraSlots: Math.min(4, Math.max(0, Number(raw?.beaconUpgradeLevels?.extraSlots) || 0)),
+      lightSpeed: Math.min(5, Math.max(0, Number(migrated.beaconUpgradeLevels?.lightSpeed) || 0)),
+      multiSpawn: Math.min(2, Math.max(0, Number(migrated.beaconUpgradeLevels?.multiSpawn) || 0)),
+      extraSlots: Math.min(4, Math.max(0, Number(migrated.beaconUpgradeLevels?.extraSlots) || 0)),
     },
-    idleUpgradeLevel: Math.min(5, Math.max(0, Number(raw?.idleUpgradeLevel) || 0)),
-    lastOnlineAt: Number(raw?.lastOnlineAt) > 0 ? Number(raw?.lastOnlineAt) : Date.now(),
-    bestiaryDefeated: normalizeBestiary(raw?.bestiaryDefeated),
-    bestWave: Math.max(0, Number(raw?.bestWave) || 0),
-    totalGames: Math.max(0, Number(raw?.totalGames) || 0),
+    idleUpgradeLevel: Math.min(5, Math.max(0, Number(migrated.idleUpgradeLevel) || 0)),
+    lastOnlineAt: Number(migrated.lastOnlineAt) > 0 ? Number(migrated.lastOnlineAt) : Date.now(),
+    bestiaryDefeated: normalizeBestiary(migrated.bestiaryDefeated),
+    bestWave: Math.max(0, Number(migrated.bestWave) || 0),
+    totalGames: Math.max(0, Number(migrated.totalGames) || 0),
   };
 }
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
-import { getGuardStats, getGuardVisualProfile, GUARD_CONFIGS } from '@/lib/game/types';
+import { getEffectiveCombatCost, getGuardStats, getGuardVisualProfile, GUARD_CONFIGS } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 import { CurrencyIcon } from './CurrencyIcon';
 
@@ -23,7 +23,7 @@ const GUARD_IMAGES = {
   archer: {
     base: require('@/assets/images/guard-archer.png'),
     veteran: require('@/assets/images/guard-archer-veteran-transparent.png'),
-    elite: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-archer-elite-transparent.png'),
     legendary: require('@/assets/images/guard-archer-legendary-transparent.png'),
   },
   tank: {
@@ -61,8 +61,8 @@ export function CardBar() {
 
   const handleCardPress = (cardIndex: number) => {
     const cropType = GUARD_TYPES[cardIndex];
-    const config = GUARD_CONFIGS[cropType];
-    if (state.combatCoins < config.combatCost) return;
+    const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades);
+    if (state.combatCoins < effectiveCost) return;
 
     if (state.selectedPlotIndex !== null) {
       if (!commitCardPlacement(cardIndex)) return;
@@ -87,8 +87,9 @@ export function CardBar() {
           const config = GUARD_CONFIGS[guardType];
           const stats = getGuardStats(guardType, state.troopUpgradeLevels[guardType]);
           const visual = getGuardVisualProfile(guardType, state.troopUpgradeLevels[guardType]);
+          const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
           const isSelected = state.selectedCardIndex === index;
-          const canAfford = state.combatCoins >= config.combatCost;
+          const canAfford = state.combatCoins >= effectiveCost;
           const unlocked = isTroopUnlocked(index);
           const available = isCardAvailable(index);
           const cooldown = cooldowns[index];
@@ -163,7 +164,7 @@ export function CardBar() {
 
                 <View className="bg-[#F7C948]/20 border border-[#C89A2C]/50 rounded-lg px-2 py-1 flex-row items-center gap-1">
                   <CurrencyIcon type="combatSupplies" size={18} />
-                  <Text className="text-xs font-semibold text-[#F7C948]">{config.combatCost}</Text>
+                  <Text className="text-xs font-semibold text-[#F7C948]">{effectiveCost}</Text>
                 </View>
 
                 {!canAfford && <Text className="text-[10px] text-[#FF9B7A] mt-1 font-semibold">Sem suprimentos</Text>}

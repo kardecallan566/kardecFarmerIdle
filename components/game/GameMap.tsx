@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useGame } from '@/lib/game/GameContext';
-import { getBossEra, getGuardVisualProfile, getWaveConfig, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
+import { getBossEra, getEffectiveCombatCost, getGuardVisualProfile, getWaveConfig, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
 import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
@@ -23,7 +23,7 @@ const GUARD_IMAGES = {
   archer: {
     base: require('@/assets/images/guard-archer.png'),
     veteran: require('@/assets/images/guard-archer-veteran-transparent.png'),
-    elite: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-archer-elite-transparent.png'),
     legendary: require('@/assets/images/guard-archer-legendary-transparent.png'),
   },
   tank: {
@@ -150,9 +150,9 @@ export function GameMap() {
     if (state.selectedCardIndex !== null) {
       const cropTypes = ['warrior', 'archer', 'tank'] as const;
       const cropType = cropTypes[state.selectedCardIndex];
-      const config = GUARD_CONFIGS[cropType];
+      const effectiveCost = getEffectiveCombatCost(cropType, state.upgrades);
 
-      if (state.combatCoins >= config.combatCost && commitCardPlacement(state.selectedCardIndex)) {
+      if (state.combatCoins >= effectiveCost && commitCardPlacement(state.selectedCardIndex)) {
         dispatch({ type: 'PLANT_CROP', plotIndex, cropType });
       }
     } else {

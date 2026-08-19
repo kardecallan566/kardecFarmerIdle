@@ -4,6 +4,8 @@ export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
 export type EnemySkinTier = 'wild' | 'scarred' | 'ancient' | 'apocalypse';
 export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 
+export const CURRENT_SAVE_VERSION = 2;
+
 export interface BeaconUpgradeLevels {
   lightSpeed: number;
   multiSpawn: number;
@@ -43,6 +45,7 @@ export const DEFAULT_BESTIARY_PROGRESS: BestiaryProgress = {
 };
 
 export interface PersistentProgress {
+  saveVersion: number;
   bankGold: number;
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;
@@ -258,6 +261,17 @@ export const GUARD_CONFIGS = {
   name: string;
   cropName: string;
 }>;
+
+export function getCombatCostMultiplier(upgrades: Upgrade[] = []): number {
+  return upgrades
+    .filter((upgrade) => upgrade.type === 'cost')
+    .reduce((multiplier, upgrade) => multiplier * Math.max(0, 1 + upgrade.value), 1);
+}
+
+export function getEffectiveCombatCost(type: GuardType, upgrades: Upgrade[] = []): number {
+  const baseCost = GUARD_CONFIGS[type].combatCost;
+  return Math.max(0, Math.round(baseCost * getCombatCostMultiplier(upgrades)));
+}
 
 export function getGuardStats(type: GuardType, upgradeLevel = 0) {
   const base = GUARD_CONFIGS[type];

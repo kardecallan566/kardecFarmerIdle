@@ -6,7 +6,7 @@ const UPGRADE_COLORS: Record<string, string> = {
   damage: '#D85C43',
   range: '#4A91C7',
   cost: '#B8842C',
-  coins: '#D49B2C',
+  combatCoins: '#D49B2C',
   health: '#5C9C63',
   guardSpecific: '#7A61B8',
 };

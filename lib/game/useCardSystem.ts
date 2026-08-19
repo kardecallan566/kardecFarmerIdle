@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from './GameContext';
-import { GUARD_CONFIGS } from './types';
+import { getEffectiveCombatCost } from './types';
 
 interface CardState {
   cardIndex: number;
@@ -37,11 +37,11 @@ export function useCardSystem() {
 
     const guardTypes = ['warrior', 'archer', 'tank'] as const;
     const guardType = guardTypes[cardIndex];
-    const guardConfig = GUARD_CONFIGS[guardType];
     if (!state.unlockedTroops.includes(guardType)) return;
 
     // A carta só é selecionada nesta etapa; o custo é cobrado na confirmação do quartel.
-    if (state.combatCoins < guardConfig.combatCost) return;
+    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
+    if (state.combatCoins < effectiveCost) return;
     dispatch({ type: 'SELECT_CARD', cardIndex });
   };
 
@@ -49,11 +49,11 @@ export function useCardSystem() {
     const card = cardCooldownsRef.current[cardIndex];
     const guardTypes = ['warrior', 'archer', 'tank'] as const;
     const guardType = guardTypes[cardIndex];
-    const guardConfig = GUARD_CONFIGS[guardType];
+    const effectiveCost = getEffectiveCombatCost(guardType, state.upgrades);
     if (!card || card.cooldown > 0 || !state.unlockedTroops.includes(guardType)) return false;
-    if (state.combatCoins < guardConfig.combatCost) return false;
+    if (state.combatCoins < effectiveCost) return false;
 
-    dispatch({ type: 'SUBTRACT_COMBAT_COINS', amount: guardConfig.combatCost });
+    dispatch({ type: 'SUBTRACT_COMBAT_COINS', amount: effectiveCost });
     card.cooldown = card.maxCooldown;
     return true;
   };

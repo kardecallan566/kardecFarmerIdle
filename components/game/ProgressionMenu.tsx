@@ -15,7 +15,7 @@ const GUARD_IMAGES = {
   archer: {
     base: require('@/assets/images/guard-archer.png'),
     veteran: require('@/assets/images/guard-archer-veteran-transparent.png'),
-    elite: require('@/assets/images/guard-archer-veteran-transparent.png'),
+    elite: require('@/assets/images/guard-archer-elite-transparent.png'),
     legendary: require('@/assets/images/guard-archer-legendary-transparent.png'),
   },
   tank: {

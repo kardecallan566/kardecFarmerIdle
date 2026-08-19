@@ -12,6 +12,7 @@ import { useGame } from '@/lib/game/GameContext';
 import { useGameLoop } from '@/lib/game/useGameLoop';
 import { useUpgrades } from '@/lib/game/useUpgrades';
 import { useBossWaves } from '@/lib/game/useBossWaves';
+import { useGameAudio, useGameFeedback } from '@/lib/game/useGameAudio';
 
 const FOREST_VILLAGE_BACKGROUND = require('@/assets/images/forest-village-background.png');
 
@@ -23,6 +24,8 @@ export default function GameScreen() {
   useGameLoop();
   useUpgrades();
   useBossWaves();
+  useGameAudio(gameStarted && !state.gameLost);
+  useGameFeedback();
 
   const handleStartGame = () => {
     setShowCamp(false);

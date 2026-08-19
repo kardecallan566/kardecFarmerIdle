@@ -1,4 +1,6 @@
 import { getBarracksModifiers } from './formations';
+import { getAscensionEffects } from './ascension';
+import { getTechnologyEffects } from './technology';
 import type { CropPlot, FormationId, GuardType, Upgrade } from './types';
 import { getGuardStats } from './types';
 
@@ -9,6 +11,8 @@ export function getRunGuardStats(
   plots: CropPlot[],
   plotIndex: number,
   formation: FormationId,
+  ascensionLevel = 0,
+  technologyLevels = { combatDoctrine: 0, supplyLines: 0, forestWard: 0 },
 ) {
   const base = getGuardStats(type, persistentLevel);
   let damageMultiplier = 1;
@@ -38,12 +42,14 @@ export function getRunGuardStats(
   healthBonus += Math.min(30, bastionStacks * 3);
 
   const barracks = getBarracksModifiers(plotIndex, type, plots, formation);
+  const ascensionEffects = getAscensionEffects(ascensionLevel);
+  const technologyEffects = getTechnologyEffects(technologyLevels);
 
   return {
     ...base,
-    damage: base.damage * damageMultiplier * (1 + specificDamage) * barracks.damageMultiplier,
+    damage: base.damage * damageMultiplier * (1 + specificDamage) * barracks.damageMultiplier * technologyEffects.damageMultiplier * ascensionEffects.damageMultiplier,
     range: base.range * rangeMultiplier * (1 + specificRange) * barracks.rangeMultiplier,
-    health: (base.health + healthBonus + base.health * specificHealth) * barracks.healthMultiplier,
+    health: (base.health + healthBonus + base.health * specificHealth) * barracks.healthMultiplier * technologyEffects.guardHealthMultiplier * ascensionEffects.healthMultiplier,
     attackSpeed: base.attackSpeed * barracks.attackSpeedMultiplier * (1 + Math.min(0.12, precisionStacks * 0.03)),
   };
 }

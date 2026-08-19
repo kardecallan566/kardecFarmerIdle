@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { getRelicBehaviorLabel, getRelicRarityConfig } from '@/lib/game/relics';
+import { triggerGameHaptic } from '@/lib/game/useGameAudio';
 
 const UPGRADE_COLORS: Record<string, string> = {
   damage: '#D85C43',
@@ -17,10 +18,12 @@ export function WaveRewardsScreen() {
   const visible = state.pendingWaveRewards.length > 0 || state.activeRunEvent !== null;
 
   const handleSelectUpgrade = (upgradeIndex: number) => {
+    triggerGameHaptic('reward');
     dispatch({ type: 'APPLY_UPGRADE', upgradeIndex });
   };
 
   const handleChooseEvent = (choiceId: string) => {
+    triggerGameHaptic('reward');
     dispatch({ type: 'CHOOSE_RUN_EVENT', choiceId });
   };
 

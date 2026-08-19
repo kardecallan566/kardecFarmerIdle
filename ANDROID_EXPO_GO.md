@@ -19,20 +19,27 @@ pnpm android:clear
 
 No Android, abra o Expo Go, remova o projeto antigo da lista de recentes se ele aparecer e escaneie o QR gerado por `pnpm android:clear`. O QR deve apontar para uma sessão `exp://...` do Metro local.
 
-O computador e o telefone precisam estar na mesma rede Wi-Fi. Não use `localhost` no telefone. Se a rede bloquear a comunicação entre dispositivos, tente:
+O comando `pnpm android:clear` usa túnel por padrão para evitar que o telefone dependa do IP LAN do computador. O túnel é somente uma conexão ao Metro local; ele não é um update remoto do jogo.
+
+Se você estiver em uma rede Wi-Fi confiável, com computador e telefone na mesma rede, pode usar o modo LAN:
+
+```powershell
+pnpm android:lan
+```
+
+Se você preferir escolher explicitamente o túnel, use:
 
 ```powershell
 pnpm android:tunnel:clear
 ```
 
-O túnel é somente uma alternativa de conexão ao Metro; ele não é um update remoto do jogo.
-
 ## Comandos Android
 
 | Comando | Uso |
 |---|---|
-| `pnpm android` | Expo Go Android via LAN |
-| `pnpm android:clear` | Expo Go Android via LAN com cache limpo |
+| `pnpm android` | Expo Go Android via túnel |
+| `pnpm android:lan` | Expo Go Android via LAN |
+| `pnpm android:clear` | Expo Go Android via túnel com cache limpo |
 | `pnpm android:tunnel` | Expo Go Android via túnel |
 | `pnpm android:tunnel:clear` | Túnel com cache limpo |
 | `pnpm android:offline` | LAN com modo offline do Metro, útil para evitar consultas externas |

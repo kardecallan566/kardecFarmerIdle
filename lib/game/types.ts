@@ -5,6 +5,7 @@ export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
 export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
 export type EnemySkinTier = 'wild' | 'scarred' | 'ancient' | 'apocalypse';
 export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
+export type FormationId = 'balanced' | 'frontline' | 'crossfire';
 
 export const CURRENT_SAVE_VERSION = 2;
 
@@ -104,6 +105,7 @@ export interface GameState {
   pendingWaveRewards: Upgrade[];
   selectedCardIndex: number | null;
   placingMode: boolean;
+  formation: FormationId;
   bankGold: number;
   unlockedTroops: GuardType[];
   troopUpgradeLevels: Record<GuardType, number>;

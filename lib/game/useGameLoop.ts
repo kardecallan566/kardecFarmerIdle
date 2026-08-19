@@ -3,15 +3,13 @@ import { useWindowDimensions } from 'react-native';
 import { useGame } from './GameContext';
 import { createAbilityRuntimeState, getAbilitiesForGuard, getAbilityDefinition } from './abilities';
 import { consumePendingAbility, isAbilityActive } from './abilitySystem';
+import { getRunGuardStats } from './guardStats';
 import {
   Enemy,
   Guard,
-  GuardType,
-  Upgrade,
   getBeaconStats,
   getEnemyKindForSpawn,
   getEnemyProfile,
-  getGuardStats,
   getWaveConfig,
   INITIAL_GAME_CONFIG,
 } from './types';
@@ -22,35 +20,6 @@ const GAME_TICK_MS = 16;
 const GAME_DT = GAME_TICK_MS / 1000;
 const GUARD_COMBAT_BUFFER = 0.82;
 const MAX_GUARDS_PER_PLOT = 4;
-
-function getRunGuardStats(type: GuardType, persistentLevel: number, upgrades: Upgrade[]) {
-  const base = getGuardStats(type, persistentLevel);
-  let damageMultiplier = 1;
-  let rangeMultiplier = 1;
-  let healthBonus = 0;
-  let specificDamage = 0;
-  let specificRange = 0;
-  let specificHealth = 0;
-
-  upgrades.forEach((upgrade) => {
-    if (upgrade.type === 'damage') damageMultiplier *= 1 + upgrade.value;
-    if (upgrade.type === 'range') rangeMultiplier *= 1 + upgrade.value * 0.1;
-    if (upgrade.type === 'health') healthBonus += upgrade.value;
-    if (upgrade.type === 'guardSpecific' && upgrade.targetGuard === type) {
-      const stat = upgrade.stat ?? 'damage';
-      if (stat === 'damage') specificDamage += upgrade.value;
-      if (stat === 'range') specificRange += upgrade.value;
-      if (stat === 'health') specificHealth += upgrade.value;
-    }
-  });
-
-  return {
-    ...base,
-    damage: base.damage * damageMultiplier * (1 + specificDamage),
-    range: base.range * rangeMultiplier * (1 + specificRange),
-    health: base.health + healthBonus + base.health * specificHealth,
-  };
-}
 
 function clampGuardToHoldRadius(
   centerX: number,
@@ -188,6 +157,9 @@ export function useGameLoop() {
           plot.cropType,
           currentState.troopUpgradeLevels[plot.cropType],
           currentState.upgrades,
+          currentState.plots,
+          plot.index,
+          currentState.formation,
         );
         const plotPosition = getPlotPosition(
           plot.index,

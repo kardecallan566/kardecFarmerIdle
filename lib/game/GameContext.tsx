@@ -16,6 +16,7 @@ import {
   GuardType,
   INITIAL_GAME_CONFIG,
   PersistentProgress,
+  FormationId,
 } from './types';
 import { getPersistentProgress, savePersistentProgress } from './storage';
 import { generateUpgradeOptions } from './utils';
@@ -54,7 +55,8 @@ export type GameAction =
   | { type: 'BUY_IDLE_UPGRADE'; goldCost: number }
   | { type: 'UNLOCK_TROOP'; troopType: GuardType; goldCost: number }
   | { type: 'BUY_TROOP_UPGRADE'; troopType: GuardType; goldCost: number }
-  | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; goldCost: number };
+  | { type: 'BUY_BEACON_UPGRADE'; upgradeType: BeaconUpgradeType; goldCost: number }
+  | { type: 'SET_FORMATION'; formation: FormationId };
 
 function createPlot(
   index: number,
@@ -122,6 +124,7 @@ const initialState: GameState = {
   pendingWaveRewards: [],
   selectedCardIndex: null,
   placingMode: false,
+  formation: 'balanced',
   bankGold: 0,
   unlockedTroops: ['warrior'],
   troopUpgradeLevels: { warrior: 0, archer: 0, tank: 0 },
@@ -260,6 +263,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         bestWave: state.bestWave,
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
+        formation: state.formation,
         sprinkler: {
           angle: 0,
           rotationSpeed: getBeaconStats(state.beaconUpgradeLevels).rotationSpeed,
@@ -298,6 +302,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         bestWave: state.bestWave,
         totalGames: state.totalGames,
         progressLoaded: state.progressLoaded,
+        formation: state.formation,
         runRewardClaimed: false,
         lastRunReward: 0,
       };
@@ -430,6 +435,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'GAME_OVER':
       return { ...state, gameLost: true, gameActive: false };
+
+    case 'SET_FORMATION':
+      return { ...state, formation: action.formation };
 
     case 'SELECT_CARD':
       return { ...state, selectedCardIndex: action.cardIndex, placingMode: true };

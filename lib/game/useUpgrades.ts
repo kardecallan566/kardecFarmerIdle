@@ -1,59 +1,49 @@
 import { useEffect } from 'react';
 import { useGame } from './GameContext';
-import { GUARD_CONFIGS } from './types';
+import { getRunGuardStats } from './guardStats';
 
 export function useUpgrades() {
   const { state, dispatch } = useGame();
 
-  // Apply upgrades to guards and game state
   useEffect(() => {
-    if (state.upgrades.length === 0) return;
+    if (state.guards.length === 0) return;
 
-    // Calculate cumulative upgrade effects
-    let damageMultiplier = 1;
-    let rangeMultiplier = 1;
-    let healthBonus = 0;
-    const guardSpecificUpgrades: Record<string, { damage: number; range: number; health: number }> = {};
-
-    state.upgrades.forEach((upgrade) => {
-      switch (upgrade.type) {
-        case 'damage':
-          damageMultiplier *= 1 + upgrade.value;
-          break;
-        case 'range':
-          rangeMultiplier *= 1 + upgrade.value * 0.1; // Range is additive per upgrade
-          break;
-        case 'health':
-          healthBonus += upgrade.value;
-          break;
-        case 'guardSpecific':
-          if (upgrade.targetGuard) {
-            const current = guardSpecificUpgrades[upgrade.targetGuard] ?? { damage: 0, range: 0, health: 0 };
-            const stat = upgrade.stat ?? 'damage';
-            guardSpecificUpgrades[upgrade.targetGuard] = {
-              ...current,
-              [stat]: current[stat] + upgrade.value,
-            };
-          }
-          break;
-      }
-    });
-
-    // Update guards with cumulative upgrades
     const updatedGuards = state.guards.map((guard) => {
-      const baseConfig = GUARD_CONFIGS[guard.type];
-      const guardSpecificBonus = guardSpecificUpgrades[guard.type] ?? { damage: 0, range: 0, health: 0 };
+      const stats = getRunGuardStats(
+        guard.type,
+        state.troopUpgradeLevels[guard.type],
+        state.upgrades,
+        state.plots,
+        guard.plotIndex,
+        state.formation,
+      );
+      const healthRatio = guard.maxHealth > 0 ? guard.health / guard.maxHealth : 1;
 
       return {
         ...guard,
-        damage: baseConfig.damage * damageMultiplier * (1 + guardSpecificBonus.damage),
-        range: baseConfig.range * rangeMultiplier * (1 + guardSpecificBonus.range),
-        maxHealth: baseConfig.health + healthBonus + baseConfig.health * guardSpecificBonus.health,
+        damage: stats.damage,
+        range: stats.range,
+        attackSpeed: stats.attackSpeed,
+        maxHealth: stats.health,
+        health: Math.min(stats.health, stats.health * healthRatio),
       };
     });
 
-    dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
-  }, [state.upgrades, dispatch]);
+    const hasStatChange = updatedGuards.some((guard, index) => {
+      const previous = state.guards[index];
+      return (
+        guard.damage !== previous.damage ||
+        guard.range !== previous.range ||
+        guard.attackSpeed !== previous.attackSpeed ||
+        guard.maxHealth !== previous.maxHealth ||
+        guard.health !== previous.health
+      );
+    });
+
+    if (hasStatChange) {
+      dispatch({ type: 'UPDATE_GUARDS', guards: updatedGuards });
+    }
+  }, [state.formation, state.guards, state.plots, state.troopUpgradeLevels, state.upgrades, dispatch]);
 
   return {
     upgrades: state.upgrades,

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { getBeaconStats, getNextBossWave, getWavesUntilBoss } from '@/lib/game/types';
+import { getFormationDefinition } from '@/lib/game/formations';
 import { useGame } from '@/lib/game/GameContext';
 import { GameIcon } from './GameIcon';
 import { CurrencyIcon } from './CurrencyIcon';
 
 export function GameHUD() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const nextBossWave = getNextBossWave(state.wave);
   const wavesUntilBoss = getWavesUntilBoss(state.wave);
   const healthPercent = Math.max(
@@ -135,6 +136,44 @@ export function GameHUD() {
               ? `${state.waveEnemiesRemaining} inimigo(s) ainda precisam ser derrotados ou escapar`
               : 'Arena limpa — próxima wave em breve'}
         </Text>
+      </View>
+
+      <View className="mt-2 rounded-xl border border-[#3E6849] bg-[#0B2419] px-2.5 py-1.5">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-[10px] font-bold text-[#DDEFC8]">FORMAÇÃO</Text>
+          <Text className="text-[9px] font-semibold text-[#8FB08D]">{getFormationDefinition(state.formation).name}</Text>
+        </View>
+        <View className="mt-1.5 flex-row gap-1.5">
+          {(['balanced', 'frontline', 'crossfire'] as const).map((formation) => {
+            const selected = state.formation === formation;
+            return (
+              <Pressable
+                key={formation}
+                onPress={() => dispatch({ type: 'SET_FORMATION', formation })}
+                accessibilityRole="button"
+                accessibilityLabel={`Usar formação ${getFormationDefinition(formation).name}`}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  opacity: pressed ? 0.78 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}
+              >
+                <View
+                  className="rounded-lg border px-1.5 py-1.5"
+                  style={{
+                    borderColor: selected ? '#F7C948' : '#3E6849',
+                    backgroundColor: selected ? '#315F40' : '#1A3B29',
+                  }}
+                >
+                  <Text numberOfLines={1} className="text-center text-[8px] font-black text-[#FFF3C4]">
+                    {getFormationDefinition(formation).name}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text className="mt-1 text-[9px] text-[#8FB08D]">{getFormationDefinition(state.formation).description}</Text>
       </View>
     </View>
   );

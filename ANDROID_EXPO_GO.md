@@ -1,64 +1,68 @@
 # Abrir o Kardec Farmer Idle no Expo Go para Android
 
-## Diagnóstico
+## Diagnóstico confirmado
 
-O erro `Uncaught Error: java.io.IOException: failed to download remote update` normalmente significa que o Expo Go não conseguiu alcançar o servidor Metro e baixar o bundle JavaScript. Nesta configuração, o projeto estava iniciando o Metro com `--web`, embora o fluxo usado fosse o Expo Go Android. Além disso, em alguns ambientes o Expo anuncia um endereço LAN `169.254.x.x`, que é um endereço link-local e não costuma ser acessível pelo telefone.
+O erro `Uncaught Error: java.io.IOException: failed to download remote update` indica que o Expo Go não conseguiu baixar o bundle JavaScript do projeto. A configuração resolvida do app usa **Expo SDK 54**, não declara `updates.url` nem `runtimeVersion`, e o Metro local foi validado: o endpoint `/status` respondeu `packager-status:running` e o entrypoint do Expo Router respondeu HTTP 200 com o bundle Android.
 
-O projeto agora inicia o alvo nativo explicitamente com Expo Go, mantém o modo web separado e usa as versões de patch compatíveis com o SDK 54.
+Portanto, neste projeto, a mensagem normalmente é causada por uma destas situações: o telefone não alcança o IP LAN do computador; o QR antigo aponta para outro projeto/porta; o Expo Go ficou com cache de um update anterior; existe isolamento de Wi-Fi, VPN, proxy ou firewall; ou o Expo Go instalado no telefone está antigo e não acompanha o SDK 54.
 
-## Procedimento recomendado
+## Procedimento recomendado em aparelho físico
 
-No computador, dentro da raiz do projeto, execute:
+Na raiz do projeto, execute primeiro:
 
 ```bash
 pnpm install
 rm -rf .expo
-pnpm android
-```
-
-O comando `pnpm android` equivale a `expo start --go --lan`. O telefone Android e o computador precisam estar na mesma rede Wi-Fi. No Expo Go, escaneie o QR exibido pelo Metro. Não use o QR gerado pelo modo `pnpm dev:web`, pois esse comando é exclusivo do navegador.
-
-Se o telefone não conseguir acessar o computador pela rede local, execute:
-
-```bash
-pnpm android:tunnel
-```
-
-Depois, escaneie o novo QR exibido pelo Metro. O endereço deverá usar um domínio público do túnel, normalmente terminado em `exp.direct`. O túnel é mais lento que LAN, mas contorna isolamento de Wi-Fi, firewall e redes públicas.
-
-Para limpar o cache do Metro antes de uma nova tentativa, use:
-
-```bash
 pnpm android:clear
 ```
 
-No Android, também é recomendável fechar o Expo Go completamente e limpar apenas o cache em **Configurações > Aplicativos > Expo Go > Armazenamento > Limpar cache**. Reabra o Expo Go e escaneie um QR novo.
+O Metro deverá indicar **Using Expo Go** e mostrar um QR baseado em `exp://...`. O Android e o computador precisam estar na mesma rede Wi-Fi. Evite rede de convidados, VPN e redes corporativas que bloqueiem comunicação entre dispositivos.
+
+No Expo Go, feche completamente o projeto anterior, remova-o da lista de recentes se necessário e escaneie **o QR recém-gerado**. Não use QR salvo, link de uma sessão anterior, nem o QR produzido por `pnpm dev:web`.
+
+Se a rede LAN não funcionar, use o túnel:
+
+```bash
+pnpm android:tunnel:clear
+```
+
+O QR do túnel deve usar um endereço público `exp.direct`. O túnel é mais lento, porém evita a maioria dos bloqueios de Wi-Fi, firewall e roteador.
 
 ## Emulador Android
 
-Se o teste for feito em um emulador no mesmo computador, o comando abaixo costuma ser suficiente:
-
-```bash
-pnpm android
-```
-
-Como alternativa, com o Metro rodando na porta 8081, é possível usar:
+Com o Metro rodando na porta 8081, execute:
 
 ```bash
 adb reverse tcp:8081 tcp:8081
+pnpm android:clear
 ```
 
-Em seguida, recarregue o projeto no Expo Go.
+Depois, recarregue o projeto no Expo Go. Para aparelho físico, **não** use `localhost`: esse endereço aponta para o próprio telefone, não para o computador.
+
+## Limpeza adicional no Android
+
+Se o erro persistir, abra **Configurações → Aplicativos → Expo Go → Armazenamento**, toque em **Limpar cache** e reabra o Expo Go. Se ainda houver falha, use **Limpar armazenamento/dados**, abra novamente a conta/sessão do Expo Go e escaneie um QR novo. Confirme também na Play Store que o Expo Go está atualizado e é compatível com o SDK 54.
+
+## Comandos disponíveis
+
+| Comando | Uso |
+|---|---|
+| `pnpm android` | Metro para Expo Go em LAN, porta 8081 |
+| `pnpm android:clear` | LAN com cache do Metro limpo |
+| `pnpm android:tunnel` | Expo Go via túnel público |
+| `pnpm android:tunnel:clear` | Túnel público com cache limpo |
+| `pnpm dev:web` | Somente navegador; não usar o QR para Android |
 
 ## Verificações rápidas
 
 | Verificação | Resultado esperado |
 |---|---|
+| SDK do projeto | `54.0.0` |
 | Alvo do Metro | `Using Expo Go` |
-| URL para Android | `exp://...`, nunca somente `http://localhost` |
-| Rede local | Computador e telefone na mesma Wi-Fi |
-| Link LAN | Deve apontar para um IP privado acessível, como `192.168.x.x`; `169.254.x.x` indica um endereço link-local problemático |
-| Versões | `pnpm dlx expo-doctor` deve terminar com `18/18 checks passed` |
-| Modo web | Usar somente `pnpm dev:web` ou `pnpm exec expo start --web` |
+| URL Android | `exp://...`, não apenas `http://localhost` |
+| LAN | IP privado acessível, como `192.168.x.x` |
+| Link problemático | `169.254.x.x` é link-local e geralmente não funciona no telefone |
+| Bundle local | `http://127.0.0.1:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&minify=false` responde HTTP 200 no computador |
+| Compatibilidade | `pnpm dlx expo-doctor` termina com `18/18 checks passed` |
 
-Se o modo túnel retornar `ngrok tunnel took too long to connect`, o problema é externo ao bundle: tente outra rede, desative VPN/proxy temporariamente ou permita o processo do ngrok no firewall. O código do jogo e o bundle podem ser válidos mesmo quando o túnel não consegue estabelecer conexão.
+Se o túnel retornar `ngrok tunnel took too long to connect`, o problema está na rede/túnel, não no bundle do jogo. Tente outra rede, desative VPN/proxy temporariamente ou permita o processo do túnel no firewall.

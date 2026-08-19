@@ -17,9 +17,10 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "android": "expo start --go --lan",
-    "android:tunnel": "expo start --go --tunnel",
-    "android:clear": "expo start --go --lan --clear",
+    "android": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --port ${EXPO_PORT:-8081}",
+    "android:tunnel": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --port ${EXPO_PORT:-8081}",
+    "android:tunnel:clear": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --clear --port ${EXPO_PORT:-8081}",
+    "android:clear": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --clear --port ${EXPO_PORT:-8081}",
     "ios": "expo start --ios",
     "qr": "node scripts/generate_qr.mjs"
   },

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useGame } from './GameContext';
-import { createAbilityRuntimeState, getAbilitiesForGuard } from './abilities';
+import { createAbilityRuntimeState, getAbilitiesForGuard, getAbilityDefinition } from './abilities';
+import { consumePendingAbility, isAbilityActive } from './abilitySystem';
 import {
   Enemy,
   Guard,
@@ -249,23 +250,38 @@ export function useGameLoop() {
 
           let guardTarget: Guard | undefined;
           let nearestGuardDistance = Number.POSITIVE_INFINITY;
-          allGuards.forEach((guard) => {
-            if (guard.health <= 0) return;
-            const guardOffsetX = guard.x - layout.centerX;
-            const guardOffsetY = guard.y - layout.centerY;
-            const guardRadius = Math.hypot(guardOffsetX, guardOffsetY);
-            if (guardRadius < INITIAL_GAME_CONFIG.plantationRadius + 24 || guardRadius > currentRadius + 28) return;
-            const laneLength = Math.max(currentRadius, 1);
-            const laneX = (currentPosition.x - layout.centerX) / laneLength;
-            const laneY = (currentPosition.y - layout.centerY) / laneLength;
-            const lateralDistance = Math.abs(guardOffsetX * laneY - guardOffsetY * laneX);
-            if (lateralDistance > 46) return;
-            const guardDistance = distance(currentPosition, { x: guard.x, y: guard.y });
-            if (guardDistance < nearestGuardDistance) {
-              nearestGuardDistance = guardDistance;
-              guardTarget = guard;
-            }
-          });
+          const tauntEffect = getAbilityDefinition('warrior-taunt').effect;
+          const tauntRadius = tauntEffect.type === 'taunt' ? tauntEffect.radius : 0;
+          const tauntingGuard = allGuards
+            .filter((guard) => guard.health > 0 && isAbilityActive(guard, 'warrior-taunt'))
+            .map((guard) => ({
+              guard,
+              guardDistance: distance(currentPosition, { x: guard.x, y: guard.y }),
+            }))
+            .find(({ guardDistance }) => guardDistance <= tauntRadius)?.guard;
+
+          if (tauntingGuard) {
+            guardTarget = tauntingGuard;
+            nearestGuardDistance = distance(currentPosition, { x: tauntingGuard.x, y: tauntingGuard.y });
+          } else {
+            allGuards.forEach((guard) => {
+              if (guard.health <= 0) return;
+              const guardOffsetX = guard.x - layout.centerX;
+              const guardOffsetY = guard.y - layout.centerY;
+              const guardRadius = Math.hypot(guardOffsetX, guardOffsetY);
+              if (guardRadius < INITIAL_GAME_CONFIG.plantationRadius + 24 || guardRadius > currentRadius + 28) return;
+              const laneLength = Math.max(currentRadius, 1);
+              const laneX = (currentPosition.x - layout.centerX) / laneLength;
+              const laneY = (currentPosition.y - layout.centerY) / laneLength;
+              const lateralDistance = Math.abs(guardOffsetX * laneY - guardOffsetY * laneX);
+              if (lateralDistance > 46) return;
+              const guardDistance = distance(currentPosition, { x: guard.x, y: guard.y });
+              if (guardDistance < nearestGuardDistance) {
+                nearestGuardDistance = guardDistance;
+                guardTarget = guard;
+              }
+            });
+          }
 
           if (guardTarget && nearestGuardDistance > enemy.radius + 18) {
             const moveDistance = Math.min(nearestGuardDistance - (enemy.radius + 18), enemy.speed * GAME_DT);
@@ -304,15 +320,45 @@ export function useGameLoop() {
         })
         .filter((enemy): enemy is Enemy => enemy !== null);
 
+      const abilityAffectedEnemies = updatedEnemies.map((enemy) => ({ ...enemy }));
+      const guardsAfterAbilityEffects = allGuards.map((guard) => {
+        const pendingAbility = guard.abilities?.find((ability) => ability.pending);
+        if (!pendingAbility) return guard;
+
+        const definition = getAbilityDefinition(pendingAbility.abilityId);
+        const areaEffect = definition.effect.type === 'areaDamage' ? definition.effect : null;
+        if (areaEffect) {
+          const targets = abilityAffectedEnemies
+            .filter((enemy) =>
+              enemy.health > 0 &&
+              distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y }) <= areaEffect.radius,
+            )
+            .sort((left, right) =>
+              distance({ x: guard.x, y: guard.y }, { x: left.x, y: left.y }) -
+              distance({ x: guard.x, y: guard.y }, { x: right.x, y: right.y }),
+            )
+            .slice(0, areaEffect.maxTargets);
+
+          targets.forEach((target) => {
+            target.health -= guard.damage * areaEffect.damageMultiplier;
+            if (target.health <= 0) defeatedEnemyIds.add(target.id);
+          });
+        }
+
+        return consumePendingAbility(guard, pendingAbility.abilityId);
+      });
+
       const incomingDamageByGuard = new Map<string, number>();
-      const combatEnemies = updatedEnemies.map((enemy) => {
+      const bulwarkEffect = getAbilityDefinition('tank-bulwark').effect;
+      const bulwarkReduction = bulwarkEffect.type === 'damageReduction' ? bulwarkEffect.reductionRatio : 0;
+      const combatEnemies = abilityAffectedEnemies.map((enemy) => {
         const nextEnemyCooldown = Math.max(0, (enemy.attackCooldown ?? 0) - GAME_DT);
         let nextAbilityCooldown = Math.max(0, (enemy.abilityCooldown ?? 0) - GAME_DT);
 
         if (enemy.kind === 'healer' && nextAbilityCooldown <= 0) {
           let healingTarget: Enemy | undefined;
           let highestMissingHealth = 0;
-          updatedEnemies.forEach((ally) => {
+          abilityAffectedEnemies.forEach((ally) => {
             if (ally.id === enemy.id || ally.health <= 0) return;
             if (distance({ x: ally.x, y: ally.y }, { x: enemy.x, y: enemy.y }) > 125) return;
             const missingHealth = ally.maxHealth - ally.health;
@@ -329,7 +375,8 @@ export function useGameLoop() {
 
         let guardTarget: Guard | undefined;
         let nearestGuardDistance = enemy.radius + 18;
-        allGuards.forEach((guard) => {
+        guardsAfterAbilityEffects.forEach((guard) => {
+          if (guard.health <= 0) return;
           const currentDistance = distance({ x: guard.x, y: guard.y }, { x: enemy.x, y: enemy.y });
           if (currentDistance <= nearestGuardDistance) {
             nearestGuardDistance = currentDistance;
@@ -339,9 +386,12 @@ export function useGameLoop() {
         let attackCooldown = nextEnemyCooldown;
 
         if (guardTarget && attackCooldown <= 0) {
+          const damageMultiplier = isAbilityActive(guardTarget, 'tank-bulwark')
+            ? 1 - bulwarkReduction
+            : 1;
           incomingDamageByGuard.set(
             guardTarget.id,
-            (incomingDamageByGuard.get(guardTarget.id) ?? 0) + enemy.troopDamage,
+            (incomingDamageByGuard.get(guardTarget.id) ?? 0) + enemy.troopDamage * damageMultiplier,
           );
           attackCooldown = 0.9;
         }
@@ -349,7 +399,7 @@ export function useGameLoop() {
         return { ...enemy, attackCooldown, abilityCooldown: nextAbilityCooldown };
       });
 
-      const guardsAfterDamage = allGuards
+      const guardsAfterDamage = guardsAfterAbilityEffects
         .map((guard) => ({
           ...guard,
           health: Math.max(0, guard.health - (incomingDamageByGuard.get(guard.id) ?? 0)),

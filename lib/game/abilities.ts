@@ -33,6 +33,7 @@ export interface AbilityRuntimeState {
   abilityId: AbilityId;
   cooldownRemaining: number;
   activeRemaining: number;
+  pending: boolean;
 }
 
 export const ABILITY_CATALOG: Record<AbilityId, AbilityDefinition> = {
@@ -96,5 +97,6 @@ export function createAbilityRuntimeState(abilityId: AbilityId): AbilityRuntimeS
     abilityId,
     cooldownRemaining: 0,
     activeRemaining: 0,
+    pending: false,
   };
 }

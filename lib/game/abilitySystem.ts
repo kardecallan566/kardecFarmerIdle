@@ -39,6 +39,7 @@ export function activateAbility(guard: Guard, abilityId: AbilityId): AbilityActi
           ...ability,
           cooldownRemaining: definition.cooldownSeconds,
           activeRemaining: definition.durationSeconds,
+          pending: definition.effect.type === 'areaDamage',
         }
       : ability,
   );
@@ -47,6 +48,17 @@ export function activateAbility(guard: Guard, abilityId: AbilityId): AbilityActi
     guard: { ...guard, abilities },
     definition,
     effect: definition.effect,
+  };
+}
+
+export function consumePendingAbility(guard: Guard, abilityId: AbilityId): Guard {
+  if (!guard.abilities?.some((ability) => ability.abilityId === abilityId && ability.pending)) return guard;
+
+  return {
+    ...guard,
+    abilities: guard.abilities.map((ability) =>
+      ability.abilityId === abilityId ? { ...ability, pending: false } : ability,
+    ),
   };
 }
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useGame } from '@/lib/game/GameContext';
 import { useCardSystem } from '@/lib/game/useCardSystem';
+import { getAbilityDefinition } from '@/lib/game/abilities';
+import { canActivateAbility } from '@/lib/game/abilitySystem';
 import { getEffectiveCombatCost, getGuardStats, getGuardVisualProfile, GUARD_CONFIGS } from '@/lib/game/types';
 import { GameIcon } from './GameIcon';
 import { CurrencyIcon } from './CurrencyIcon';
@@ -78,6 +80,56 @@ export function CardBar() {
         <Text className="text-[11px] font-bold tracking-wide text-[#DDEFC8]">TROPAS DA FAZENDA</Text>
         <Text className="text-[10px] text-[#9FBE9A]">Deslize para ver todas</Text>
       </View>
+
+      {state.guards.some((guard) => guard.abilities?.length) && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 10, gap: 8, paddingBottom: 6 }}
+        >
+          {state.guards
+            .filter((guard) => guard.abilities?.length)
+            .slice(0, 24)
+            .map((guard) => {
+              const runtime = guard.abilities?.[0];
+              if (!runtime) return null;
+
+              const ability = getAbilityDefinition(runtime.abilityId);
+              const ready = canActivateAbility(guard, runtime.abilityId);
+              const status = runtime.activeRemaining > 0
+                ? `ATIVA ${runtime.activeRemaining.toFixed(1)}s`
+                : ready
+                  ? 'ATIVAR'
+                  : `${runtime.cooldownRemaining.toFixed(1)}s`;
+
+              return (
+                <Pressable
+                  key={`${guard.id}_${runtime.abilityId}`}
+                  onPress={() => dispatch({ type: 'ACTIVATE_ABILITY', guardId: guard.id, abilityId: runtime.abilityId })}
+                  disabled={!ready}
+                  style={({ pressed }) => ({
+                    opacity: ready ? (pressed ? 0.78 : 1) : 0.6,
+                    transform: [{ scale: pressed && ready ? 0.96 : 1 }],
+                  })}
+                >
+                  <View
+                    className="min-w-[132px] rounded-xl border px-3 py-2"
+                    style={{
+                      borderColor: ready ? GUARD_ACCENTS[guard.type] : '#46634D',
+                      backgroundColor: ready ? '#1C4A31' : '#173022',
+                    }}
+                  >
+                    <Text className="text-[9px] font-black uppercase text-[#DDEFC8]">
+                      {GUARD_NAMES[guard.type]} • {ability.name}
+                    </Text>
+                    <Text className="mt-1 text-[9px] font-semibold text-[#9FBE9A]">{status}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+        </ScrollView>
+      )}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

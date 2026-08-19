@@ -40,6 +40,38 @@ export interface RunEvent {
   choices: RunEventChoice[];
 }
 
+export interface RunStats {
+  damageDealt: number;
+  damageTaken: number;
+  guardsSpawned: number;
+  guardsLost: number;
+  enemiesEscaped: number;
+  wavesCleared: number;
+  bossesDefeated: number;
+  abilitiesActivated: number;
+  suppliesSpent: number;
+  relicsChosen: number;
+  eventsChosen: number;
+  maxGuards: number;
+  enemiesDefeatedByKind: Partial<Record<EnemyKind, number>>;
+}
+
+export const DEFAULT_RUN_STATS: RunStats = {
+  damageDealt: 0,
+  damageTaken: 0,
+  guardsSpawned: 0,
+  guardsLost: 0,
+  enemiesEscaped: 0,
+  wavesCleared: 0,
+  bossesDefeated: 0,
+  abilitiesActivated: 0,
+  suppliesSpent: 0,
+  relicsChosen: 0,
+  eventsChosen: 0,
+  maxGuards: 0,
+  enemiesDefeatedByKind: {},
+};
+
 export interface BestiaryProgress {
   normal: number;
   runner: number;
@@ -137,6 +169,7 @@ export interface GameState {
   waveEnemiesSpawned: number;
   totalEnemiesDefeated: number;
   totalCombatCoinsEarned: number;
+  runStats: RunStats;
   upgrades: Upgrade[];
   pendingWaveRewards: Upgrade[];
   selectedCardIndex: number | null;

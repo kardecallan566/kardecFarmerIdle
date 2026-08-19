@@ -7,6 +7,7 @@ import {
   CURRENT_SAVE_VERSION,
   DEFAULT_BESTIARY_PROGRESS,
   DEFAULT_BEACON_UPGRADE_LEVELS,
+  DEFAULT_RUN_STATS,
   GameState,
   getBestiaryReward,
   getBeaconStats,
@@ -127,6 +128,7 @@ const initialState: GameState = {
   waveEnemiesSpawned: 0,
   totalEnemiesDefeated: 0,
   totalCombatCoinsEarned: 0,
+  runStats: { ...DEFAULT_RUN_STATS, enemiesDefeatedByKind: {} },
   upgrades: [],
   pendingWaveRewards: [],
   selectedCardIndex: null,
@@ -313,6 +315,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ascensionLevel: state.ascensionLevel,
         forestEssence: state.forestEssence,
         activeRunEvent: null,
+        runStats: { ...DEFAULT_RUN_STATS, enemiesDefeatedByKind: {} },
         sprinkler: {
           angle: 0,
           rotationSpeed: getBeaconStats(state.beaconUpgradeLevels).rotationSpeed,
@@ -358,6 +361,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ascensionLevel: state.ascensionLevel,
         forestEssence: state.forestEssence,
         activeRunEvent: null,
+        runStats: { ...DEFAULT_RUN_STATS, enemiesDefeatedByKind: {} },
       };
 
     case 'UPDATE_ENEMIES': {
@@ -369,13 +373,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case 'UPDATE_ENEMY':
+    case 'UPDATE_ENEMY': {
+      const previousEnemy = state.enemies.find((enemy) => enemy.id === action.enemyId);
+      if (!previousEnemy) return state;
+      const nextEnemy = { ...previousEnemy, ...action.patch };
+      const damageDealt = Math.max(0, previousEnemy.health - nextEnemy.health);
       return {
         ...state,
-        enemies: state.enemies.map((enemy) =>
-          enemy.id === action.enemyId ? { ...enemy, ...action.patch } : enemy,
-        ),
+        enemies: state.enemies.map((enemy) => enemy.id === action.enemyId ? nextEnemy : enemy),
+        runStats: damageDealt > 0
+          ? { ...state.runStats, damageDealt: state.runStats.damageDealt + damageDealt }
+          : state.runStats,
       };
+    }
 
     case 'SPAWN_ENEMY':
       return {
@@ -394,8 +404,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         waveEnemiesTotal: state.waveEnemiesTotal + action.enemies.length,
       };
 
-    case 'UPDATE_GUARDS':
-      return { ...state, guards: action.guards };
+    case 'UPDATE_GUARDS': {
+      const nextIds = new Set(action.guards.map((guard) => guard.id));
+      const guardsLost = state.guards.filter((guard) => !nextIds.has(guard.id)).length;
+      const damageTaken = state.guards.reduce((total, guard) => {
+        const nextGuard = action.guards.find((candidate) => candidate.id === guard.id);
+        return total + Math.max(0, guard.health - (nextGuard?.health ?? 0));
+      }, 0);
+      return {
+        ...state,
+        guards: action.guards,
+        runStats: {
+          ...state.runStats,
+          guardsLost: state.runStats.guardsLost + guardsLost,
+          damageTaken: state.runStats.damageTaken + damageTaken,
+        },
+      };
+    }
 
     case 'ACTIVATE_ABILITY': {
       const guard = state.guards.find((candidate) => candidate.id === action.guardId);
@@ -409,6 +434,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         guards: state.guards.map((candidate) =>
           candidate.id === action.guardId ? activation.guard : candidate,
         ),
+        runStats: { ...state.runStats, abilitiesActivated: state.runStats.abilitiesActivated + 1 },
       };
     }
 
@@ -420,8 +446,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case 'ADD_GUARD':
-      return { ...state, guards: [...state.guards, action.guard] };
+    case 'ADD_GUARD': {
+      const guards = [...state.guards, action.guard];
+      return {
+        ...state,
+        guards,
+        runStats: {
+          ...state.runStats,
+          guardsSpawned: state.runStats.guardsSpawned + 1,
+          maxGuards: Math.max(state.runStats.maxGuards, guards.length),
+        },
+      };
+    }
 
     case 'REMOVE_ENEMY': {
       const enemy = state.enemies.find((e) => e.id === action.enemyId);
@@ -443,6 +479,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.bestiaryDefeated,
           [enemy.kind]: nextCount,
         },
+        runStats: {
+          ...state.runStats,
+          enemiesDefeatedByKind: {
+            ...state.runStats.enemiesDefeatedByKind,
+            [enemy.kind]: (state.runStats.enemiesDefeatedByKind[enemy.kind] ?? 0) + 1,
+          },
+        },
       };
     }
 
@@ -453,6 +496,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         enemies: state.enemies.filter((enemy) => enemy.id !== action.enemyId),
         waveEnemiesRemaining: Math.max(0, state.waveEnemiesRemaining - 1),
+        runStats: { ...state.runStats, enemiesEscaped: state.runStats.enemiesEscaped + 1 },
       };
     }
 
@@ -463,6 +507,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         plantationHealth: newHealth,
         gameLost: newHealth <= 0 && state.gameActive,
         gameActive: newHealth > 0,
+        runStats: { ...state.runStats, damageTaken: state.runStats.damageTaken + Math.max(0, action.amount) },
       };
     }
 
@@ -470,7 +515,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, combatCoins: state.combatCoins + action.amount };
 
     case 'SUBTRACT_COMBAT_COINS':
-      return { ...state, combatCoins: Math.max(0, state.combatCoins - action.amount) };
+      return {
+        ...state,
+        combatCoins: Math.max(0, state.combatCoins - action.amount),
+        runStats: { ...state.runStats, suppliesSpent: state.runStats.suppliesSpent + Math.max(0, action.amount) },
+      };
 
     case 'NEXT_WAVE': {
       const nextWave = state.wave + 1;
@@ -487,6 +536,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         waveEnemiesSpawned: 0,
         pendingWaveRewards: clearedBossWave ? generateUpgradeOptions(3) : [],
         forestEssence: state.forestEssence + essenceReward,
+        runStats: {
+          ...state.runStats,
+          wavesCleared: state.runStats.wavesCleared + 1,
+          bossesDefeated: state.runStats.bossesDefeated + (clearedBossWave ? 1 : 0),
+        },
       };
     }
 
@@ -566,6 +620,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         upgrades: [...state.upgrades, selectedUpgrade],
         pendingWaveRewards: [],
         gameActive: state.activeRunEvent === null,
+        runStats: { ...state.runStats, relicsChosen: state.runStats.relicsChosen + 1 },
       };
     }
 
@@ -582,6 +637,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         upgrades: outcome.upgrade ? [...state.upgrades, outcome.upgrade] : state.upgrades,
         activeRunEvent: null,
         gameActive: true,
+        runStats: { ...state.runStats, eventsChosen: state.runStats.eventsChosen + 1 },
       };
     }
 

@@ -76,8 +76,25 @@ export default function GameScreen() {
                 <View className="flex-row flex-wrap gap-2">
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">WAVE</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.wave}</Text></View>
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">ABATES</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.totalEnemiesDefeated}</Text></View>
-                  <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">TROPAS</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.guards.length}</Text></View>
+                  <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">TROPAS ATIVAS</Text><Text className="mt-1 text-xl font-black text-[#FFF4D6]">{state.runStats.maxGuards}</Text></View>
                   <View className="min-w-[46%] flex-1 rounded-2xl bg-[#203C2B] p-3"><Text className="text-[9px] font-black text-[#9FBE9A]">RECOMPENSA</Text><View className="mt-1 flex-row items-center gap-2"><CurrencyIcon type="campGold" size={24} /><Text className="text-xl font-black text-[#F7D774]">+{state.lastRunReward || '—'}</Text></View></View>
+                </View>
+
+                <View className="mt-3 rounded-2xl border border-[#3D6749] bg-[#1A3323] p-3">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[10px] font-black tracking-wide text-[#F7D774]">LEITURA DA RUN</Text>
+                    <Text className="text-xs font-black text-[#B8D491]">{state.runStats.bossesDefeated > 1 ? 'DEFESA DE ELITE' : state.runStats.wavesCleared >= 5 ? 'BOM PROGRESSO' : 'BASE EM FORMAÇÃO'}</Text>
+                  </View>
+                  <View className="mt-2 flex-row flex-wrap gap-2">
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Dano causado: {Math.round(state.runStats.damageDealt)}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Dano recebido: {Math.round(state.runStats.damageTaken)}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Tropas perdidas: {state.runStats.guardsLost}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Inimigos no farol: {state.runStats.enemiesEscaped}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Bosses vencidos: {state.runStats.bossesDefeated}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Habilidades: {state.runStats.abilitiesActivated}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Suprimentos gastos: {Math.round(state.runStats.suppliesSpent)}</Text>
+                    <Text className="min-w-[46%] flex-1 text-[10px] text-[#CFE2C6]">Relíquias/eventos: {state.runStats.relicsChosen}/{state.runStats.eventsChosen}</Text>
+                  </View>
                 </View>
               </View>
 

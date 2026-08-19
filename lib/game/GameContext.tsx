@@ -1,4 +1,6 @@
 import React, { createContext, useEffect, useReducer } from 'react';
+import type { AbilityId } from './abilities';
+import { activateAbility, updateAbilityCooldowns } from './abilitySystem';
 import {
   BeaconUpgradeType,
   CropPlot,
@@ -25,6 +27,8 @@ export type GameAction =
   | { type: 'UPDATE_ENEMY'; enemyId: string; patch: Partial<GameState['enemies'][number]> }
   | { type: 'ADD_ENEMIES'; enemies: GameState['enemies'] }
   | { type: 'UPDATE_GUARDS'; guards: GameState['guards'] }
+  | { type: 'ACTIVATE_ABILITY'; guardId: string; abilityId: AbilityId }
+  | { type: 'UPDATE_ABILITY_COOLDOWNS'; deltaSeconds: number }
   | { type: 'ADD_GUARD'; guard: GameState['guards'][number] }
   | { type: 'SPAWN_ENEMY'; enemy: GameState['enemies'][number] }
   | { type: 'REMOVE_ENEMY'; enemyId: string }
@@ -335,6 +339,29 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'UPDATE_GUARDS':
       return { ...state, guards: action.guards };
 
+    case 'ACTIVATE_ABILITY': {
+      const guard = state.guards.find((candidate) => candidate.id === action.guardId);
+      if (!guard) return state;
+
+      const activation = activateAbility(guard, action.abilityId);
+      if (!activation) return state;
+
+      return {
+        ...state,
+        guards: state.guards.map((candidate) =>
+          candidate.id === action.guardId ? activation.guard : candidate,
+        ),
+      };
+    }
+
+    case 'UPDATE_ABILITY_COOLDOWNS': {
+      if (!Number.isFinite(action.deltaSeconds) || action.deltaSeconds <= 0) return state;
+      return {
+        ...state,
+        guards: state.guards.map((guard) => updateAbilityCooldowns(guard, action.deltaSeconds)),
+      };
+    }
+
     case 'ADD_GUARD':
       return { ...state, guards: [...state.guards, action.guard] };
 
@@ -499,6 +526,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!state.gameActive || state.gameLost) return;
+
+    const abilityClock = setInterval(() => {
+      dispatch({ type: 'UPDATE_ABILITY_COOLDOWNS', deltaSeconds: 0.1 });
+    }, 100);
+
+    return () => clearInterval(abilityClock);
+  }, [state.gameActive, state.gameLost, dispatch]);
 
   useEffect(() => {
     if (!state.progressLoaded) return;

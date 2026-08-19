@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useGame } from './GameContext';
+import { createAbilityRuntimeState, getAbilitiesForGuard } from './abilities';
 import {
   Enemy,
   Guard,
@@ -215,6 +216,7 @@ export function useGameLoop() {
             attackCooldown: 0,
             moveSpeed: config.moveSpeed,
             color: config.color,
+            abilities: getAbilitiesForGuard(plot.cropType).map((ability) => createAbilityRuntimeState(ability.id)),
           });
         }
       });

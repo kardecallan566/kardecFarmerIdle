@@ -1,3 +1,5 @@
+import type { AbilityRuntimeState } from './abilities';
+
 export type GuardType = 'warrior' | 'archer' | 'tank';
 export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
 export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
@@ -161,6 +163,7 @@ export interface Guard {
   moveSpeed?: number;
   color: string;
   targetId?: string;
+  abilities?: AbilityRuntimeState[];
 }
 
 export interface Card {

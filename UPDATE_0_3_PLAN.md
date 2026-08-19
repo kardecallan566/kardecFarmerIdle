@@ -34,21 +34,23 @@ A implementação será feita em incrementos pequenos, jogáveis e publicáveis.
 
 | Fase | Entrega | Depende de | Estado |
 |---|---|---|---|
-| 0 | Auditoria, baseline e testes de regressão | Estado atual | Planejada |
-| 1 | Economia, custos, stats centralizados, migrations e dívida técnica | Fase 0 | Planejada |
-| 2 | Framework extensível de habilidades | Fase 1 | Planejada |
-| 3 | Provocação, Chuva de Flechas e Muralha | Fase 2 | Planejada |
-| 4 | Bônus de quartéis e formações | Fase 1 e 3 | Planejada |
-| 5 | Relíquias com raridade e builds | Fase 1, 2 e 4 | Planejada |
-| 6 | Bosses com fases e telegráficos | Fase 2, 4 e 5 | Planejada |
-| 7 | Voador, Demolidor, Invocador e Espectro | Fase 1, 2 e 6 | Planejada |
-| 8 | Árvore tecnológica, eventos, Bestiário expandido e Ascensão | Fase 1, 5, 6 e 7 | Planejada |
-| 9 | Estatísticas da run, Game Over e Home orientada a metas | Fase 3–8 | Planejada |
-| 10 | Áudio, haptics e polimento audiovisual | Fase 3, 6, 7 e 9 | Planejada |
-| 11 | Balanceamento, performance, testes e compatibilidade | Todas as fases | Planejada |
-| 12 | Documentação, changelog, commit final e entrega | Fase 11 | Planejada |
+| 0 | Auditoria, baseline e testes de regressão | Estado atual | Concluída |
+| 1 | Economia, custos, stats centralizados, migrations e dívida técnica | Fase 0 | Concluída |
+| 2 | Framework extensível de habilidades | Fase 1 | Concluída |
+| 3 | Provocação, Chuva de Flechas e Muralha | Fase 2 | Concluída |
+| 4 | Bônus de quartéis e formações | Fase 1 e 3 | Concluída |
+| 5 | Relíquias com raridade e builds | Fase 1, 2 e 4 | Concluída |
+| 6 | Bosses com fases e telegráficos | Fase 2, 4 e 5 | Concluída |
+| 7 | Voador, Demolidor, Invocador e Espectro | Fase 1, 2 e 6 | Concluída |
+| 8 | Árvore tecnológica, eventos, Bestiário expandido e Ascensão | Fase 1, 5, 6 e 7 | Concluída |
+| 9 | Estatísticas da run, Game Over e Home orientada a metas | Fase 3–8 | Concluída |
+| 10 | Áudio, haptics e polimento audiovisual | Fase 3, 6, 7 e 9 | Concluída |
+| 11 | Balanceamento, performance, testes e compatibilidade | Todas as fases | Concluída |
+| 12 | Documentação, changelog, commit final e entrega | Fase 11 | Concluída |
 
 Cada fase deve terminar com `pnpm check`, `pnpm lint`, `git diff --check` e uma validação em execução real quando a alteração for visível ou interativa.
+
+> **Status final — agosto de 2026:** as fases de implementação do Update 0.3 foram concluídas no branch `main`. A entrega inclui os sistemas descritos neste plano, foi validada com type-check, testes, lint, export web e `expo-doctor`, e está documentada em `UPDATE_0_3_RELEASE_NOTES.md`. O lint permanece com 15 avisos legados em componentes fora do fluxo principal; não há erros de TypeScript ou bloqueios de export.
 
 ---
 

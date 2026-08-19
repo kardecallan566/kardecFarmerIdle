@@ -2,13 +2,14 @@ import type { AbilityRuntimeState } from './abilities';
 
 export type GuardType = 'warrior' | 'archer' | 'tank';
 export type BeaconUpgradeType = 'lightSpeed' | 'multiSpawn' | 'extraSlots';
-export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'boss';
+export type EnemyKind = 'normal' | 'runner' | 'brute' | 'healer' | 'flyer' | 'demolisher' | 'summoner' | 'wraith' | 'boss';
 export type EnemySkinTier = 'wild' | 'scarred' | 'ancient' | 'apocalypse';
 export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 export type FormationId = 'balanced' | 'frontline' | 'crossfire';
 export type RelicRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type RelicBehavior = 'assault' | 'bastion' | 'precision' | 'logistics';
 export type BossAbilityType = 'speedBoost' | 'spawnMinions' | 'shockwave';
+export type EnemyTraversal = 'ground' | 'flying' | 'wraith';
 
 export const CURRENT_SAVE_VERSION = 2;
 
@@ -23,6 +24,10 @@ export interface BestiaryProgress {
   runner: number;
   brute: number;
   healer: number;
+  flyer: number;
+  demolisher: number;
+  summoner: number;
+  wraith: number;
   boss: number;
 }
 
@@ -47,6 +52,10 @@ export const DEFAULT_BESTIARY_PROGRESS: BestiaryProgress = {
   runner: 0,
   brute: 0,
   healer: 0,
+  flyer: 0,
+  demolisher: 0,
+  summoner: 0,
+  wraith: 0,
   boss: 0,
 };
 
@@ -141,6 +150,8 @@ export interface Enemy {
   radius: number;
   color: string;
   isBoss: boolean;
+  traversal?: EnemyTraversal;
+  plantationDamageMultiplier?: number;
   healingPower?: number;
   abilityCooldown?: number;
   bossAbilities?: BossAbility[];
@@ -223,6 +234,8 @@ export interface EnemyProfile {
   troopDamage: number;
   radius: number;
   color: string;
+  traversal?: EnemyTraversal;
+  plantationDamageMultiplier?: number;
   healingPower?: number;
 }
 
@@ -400,6 +413,10 @@ export function getEnemySkinTier(waveNumber: number): EnemySkinTier {
 
 export function getEnemyKindForSpawn(waveNumber: number, spawnIndex: number): EnemyKind {
   if (waveNumber % 5 === 0 && spawnIndex === 0) return 'boss';
+  if (waveNumber >= 8 && spawnIndex % 11 === 0) return 'wraith';
+  if (waveNumber >= 7 && spawnIndex % 9 === 0) return 'summoner';
+  if (waveNumber >= 5 && spawnIndex % 8 === 0) return 'demolisher';
+  if (waveNumber >= 4 && spawnIndex % 6 === 0) return 'flyer';
   if (waveNumber >= 6 && spawnIndex % 7 === 0) return 'healer';
   if (waveNumber >= 4 && spawnIndex % 5 === 0) return 'brute';
   if (waveNumber >= 3 && spawnIndex % 4 === 0) return 'runner';
@@ -414,7 +431,7 @@ export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfi
   const eraTroopScale = 1 + bossEra * 0.22;
   const waveScale = 1 + Math.max(0, waveNumber - 1) * 0.18;
   const troopScale = 1 + Math.max(0, waveNumber - 1) * 0.14;
-  const base = {
+  const base: EnemyProfile = {
     kind,
     skinTier,
     bossEra,
@@ -424,6 +441,8 @@ export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfi
     troopDamage: Math.max(16, Math.round(16 * troopScale * eraTroopScale)),
     radius: 12,
     color: '#DC143C',
+    traversal: 'ground',
+    plantationDamageMultiplier: 1,
   };
 
   switch (kind) {
@@ -433,8 +452,16 @@ export function getEnemyProfile(kind: EnemyKind, waveNumber: number): EnemyProfi
       return { ...base, health: Math.round(base.health * 2.35), speed: base.speed * 0.62, damage: Math.round(base.damage * 1.8), troopDamage: Math.round(base.troopDamage * 1.35), radius: 19, color: '#7A3F2B' };
     case 'healer':
       return { ...base, health: Math.round(base.health * 1.15), speed: base.speed * 0.82, damage: Math.max(3, Math.round(base.damage * 0.75)), troopDamage: Math.max(10, Math.round(base.troopDamage * 0.72)), radius: 14, color: '#5B8FD1', healingPower: Math.max(2, Math.round(base.health * 0.025)) };
+    case 'flyer':
+      return { ...base, health: Math.round(base.health * 0.8), speed: base.speed * 1.35, damage: Math.max(4, Math.round(base.damage * 0.9)), troopDamage: Math.max(12, Math.round(base.troopDamage * 0.9)), radius: 11, color: '#52B8D6', traversal: 'flying' };
+    case 'demolisher':
+      return { ...base, health: Math.round(base.health * 3.2), speed: base.speed * 0.42, damage: Math.round(base.damage * 2.2), troopDamage: Math.round(base.troopDamage * 1.55), radius: 22, color: '#5F5047', plantationDamageMultiplier: 2.2 };
+    case 'summoner':
+      return { ...base, health: Math.round(base.health * 1.45), speed: base.speed * 0.68, damage: Math.max(3, Math.round(base.damage * 0.8)), troopDamage: Math.max(10, Math.round(base.troopDamage * 0.85)), radius: 15, color: '#7D5BB7' };
+    case 'wraith':
+      return { ...base, health: Math.round(base.health * 0.9), speed: base.speed * 1.15, damage: Math.round(base.damage * 1.1), troopDamage: Math.max(12, Math.round(base.troopDamage * 0.9)), radius: 12, color: '#A477D5', traversal: 'wraith', plantationDamageMultiplier: 1.5 };
     case 'boss':
-      return { ...base, health: Math.round(base.health * (4.5 + bossEra * 0.8)), speed: base.speed * 1.22, damage: Math.round(base.damage * (2.2 + bossEra * 0.3)), troopDamage: Math.round(base.troopDamage * (1.65 + bossEra * 0.25)), radius: 19 + bossEra * 2, color: bossEra >= 3 ? '#4B1D6B' : bossEra === 2 ? '#341A52' : '#8B0000' };
+      return { ...base, health: Math.round(base.health * (4.5 + bossEra * 0.8)), speed: base.speed * 1.22, damage: Math.round(base.damage * (2.2 + bossEra * 0.3)), troopDamage: Math.round(base.troopDamage * (1.65 + bossEra * 0.25)), radius: 19 + bossEra * 2, color: bossEra >= 3 ? '#4B1D6B' : bossEra === 2 ? '#341A52' : '#8B0000', plantationDamageMultiplier: 1.8 };
     default:
       return { ...base, kind: 'normal' };
   }

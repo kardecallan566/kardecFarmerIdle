@@ -21,6 +21,10 @@ Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose 
 | Corredor | `enemy-runner-terror-transparent.png` | Classe veloz | Sprite transparente e identidade visual própria |
 | Bruto | `enemy-brute-terror-transparent.png` | Classe resistente | Sprite transparente, massa visual maior e identidade própria |
 | Curandeiro | `enemy-healer-terror-transparent.png` | Classe de suporte | Sprite transparente e identidade própria |
+| Voador | `enemy-flyer-terror-transparent.png` | Classe aérea veloz | Sprite transparente, silhueta alada e counter de arqueiros |
+| Demolidor | `enemy-demolisher-terror-transparent.png` | Classe de cerco | Sprite transparente, massa pesada e dano ampliado ao farol |
+| Invocador | `enemy-summoner-terror-transparent.png` | Classe de suporte ofensivo | Sprite transparente, cajado violeta e geração periódica de corredores |
+| Espectro | `enemy-wraith-terror-transparent.png` | Classe espectral | Sprite transparente, traversal incorpóreo e counter de tanques |
 | Boss antigo | `enemy-boss.png`, `enemy-boss-ancient-transparent.png` | Bosses de eras intermediárias | Escala superior, cor laranja/antiga e transparência no tier específico |
 | Boss apocalipse | `enemy-boss-apocalypse-transparent.png` | Bosses de eras avançadas | Paleta roxa, atmosfera aterrorizante e transparência real |
 | Marca | `assets/images/logo-kardec-farmer.png` | Logo da Home e branding | Emblema de trigo + defesa agrícola, sem depender de tipografia gerada |
@@ -32,7 +36,7 @@ Os sprites de unidades e monstros têm fundo verdadeiramente transparente, pose 
 
 ## Integração atual
 
-`components/game/GameMap.tsx` seleciona sprites de tropa por tier e classe, sprites de monstros por arquétipo e sprites de boss por era. Os oito espaços livres são renderizados com `village-barracks.png` em anel ao redor do farol, enquanto `forest-lane-foreground-transparent.png` entra depois da faixa lógica da pista e antes das unidades, deixando a vegetação em primeiro plano sem cobrir a rota central. `components/game/CardBar.tsx` e `components/game/ProgressionMenu.tsx` usam os mesmos retratos transparentes para manter consistência entre arena e acampamento. `lib/game/types.ts` calcula `skinTier` e `bossEra`, e `lib/game/useGameLoop.ts` gera monstros fora da viewport em oito lanes radiais; quando uma tropa está posicionada à frente, o inimigo a persegue antes de retomar o farol. Os minions de boss herdam a era e a skin do chefe.
+`components/game/GameMap.tsx` seleciona sprites de tropa por tier e classe, sprites de monstros por arquétipo — incluindo Voador, Demolidor, Invocador e Espectro — e sprites de boss por era. Os oito espaços livres são renderizados com `village-barracks.png` em anel ao redor do farol, enquanto `forest-lane-foreground-transparent.png` entra depois da faixa lógica da pista e antes das unidades, deixando a vegetação em primeiro plano sem cobrir a rota central. `components/game/CardBar.tsx` e `components/game/ProgressionMenu.tsx` usam os mesmos retratos transparentes para manter consistência entre arena e acampamento. `lib/game/types.ts` calcula `skinTier` e `bossEra`, e `lib/game/useGameLoop.ts` gera monstros fora da viewport em oito lanes radiais; quando uma tropa está posicionada à frente, o inimigo a persegue antes de retomar o farol. Os minions de boss herdam a era e a skin do chefe.
 
 As waves múltiplas de cinco recebem a classe visual de boss, escala maior de arena e banner discreto de era. O Intervalo Tático é exibido apenas depois dessas waves. O farol SVG central continua sendo a estrutura protegida e a origem das tropas, sem causar dano aos monstros.
 

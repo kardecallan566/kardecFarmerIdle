@@ -27,8 +27,18 @@ const GUARD_IMAGES = {
 };
 
 const TROOP_ORDER: GuardType[] = ['warrior', 'archer', 'tank'];
-const BESTIARY_ORDER = ['normal', 'runner', 'brute', 'healer', 'boss'] as const;
-const BESTIARY_NAMES = { normal: 'Batedor', runner: 'Corredor', brute: 'Bruto', healer: 'Curandeiro', boss: 'Chefe' };
+const BESTIARY_ORDER = ['normal', 'runner', 'brute', 'healer', 'flyer', 'demolisher', 'summoner', 'wraith', 'boss'] as const;
+const BESTIARY_NAMES = {
+  normal: 'Batedor',
+  runner: 'Corredor',
+  brute: 'Bruto',
+  healer: 'Curandeiro',
+  flyer: 'Voador',
+  demolisher: 'Demolidor',
+  summoner: 'Invocador',
+  wraith: 'Espectro',
+  boss: 'Chefe',
+};
 const UNLOCK_COSTS: Record<GuardType, number> = { warrior: 0, archer: 180, tank: 360 };
 const UPGRADE_BASE_COSTS: Record<GuardType, number> = { warrior: 120, archer: 160, tank: 200 };
 

@@ -4,6 +4,7 @@ import Svg, { Circle, Rect, G, Text as SvgText, Image as SvgImage, Path, Defs, L
 import { useGame } from '@/lib/game/GameContext';
 import { getBossEra, getEffectiveCombatCost, getGuardVisualProfile, getWaveConfig, INITIAL_GAME_CONFIG, GUARD_CONFIGS } from '@/lib/game/types';
 import { distance } from '@/lib/game/utils';
+import { ENEMY_CLASS_LABELS } from '@/lib/game/enemyCounters';
 import { getMapLayout, getPlotPosition } from '@/lib/game/layout';
 import { useAttackAnimations } from '@/lib/game/useAttackAnimations';
 import { useDeathAnimations } from '@/lib/game/useDeathAnimations';
@@ -39,6 +40,10 @@ const ENEMY_IMAGES = {
   runner: require('@/assets/images/enemy-runner-terror-transparent.png'),
   brute: require('@/assets/images/enemy-brute-terror-transparent.png'),
   healer: require('@/assets/images/enemy-healer-terror-transparent.png'),
+  flyer: require('@/assets/images/enemy-flyer-terror-transparent.png'),
+  demolisher: require('@/assets/images/enemy-demolisher-terror-transparent.png'),
+  summoner: require('@/assets/images/enemy-summoner-terror-transparent.png'),
+  wraith: require('@/assets/images/enemy-wraith-terror-transparent.png'),
   bossAncient: require('@/assets/images/enemy-boss-ancient-transparent.png'),
   bossApocalypse: require('@/assets/images/enemy-boss-apocalypse-transparent.png'),
   bossWild: require('@/assets/images/enemy-boss.png'),
@@ -473,26 +478,36 @@ export function GameMap() {
               ? '#A96745'
               : enemy.kind === 'healer'
                 ? '#63D9E8'
-                : eraAccent;
+                : enemy.kind === 'flyer'
+                  ? '#52B8D6'
+                  : enemy.kind === 'demolisher'
+                    ? '#C18A62'
+                    : enemy.kind === 'summoner'
+                      ? '#B48AE8'
+                      : enemy.kind === 'wraith'
+                        ? '#D0A8F3'
+                        : eraAccent;
           const enemyAccent = enemy.isBoss ? eraAccent : classAccent;
           const enemyLabel = enemy.isBoss
             ? `BOSS ${enemy.bossEra} • F${enemy.bossPhase ?? 1}`
-            : enemy.kind === 'runner'
-              ? 'COR'
-              : enemy.kind === 'brute'
-                ? 'BRU'
-                : enemy.kind === 'healer'
-                  ? 'CUR'
-                  : '';
+            : enemy.kind === 'normal'
+              ? ''
+              : ENEMY_CLASS_LABELS[enemy.kind].slice(0, 3);
           const imgSize = enemy.isBoss
             ? 48 + Math.min(enemy.bossEra, 3) * 8
-            : enemy.kind === 'brute'
-              ? 40
-              : enemy.kind === 'healer'
-                ? 34
-                : enemy.kind === 'runner'
-                  ? 30
-                  : 30;
+            : enemy.kind === 'demolisher'
+              ? 48
+              : enemy.kind === 'summoner'
+                ? 38
+                : enemy.kind === 'brute'
+                  ? 40
+                  : enemy.kind === 'healer'
+                    ? 34
+                    : enemy.kind === 'flyer' || enemy.kind === 'wraith'
+                      ? 34
+                      : enemy.kind === 'runner'
+                        ? 30
+                        : 30;
           const enemyImage = enemy.isBoss
             ? enemy.skinTier === 'apocalypse'
               ? ENEMY_IMAGES.bossApocalypse
@@ -505,9 +520,17 @@ export function GameMap() {
                 ? ENEMY_IMAGES.brute
                 : enemy.kind === 'healer'
                   ? ENEMY_IMAGES.healer
-                  : ENEMY_IMAGES.normal;
+                  : enemy.kind === 'flyer'
+                    ? ENEMY_IMAGES.flyer
+                    : enemy.kind === 'demolisher'
+                      ? ENEMY_IMAGES.demolisher
+                      : enemy.kind === 'summoner'
+                        ? ENEMY_IMAGES.summoner
+                        : enemy.kind === 'wraith'
+                          ? ENEMY_IMAGES.wraith
+                          : ENEMY_IMAGES.normal;
           const phase = animationTick * 0.16 + enemyIndex * 0.9;
-          const bob = Math.sin(phase) * (enemy.isBoss ? 2 : 1.2);
+          const bob = Math.sin(phase) * (enemy.isBoss ? 2 : enemy.traversal ? 2.4 : 1.2);
           const scale = 1 + Math.sin(phase * 1.2) * (enemy.isBoss ? 0.035 : 0.02);
           const x = Math.round(enemy.x);
           const y = Math.round(enemy.y);

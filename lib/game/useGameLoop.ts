@@ -4,6 +4,7 @@ import { useGame } from './GameContext';
 import { createAbilityRuntimeState, getAbilitiesForGuard, getAbilityDefinition } from './abilities';
 import { consumePendingAbility, isAbilityActive } from './abilitySystem';
 import { getRunGuardStats } from './guardStats';
+import { getCounterDamageMultiplier } from './enemyCounters';
 import {
   Enemy,
   Guard,
@@ -112,6 +113,8 @@ export function useGameLoop() {
           radius: enemyProfile.radius,
           color: enemyProfile.color,
           isBoss: enemyKind === 'boss',
+          traversal: enemyProfile.traversal,
+          plantationDamageMultiplier: enemyProfile.plantationDamageMultiplier,
           healingPower: enemyProfile.healingPower,
           abilityCooldown: enemyProfile.healingPower ? 0 : undefined,
           attackCooldown: 0,
@@ -224,6 +227,7 @@ export function useGameLoop() {
 
           let guardTarget: Guard | undefined;
           let nearestGuardDistance = Number.POSITIVE_INFINITY;
+          const canInterceptGuards = enemy.traversal !== 'flying' && enemy.traversal !== 'wraith';
           const tauntEffect = getAbilityDefinition('warrior-taunt').effect;
           const tauntRadius = tauntEffect.type === 'taunt' ? tauntEffect.radius : 0;
           const tauntingGuard = allGuards
@@ -234,10 +238,10 @@ export function useGameLoop() {
             }))
             .find(({ guardDistance }) => guardDistance <= tauntRadius)?.guard;
 
-          if (tauntingGuard) {
+          if (tauntingGuard && canInterceptGuards) {
             guardTarget = tauntingGuard;
             nearestGuardDistance = distance(currentPosition, { x: tauntingGuard.x, y: tauntingGuard.y });
-          } else {
+          } else if (canInterceptGuards) {
             allGuards.forEach((guard) => {
               if (guard.health <= 0) return;
               const guardOffsetX = guard.x - layout.centerX;
@@ -280,7 +284,10 @@ export function useGameLoop() {
           );
 
           if (distToCenter < INITIAL_GAME_CONFIG.plantationRadius + 15) {
-            dispatch({ type: 'DAMAGE_PLANTATION', amount: enemy.damage });
+            dispatch({
+              type: 'DAMAGE_PLANTATION',
+              amount: enemy.damage * (enemy.plantationDamageMultiplier ?? 1),
+            });
             dispatch({ type: 'ENEMY_REACHED_CENTER', enemyId: enemy.id });
             return null;
           }
@@ -323,11 +330,44 @@ export function useGameLoop() {
       });
 
       const incomingDamageByGuard = new Map<string, number>();
+      const summonedEnemiesThisTick: Enemy[] = [];
       const bulwarkEffect = getAbilityDefinition('tank-bulwark').effect;
       const bulwarkReduction = bulwarkEffect.type === 'damageReduction' ? bulwarkEffect.reductionRatio : 0;
       const combatEnemies = abilityAffectedEnemies.map((enemy) => {
         const nextEnemyCooldown = Math.max(0, (enemy.attackCooldown ?? 0) - GAME_DT);
         let nextAbilityCooldown = Math.max(0, (enemy.abilityCooldown ?? 0) - GAME_DT);
+
+        if (enemy.kind === 'summoner' && nextAbilityCooldown <= 0) {
+          const minionProfile = getEnemyProfile('runner', currentState.wave);
+          const minionCount = enemy.bossEra >= 2 ? 2 : 1;
+          const summonedEnemies: Enemy[] = [];
+          for (let index = 0; index < minionCount; index += 1) {
+            const minionHealth = Math.max(10, Math.round(minionProfile.health * (0.9 + enemy.bossEra * 0.12)));
+            summonedEnemies.push({
+              id: generateId('summoned'),
+              kind: 'runner',
+              skinTier: enemy.skinTier,
+              bossEra: enemy.bossEra,
+              x: enemy.x + (index === 0 ? -10 : 10),
+              y: enemy.y + (index === 0 ? 8 : -8),
+              pathIndex: enemy.pathIndex,
+              pathProgress: Math.max(0, enemy.pathProgress - 0.035),
+              health: minionHealth,
+              maxHealth: minionHealth,
+              speed: minionProfile.speed * (0.9 + enemy.bossEra * 0.04),
+              damage: minionProfile.damage,
+              troopDamage: minionProfile.troopDamage,
+              radius: minionProfile.radius,
+              color: minionProfile.color,
+              isBoss: false,
+              traversal: 'ground',
+              plantationDamageMultiplier: 1,
+              attackCooldown: 0,
+            });
+          }
+          summonedEnemiesThisTick.push(...summonedEnemies);
+          nextAbilityCooldown = 7 - Math.min(2, enemy.bossEra * 0.4);
+        }
 
         if (enemy.kind === 'healer' && nextAbilityCooldown <= 0) {
           let healingTarget: Enemy | undefined;
@@ -428,7 +468,7 @@ export function useGameLoop() {
               { x: target.x, y: target.y },
             );
             if (distanceAfterMove <= guard.range && nextCooldown <= 0) {
-              target.health -= guard.damage;
+              target.health -= guard.damage * getCounterDamageMultiplier(guard.type, target.kind);
               nextCooldown = 1 / Math.max(guard.attackSpeed, 0.1);
               if (target.health <= 0) defeatedEnemyIds.add(target.id);
             }
@@ -444,6 +484,10 @@ export function useGameLoop() {
         })
         .filter((guard) => guard.health > 0);
 
+      if (summonedEnemiesThisTick.length > 0) {
+        dispatch({ type: 'ADD_ENEMIES', enemies: summonedEnemiesThisTick });
+      }
+
       defeatedEnemyIds.forEach((enemyId) => {
         dispatch({ type: 'REMOVE_ENEMY', enemyId });
       });
@@ -454,6 +498,7 @@ export function useGameLoop() {
 
       if (
         aliveEnemies.length === 0 &&
+        summonedEnemiesThisTick.length === 0 &&
         enemySpawnCountRef.current >= waveConfig.enemyCount &&
         !waveTransitionRef.current
       ) {

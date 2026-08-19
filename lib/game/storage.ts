@@ -115,6 +115,10 @@ function normalizeBestiary(raw: Partial<BestiaryProgress> | null | undefined): B
     runner: Math.max(0, Number(raw?.runner) || 0),
     brute: Math.max(0, Number(raw?.brute) || 0),
     healer: Math.max(0, Number(raw?.healer) || 0),
+    flyer: Math.max(0, Number(raw?.flyer) || 0),
+    demolisher: Math.max(0, Number(raw?.demolisher) || 0),
+    summoner: Math.max(0, Number(raw?.summoner) || 0),
+    wraith: Math.max(0, Number(raw?.wraith) || 0),
     boss: Math.max(0, Number(raw?.boss) || 0),
   };
 }

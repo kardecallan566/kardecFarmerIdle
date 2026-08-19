@@ -30,6 +30,39 @@ const GUARD_IMAGES = {
 
 const TROOP_ORDER: GuardType[] = ['warrior', 'archer', 'tank'];
 const BESTIARY_ORDER = ['normal', 'runner', 'brute', 'healer', 'flyer', 'demolisher', 'summoner', 'wraith', 'boss'] as const;
+const BESTIARY_IMAGES = {
+  normal: require('@/assets/images/enemy-normal.png'),
+  runner: require('@/assets/images/enemy-runner-terror-transparent.png'),
+  brute: require('@/assets/images/enemy-brute-terror-transparent.png'),
+  healer: require('@/assets/images/enemy-healer-terror-transparent.png'),
+  flyer: require('@/assets/images/enemy-flyer-terror-transparent.png'),
+  demolisher: require('@/assets/images/enemy-demolisher-terror-transparent.png'),
+  summoner: require('@/assets/images/enemy-summoner-terror-transparent.png'),
+  wraith: require('@/assets/images/enemy-wraith-terror-transparent.png'),
+  boss: require('@/assets/images/enemy-boss.png'),
+};
+const BESTIARY_COLORS = {
+  normal: '#78909C',
+  runner: '#D97145',
+  brute: '#9A5A3C',
+  healer: '#8B67B5',
+  flyer: '#3C8FBE',
+  demolisher: '#B65C3C',
+  summoner: '#8E5AA7',
+  wraith: '#675DA8',
+  boss: '#B6852D',
+};
+const BESTIARY_COUNTERS = {
+  normal: 'Linha equilibrada',
+  runner: 'Foco rápido',
+  brute: 'Dano concentrado',
+  healer: 'Eliminar primeiro',
+  flyer: 'Arqueiros',
+  demolisher: 'Guerreiros',
+  summoner: 'Fogo cruzado',
+  wraith: 'Tanques',
+  boss: 'Habilidades e formação',
+};
 const BESTIARY_NAMES = {
   normal: 'Batedor',
   runner: 'Corredor',
@@ -208,21 +241,45 @@ export function ProgressionMenu({ onStartGame, onBack }: ProgressionMenuProps) {
             </View>
           </View>
 
+          <View className="rounded-3xl border border-[#91B28A] bg-[#F4FAEE]/95 p-4">
+            <Text className="text-[10px] font-black tracking-[1.5px] text-[#52734E]">MAPA DO BOSQUE</Text>
+            <Text className="mt-1 text-lg font-black text-[#294F2E]">A vila ao redor do farol</Text>
+            <Text className="mt-1 text-xs leading-4 text-[#71835E]">Veja a arena ampliada, os quartéis e a direção das próximas ameaças.</Text>
+            <View className="mt-3 overflow-hidden rounded-2xl border-2 border-[#759B6A] bg-[#DCEAC8]">
+              <Image source={FOREST_VILLAGE_BACKGROUND} style={{ width: '100%', height: isCompact ? 190 : 230 }} resizeMode="cover" />
+              <View className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/50 bg-[#142719]/85 px-3 py-2">
+                <Text className="text-center text-[10px] font-black tracking-wide text-[#F7D774]">FAROL CENTRAL • 8 QUARTÉIS • LANES INVISÍVEIS</Text>
+                <Text className="mt-0.5 text-center text-[9px] font-bold text-[#E7F4D6]">Wave máxima {state.bestWave} • {state.unlockedTroops.length} tropas disponíveis</Text>
+              </View>
+            </View>
+            <View className="mt-3 flex-row gap-2">
+              <View className="flex-1 rounded-xl bg-[#E2F0D8] p-2.5"><Text className="text-[9px] font-black text-[#52734E]">QUARTÉIS</Text><Text className="mt-0.5 text-base font-black text-[#294F2E]">{beaconStats.unlockedPlotCount}/8</Text></View>
+              <View className="flex-1 rounded-xl bg-[#E7E0F2] p-2.5"><Text className="text-[9px] font-black text-[#76558E]">TECNOLOGIA</Text><Text className="mt-0.5 text-base font-black text-[#4A315B]">{Object.values(state.technologyLevels).reduce((sum, level) => sum + level, 0)}/15</Text></View>
+              <View className="flex-1 rounded-xl bg-[#F3D98C] p-2.5"><Text className="text-[9px] font-black text-[#8A7040]">ASCENSÃO</Text><Text className="mt-0.5 text-base font-black text-[#704D1B]">{state.ascensionLevel}</Text></View>
+            </View>
+          </View>
+
           <View className="rounded-3xl border border-[#B8CDE0] bg-[#F1F8FC]/95 p-4">
             <Text className="text-[10px] font-black tracking-[1.5px] text-[#5F7990]">BESTIÁRIO DO BOSQUE</Text>
             <Text className="mt-1 text-lg font-black text-[#2D5367]">Conheça seus inimigos</Text>
             <Text className="mt-1 text-xs leading-4 text-[#68859A]">Cada nova espécie descoberta rende uma recompensa e revela sua estratégia.</Text>
-            <View className="mt-3 gap-2">
+            <View className="mt-3 flex-row flex-wrap justify-between gap-y-2">
               {BESTIARY_ORDER.map((kind) => {
                 const defeated = state.bestiaryDefeated[kind];
                 const discovered = defeated > 0;
+                const accent = BESTIARY_COLORS[kind];
                 return (
-                  <View key={kind} className="flex-row items-center justify-between rounded-xl border border-[#C8DCE8] bg-white/70 px-3 py-2">
-                    <View className="flex-row items-center gap-2">
-                      <View className={`h-3 w-3 rounded-full ${discovered ? 'bg-[#5B8FD1]' : 'bg-[#B9C8D1]'}`} />
-                      <Text className="text-xs font-black text-[#36576A]">{BESTIARY_NAMES[kind]}</Text>
+                  <View key={kind} style={{ width: isCompact ? '48.5%' : '31.5%', borderColor: accent }} className="overflow-hidden rounded-2xl border bg-white/85 p-2.5">
+                    <View className="items-center rounded-xl bg-[#EAF2F6] py-1">
+                      <Image
+                        source={BESTIARY_IMAGES[kind]}
+                        style={{ width: isCompact ? 76 : 82, height: isCompact ? 76 : 82, opacity: discovered ? 1 : 0.35 }}
+                        resizeMode="contain"
+                      />
                     </View>
-                    <Text className="text-[10px] font-bold text-[#6A879A]">{discovered ? `${defeated} derrotados` : 'Ainda não encontrado'}</Text>
+                    <Text numberOfLines={1} className="mt-2 text-center text-[11px] font-black text-[#36576A]">{BESTIARY_NAMES[kind]}</Text>
+                    <Text numberOfLines={1} className="mt-0.5 text-center text-[9px] font-bold" style={{ color: accent }}>{discovered ? `${defeated} abatidos` : 'Não encontrado'}</Text>
+                    <Text numberOfLines={1} className="mt-1 text-center text-[8px] font-black text-[#6A879A]">{BESTIARY_COUNTERS[kind]}</Text>
                   </View>
                 );
               })}

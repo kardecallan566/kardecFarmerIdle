@@ -224,7 +224,6 @@ export function GameMap() {
           height={mapLayout.height}
           preserveAspectRatio="none"
           opacity={0.96}
-          pointerEvents="none"
         />
 
         {isBossWave && (

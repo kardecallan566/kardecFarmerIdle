@@ -17,30 +17,32 @@ Remove-Item -Recurse -Force .expo -ErrorAction SilentlyContinue
 pnpm android:clear
 ```
 
-No Android, abra o Expo Go, remova o projeto antigo da lista de recentes se ele aparecer e escaneie o QR gerado por `pnpm android:clear`. O QR deve apontar para uma sessão `exp://...` do Metro local.
+No Android, abra o Expo Go, remova o projeto antigo da lista de recentes se ele aparecer e escaneie o QR gerado por `pnpm android:clear`. O QR deve apontar para uma sessão `exp://...` do Metro local. Se o Expo mostrar um IP `169.254.x.x`, esse endereço é link-local e geralmente não funciona no telefone; conecte o computador a uma rede Wi-Fi normal, desative adaptadores VPN/virtuais temporariamente ou use `REACT_NATIVE_PACKAGER_HOSTNAME` com o IP LAN correto.
 
-O comando `pnpm android:clear` usa túnel por padrão para evitar que o telefone dependa do IP LAN do computador. O túnel é somente uma conexão ao Metro local; ele não é um update remoto do jogo.
+O comando `pnpm android:clear` usa LAN por padrão. Esse é o caminho recomendado quando o computador e o Android estão na mesma rede Wi-Fi. O túnel é somente uma conexão ao Metro local; ele não é um update remoto do jogo.
 
-Se você estiver em uma rede Wi-Fi confiável, com computador e telefone na mesma rede, pode usar o modo LAN:
+Antes de iniciar, você pode conferir os IPs disponíveis no Windows:
 
 ```powershell
-pnpm android:lan
+pnpm android:network
 ```
 
-Se você preferir escolher explicitamente o túnel, use:
+Se a LAN não funcionar, tente explicitamente o túnel:
 
 ```powershell
 pnpm android:tunnel:clear
 ```
 
+O túnel depende do serviço ngrok. Se aparecer `ngrok tunnel took too long to connect`, o ngrok está indisponível ou bloqueado na rede; nesse caso, não insista no túnel e use a correção de LAN abaixo.
+
 ## Comandos Android
 
 | Comando | Uso |
 |---|---|
-| `pnpm android` | Expo Go Android via túnel |
+| `pnpm android` | Expo Go Android via LAN |
 | `pnpm android:lan` | Expo Go Android via LAN |
-| `pnpm android:clear` | Expo Go Android via túnel com cache limpo |
-| `pnpm android:tunnel` | Expo Go Android via túnel |
+| `pnpm android:clear` | Expo Go Android via LAN com cache limpo |
+| `pnpm android:tunnel` | Expo Go Android via túnel opcional |
 | `pnpm android:tunnel:clear` | Túnel com cache limpo |
 | `pnpm android:offline` | LAN com modo offline do Metro, útil para evitar consultas externas |
 | `pnpm dev` | Alias Android: executa `pnpm android:clear` |

@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "pnpm android:clear",
-    "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --port 8081",
+    "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --port 8081",
     "dev:metro:lan": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --port 8081",
     "dev:metro:tunnel": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --port 8081",
     "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
@@ -15,12 +15,13 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "android": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --port 8081",
+    "android": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --port 8081",
     "android:lan": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --port 8081",
     "android:tunnel": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --port 8081",
     "android:tunnel:clear": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --clear --port 8081",
-    "android:clear": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --tunnel --clear --port 8081",
+    "android:clear": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --clear --port 8081",
     "android:offline": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --go --lan --clear --offline --port 8081",
+    "android:network": "node scripts/check_android_network.mjs",
     "qr": "node scripts/generate_qr.mjs"
   },
   "dependencies": {

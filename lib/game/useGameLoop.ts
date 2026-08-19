@@ -115,10 +115,12 @@ export function useGameLoop() {
           healingPower: enemyProfile.healingPower,
           abilityCooldown: enemyProfile.healingPower ? 0 : undefined,
           attackCooldown: 0,
+          bossPhase: enemyKind === 'boss' ? 1 : undefined,
           bossAbilities: enemyKind === 'boss'
             ? [
-                { type: 'speedBoost', cooldown: 0, maxCooldown: 10 },
-                { type: 'spawnMinions', cooldown: 0, maxCooldown: 15 },
+                { type: 'speedBoost', cooldown: 0, maxCooldown: 10, minPhase: 1, telegraphSeconds: 1.2 },
+                { type: 'spawnMinions', cooldown: 0, maxCooldown: 15, minPhase: 2, telegraphSeconds: 1.6 },
+                { type: 'shockwave', cooldown: 0, maxCooldown: 18, minPhase: 3, telegraphSeconds: 2.1 },
               ]
             : undefined,
         };

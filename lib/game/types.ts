@@ -8,6 +8,7 @@ export type GuardVisualTier = 'base' | 'veteran' | 'elite' | 'legendary';
 export type FormationId = 'balanced' | 'frontline' | 'crossfire';
 export type RelicRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type RelicBehavior = 'assault' | 'bastion' | 'precision' | 'logistics';
+export type BossAbilityType = 'speedBoost' | 'spawnMinions' | 'shockwave';
 
 export const CURRENT_SAVE_VERSION = 2;
 
@@ -143,13 +144,24 @@ export interface Enemy {
   healingPower?: number;
   abilityCooldown?: number;
   bossAbilities?: BossAbility[];
+  bossPhase?: number;
+  bossTelegraph?: BossTelegraph;
   attackCooldown?: number;
 }
 
 export interface BossAbility {
-  type: 'speedBoost' | 'spawnMinions';
+  type: BossAbilityType;
   cooldown: number;
   maxCooldown: number;
+  minPhase?: number;
+  telegraphSeconds?: number;
+}
+
+export interface BossTelegraph {
+  type: BossAbilityType;
+  remaining: number;
+  duration: number;
+  color: string;
 }
 
 export interface Guard {

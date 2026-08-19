@@ -18,6 +18,7 @@ export function GameHUD() {
     ? Math.min(100, (state.waveEnemiesSpawned / state.waveEnemiesTotal) * 100)
     : 0;
   const isBossWave = wavesUntilBoss === 0;
+  const boss = state.enemies.find((enemy) => enemy.isBoss);
   const beaconStats = getBeaconStats(state.beaconUpgradeLevels);
   const activePlotCount = state.plots.filter((plot) => plot.unlocked).length;
   const previousHealthRef = useRef(state.plantationHealth);
@@ -73,6 +74,23 @@ export function GameHUD() {
           Pulso {beaconStats.spawnBatch}x • {activePlotCount}/8 quartéis
         </Text>
       </View>
+
+      {isBossWave && boss && (
+        <View className="mt-2 rounded-xl border border-[#A65CC5] bg-[#291934] px-2.5 py-1.5">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[10px] font-black text-[#F1C8FF]">BOSS • FASE {boss.bossPhase ?? 1}</Text>
+            <Text className="text-[9px] font-bold text-[#D7A9EC]">
+              {boss.bossTelegraph
+                ? boss.bossTelegraph.type === 'speedBoost'
+                  ? 'INVESTIDA PREPARADA'
+                  : boss.bossTelegraph.type === 'spawnMinions'
+                    ? 'INVOCAR MINIONS'
+                    : 'ONDA DE CHOQUE'
+                : 'Padrão em recarga'}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {damageNotice !== null && (
         <View className="mt-2 flex-row items-center justify-center gap-2 rounded-xl border border-[#F07863] bg-[#6F2B28] px-3 py-1.5">

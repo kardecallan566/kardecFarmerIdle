@@ -476,7 +476,7 @@ export function GameMap() {
                 : eraAccent;
           const enemyAccent = enemy.isBoss ? eraAccent : classAccent;
           const enemyLabel = enemy.isBoss
-            ? `BOSS ${enemy.bossEra}`
+            ? `BOSS ${enemy.bossEra} • F${enemy.bossPhase ?? 1}`
             : enemy.kind === 'runner'
               ? 'COR'
               : enemy.kind === 'brute'
@@ -524,6 +524,38 @@ export function GameMap() {
                 fill="#000"
                 opacity={0.22}
               />
+              {enemy.isBoss && enemy.bossTelegraph && (
+                <G>
+                  <Circle
+                    r={imgSize / 2 + 12 + (1 - enemy.bossTelegraph.remaining / Math.max(enemy.bossTelegraph.duration, 0.1)) * 12}
+                    fill="none"
+                    stroke={enemy.bossTelegraph.color}
+                    strokeWidth={3}
+                    strokeDasharray="5 4"
+                    opacity={0.9}
+                  />
+                  <Rect
+                    x={-28}
+                    y={-imgSize / 2 - 19}
+                    width={56}
+                    height={10}
+                    rx={5}
+                    fill="#24152D"
+                    stroke={enemy.bossTelegraph.color}
+                    strokeWidth={1}
+                  />
+                  <SvgText
+                    x={0}
+                    y={-imgSize / 2 - 12}
+                    fontSize={6}
+                    fill={enemy.bossTelegraph.color}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    {`${enemy.bossTelegraph.type === 'speedBoost' ? 'INVESTIDA' : enemy.bossTelegraph.type === 'spawnMinions' ? 'INVOCAR' : 'ONDA DE CHOQUE'} ${enemy.bossTelegraph.remaining.toFixed(1)}s`}
+                  </SvgText>
+                </G>
+              )}
               <SvgImage
                 href={enemyImage}
                 x={-imgSize / 2}
